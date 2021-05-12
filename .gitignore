@@ -1,0 +1,6 @@
+# Ignore all hidden files
+.*
+!/.gitignore
+
+# Ignore csv files
+*.csv
