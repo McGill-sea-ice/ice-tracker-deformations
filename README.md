@@ -35,5 +35,11 @@ Install the python dependencies on the virtual environment:
 python -m pip install -r requirements.txt
 ```
 
+To avoid any module importation errors, append the project's root directory to `PYTHONPATH`:
+
+```
+export PYTHONPATH="${PYTHONPATH}:/path/to/2021_SeaIceDeformation/"
+```
+
 ## Usage
 
