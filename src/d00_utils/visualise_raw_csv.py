@@ -1,114 +1,20 @@
 '''
 Author: Beatrice Duval (bdu002)
 
-----------------------------------------------
-Testing code for csv data file visualization. 
-----------------------------------------------
+-------------------------------------------
+Visualisation tools for raw csv data files. 
+-------------------------------------------
 
-Provides tools that:
-    Display S1 data points on a map (numbered) for individual 
-        csv files.  
-    Plot the distances between consecutive data points for 
-        individual csv files. 
-    Display S1 data points on a map from all csv files under 
-        a directory.
 '''
 
 import os
-from datetime import datetime
-from math import asin, degrees, sqrt, tan
 
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-from pyproj import Proj
 from haversine import haversine
-from scipy.spatial import Delaunay
-from scipy.interpolate import griddata
 
-################################ FUNCTIONS #################################
-
-
-def find_gridLatDeg(dist):
-    ''' (float) -> float 
-    
-    Takes as input desired spacing (km) between parallels to be mapped
-    and returns the angle (degrees) between parallels to be displayed on 
-    a map
-
-    Keyword arguments:
-    dist -- Spacing between parallels (km)
-    
-    >>> find_gridDeg(0)
-    0.0
-    >>> find_gridDeg(50)
-    0.44966080296032374
-    '''
-    # Set the approx. value of Earth radius (km)
-    R = 6371
-
-    # Use the 'haversine' formula backwards to find dLat
-    # for a given input distance
-    c = dist / R
-    a = (1 + tan(c / 2) ** 2) ** (-1)
-
-    # Set dLon to zero, and dLat to be the value
-    # we want to compute
-    dLat = 2 * asin(sqrt(a))
-
-    return 180 - degrees(dLat)
-    
-
-def dataDate(p):
-    ''' (str) -> datetime, datetime
-    
-    Takes as input RCM or S1 csv data file path
-    and returns Start and end times as datetime objects
-    
-    Keyword arguments:
-    p -- csv data file path (absolute or relative)
-
-    >>> start, end = dataDate('2020_MarApr_S1/pairs_20200301033644_20200303032021_1.csv')
-    >>> print(start.strftime("%b %d %Y %H:%M:%S"))
-    Mar 01 2020 03:36:44
-    >>> print(end.strftime("%b %d %Y %H:%M:%S"))
-    Mar 03 2020 03:20:21
-    '''
-
-    # Create datetime objects for data starting and ending times
-    # using the times specified in the csv file names
-    start = datetime(int(p[-35:-31]), # Year
-                     int(p[-31:-29]), # Month
-                     int(p[-29:-27]), # Day
-                     int(p[-27:-25]), # Hour
-                     int(p[-25:-23]), # Minute
-                     int(p[-23:-21])) # Second
-
-    end   = datetime(int(p[-20:-16]), # Year
-                     int(p[-16:-14]), # Month
-                     int(p[-14:-12]), # Day
-                     int(p[-12:-10]), # Hour
-                     int(p[-10:-8]),  # Minute
-                     int(p[-8:-6]))   # Second
-
-    return start, end
-
-def dT(s, e):
-    ''' (datetime, datetime) -> float
-    
-    Takes as input start and end times as datetime objects
-    and returns delta time (s)
-
-    Keyword arguments:
-    s -- start time (datetime)
-    e -- end time (datetime)
-
-    >>> start, end = dataDate('2020_MarApr_S1/pairs_20200301033644_20200303032021_1.csv')
-    >>> print(dT(start, end))
-    171817.0
-    '''
-    return (e-s).total_seconds()
+from .datetime_raw_csv import *
 
 def show_SpatialCoverage( dir ):
     ''' (string) -> none
@@ -117,7 +23,7 @@ def show_SpatialCoverage( dir ):
     the given directory on a single artic map
     
     Keyword arguments:
-    dir -- path to directory containing csv files (absolute or relative) 
+    dir -- path to directory containing csv files
     '''
 
     # Initialize figure and map
@@ -157,7 +63,7 @@ def show_ConsecutiveDists(path):
     data points in csv file
 
     Keyword arguments:
-    path -- csv file path (absolute or relative) 
+    path -- csv file path 
     '''
 
     # Create a data frame from a csv file
@@ -165,7 +71,7 @@ def show_ConsecutiveDists(path):
     
     # Create datetime objects for the starting and ending
     # times of the data
-    start, end = dataDate(path)
+    start, end = dataDatetimes(path)
 
     # Initialize scatter plot arrays
     distances = []
@@ -209,7 +115,7 @@ def show_numberedDP(path):
     
     # Create datetime objects for the starting and ending
     # times of the data
-    start, end = dataDate(path)
+    start, _ = dataDatetimes(path)
 
     # Initialize figure and plot
     fig = plt.figure()
@@ -234,14 +140,14 @@ def show_numberedDP(path):
                                            xycoords=transform,
                                            textcoords='offset points')
     
+    # Add a title
     fig.suptitle('Numbered data points on ' + start.strftime("%b %d %Y %H:%M:%S") + ' - S1', fontsize=14, y=1)
 
-    
     plt.show()
 
 
 def show_DP(path):
-    ''' (string) -> none
+    ''' (array, array) -> none
 
     Plots data points from a csv file on a map of the entire 
     arctic ocean.
@@ -250,12 +156,16 @@ def show_DP(path):
     path --  csv file path (absolute or relative) 
     '''
 
-    # Retrieve data from a csv file
-    lat, lon, _ , _ = get_trackerDP(path)
+    # Create a data frame
+    df = pd.read_csv(path)
 
+    # Retrieve data points
+    sLon = df['sLon']       # Starting longitude
+    sLat = df['sLat']       # Starting latitude
+    
     # Create datetime objects for the starting and ending
     # times of the data
-    start, end = dataDate(path)
+    start, end = dataDatetimes(path)
 
     # Initialize figure
     fig = plt.figure()
@@ -274,38 +184,12 @@ def show_DP(path):
 
     # Plot the starting data points
     #ax.scatter(list(df['sLosn']), list(df['sLat']), transform=ccrs.Geodetic())
-    ax.scatter(lon, lat, transform=ccrs.Geodetic())
+    ax.scatter(sLon, sLat, transform=ccrs.Geodetic())
 
     # Add a title
     fig.suptitle('Data points on ' + start.strftime("%b %d %Y %H:%M:%S") + ' - S1', fontsize=14, y=1)
 
     plt.show()
 
-
-def get_trackerDP(path):
-    ''' (string) -> array, array, array, array
-
-    Retrieves data from csv file.
-
-    Keyword arguments:
-    path --  csv file path (absolute or relative)
-    '''
-
-    # Create a data frame
-    df = pd.read_csv(path)
-
-    # Retrieve data points
-    slon = df['sLon']       # Starting longitude
-    slat = df['sLat']       # Starting latitude
-    elon = df['eLon']       # Ending longitude
-    elat = df['eLat']       # Ending latitude
-
-    return slat, slon, elat, elon
-
-
-################################### MAIN PROGRAM #################################
-
-if __name__ == '__main__':
-    print("Main")
 
 

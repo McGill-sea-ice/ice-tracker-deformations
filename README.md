@@ -4,7 +4,7 @@
 
 This project aims at computing arctic sea ice deformations from icetracker data (Sentinel-1 and RCM). 
 
-The RIOPS grid is used to create data quadrilaterals which are in turn used to compute sea ice deformations.
+A Delaunay triangulation is performed on data points and the RIOPS grid is used to create local cartesian coordinate systems for each triangular data cell. The processed data set is then used to compute sea ice deformations following *Bouchat et al. (2020)*.
 
 ## Installation
 
@@ -41,5 +41,5 @@ To avoid any module importation errors, append the project's root directory to `
 export PYTHONPATH="${PYTHONPATH}:/path/to/2021_SeaIceDeformation/"
 ```
 
-## Usage
+
 

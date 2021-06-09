@@ -6,16 +6,13 @@ Code for creation of a netcdf grid, adapted from original RIOPS grid
 --------------------------------------------------------------------
 
 Crops the RIOPS grid to region of interest. 
-Creates a new netcdf cropped grid containing central 
-    grid points ('points traceurs') (lat,lon and x,y coordinates), 
-    f speed points ('points de vitesse'), distance between cental 
-    points and land, and a sea-land mask.
+Creates a new netcdf cropped grid containing tracer points (lat,lon and 
+    x,y coordinates in the aeqd transform), speed points, distance between 
+    tracer points and land, and a sea-land mask.
 '''
 
 import os
 
-import cartopy.crs as ccrs
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from haversine import haversine
@@ -162,7 +159,7 @@ X, Y = p(LON, LAT)
 
 # Find absolute path in which cropped_grid.nc is to be stored
 projPath = os.path.dirname(os.path.realpath(__file__))
-cropGridPath = projPath + '/cropped_grid.nc'
+cropGridPath = projPath + '/../../data/00_grid/cropped_grid.nc'
 
 # Create cropped_grid.nc netcdf file and associated crop_ds dataset
 crop_ds = Dataset(cropGridPath, 'w', format = 'NETCDF4')
