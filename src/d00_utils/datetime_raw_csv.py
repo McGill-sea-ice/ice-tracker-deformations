@@ -44,18 +44,22 @@ def dataDatetimes(p):
     return start, end
 
 
-def dT(s, e):
-    ''' (datetime, datetime) -> float
+def dT(se):
+    ''' tuple(datetime) -> float
     
     Takes as input start and end times as datetime objects
-    and returns delta time (s)
+    and returns delta time (days)
 
     Keyword arguments:
-    s -- start time (datetime)
-    e -- end time (datetime)
+    se -- start, end time (datetime objects)
 
     >>> start, end = dataDate('2020_MarApr_S1/pairs_20200301033644_20200303032021_1.csv')
-    >>> print(dT(start, end))
-    171817.0
+    >>> print(dT( (start, end) ))
+    1.98862268519
     '''
-    return (e-s).total_seconds()
+
+    # Unpack the input start and end times
+    s, e = se
+
+    return (e-s).total_seconds() / 86400
+

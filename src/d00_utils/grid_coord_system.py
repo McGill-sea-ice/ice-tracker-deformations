@@ -10,6 +10,7 @@ x,y coordinates in a local cartesian grid coordinate system.
 
 import numpy as np
 from haversine import haversine
+from math import sqrt, acos
 
 def find_aeqdTriCenter(x1_aeqd, x2_aeqd, x3_aeqd, y1_aeqd, y2_aeqd, y3_aeqd):
     ''' (float, float, float, float, float, float) ->  tuple
@@ -59,8 +60,8 @@ def find_nearestGridTracerPt(gridX_aeqd, gridY_aeqd, xy_aeqd):
     # Find local grid delta maximums
     maxDeltas = np.maximum(absDeltaX, absDeltaY)
 
-    # The minimum local maximum is at the nearest grid tracer point
-    nearest_idx = np.argmin(maxDeltas)
+    # The minimum local maxima is at the nearest grid tracer point
+    nearest_idx = np.nanargmin(maxDeltas)
 
     # Retrieve the nearest grid tracer point's (j,i) index and return it
     nearest_j, nearest_i = np.unravel_index(nearest_idx, gridX_aeqd.shape)
@@ -96,8 +97,8 @@ def define_gridCS(fLAT, fLON, ji):
     D = (fLAT[j-1, i], fLON[j-1, i])  
 
     # Compute the distance between the origin (C) and B/D (respectively)
-    b =  haversine(B, C)
-    d =  haversine(D, C)
+    b =  haversine(B, C) 
+    d =  haversine(D, C) 
     
     return B, C, D, b, d
 
@@ -117,16 +118,44 @@ def get_xy_gridCS(gridCS, latlonPt ):
     B, C, D, b, d = gridCS
 
     # Compute the distance between B, C, D and the input point (respectively)
-    a1 = haversine(B, latlonPt)
-    a2 = haversine(C, latlonPt)
-    a3 = haversine(D, latlonPt)
+    a1 = haversine(B, latlonPt) 
+    a2 = haversine(C, latlonPt) 
+    a3 = haversine(D, latlonPt) 
     
     # Compute the x and y coordinates in the local CS
     '''
     Note: see RCM_deformation.pdf (section 3) and xy_gridCoords_derivation.pdf 
-    in the docs folder for more information on this calculation.
+    in the docs folder for more information about this calculation.
     '''
     x = ( a2**2 - a3**2 + d**2 ) / (2 * d)
     y = ( a2**2 - a1**2 + b**2 ) / (2 * b)
 
     return x, y
+
+
+def get_tri_angles( xy1, xy2, xy3):
+    ''' (tuple, tuple, tuple) -> tuple
+
+    Returns the triangle's angle at each vertex in radians.
+    
+    Keyword arguments:
+    xy1, xy2, xy3  -- (x, y) cartesian coordinates for the 1st, 2nd and 3rd triangle vertices
+    '''
+
+    # Unpack the input coordinates
+    x1, y1 = xy1
+    x2, y2 = xy2
+    x3, y3 = xy3 
+
+    # Get the distance between each vertices
+    d12 = sqrt( (x2-x1)**2 + (y2-y1)**2 )
+    d13 = sqrt( (x3-x1)**2 + (y3-y1)**2 )
+    d23 = sqrt( (x3-x2)**2 + (y3-y2)**2 )
+
+    # Compute the angle at each vertex (in radians)
+    ang1 = acos( (d13**2 + d12**2 - d23**2) / (2*d13*d12) )
+    ang2 = acos( (d12**2 + d23**2 - d13**2) / (2*d23*d12) )
+    ang3 = acos( (d23**2 + d13**2 - d12**2) / (2*d13*d23) )
+
+    return ang1, ang2, ang3
+

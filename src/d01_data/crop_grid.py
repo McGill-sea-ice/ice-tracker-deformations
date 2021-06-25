@@ -18,6 +18,8 @@ import pandas as pd
 from haversine import haversine
 from netCDF4 import Dataset
 from pyproj import Proj
+from math import nan
+from src.d00_utils.grid_coord_system import find_nearestGridTracerPt
 
 ################################### MAIN PROGRAM #################################
 
@@ -44,6 +46,13 @@ fLON = grid_ds['glamf'][y1:y2, x1:x2]
 # Retrieve new size for grid matrices
 ydim, xdim = LAT.shape
 
+#-------------Create 'points traceurs' matrix in x,y coordinates-----------------
+
+# Convert grid points from lat/lon to x,y coordinates following 
+# the Azimuthal Equidistant transform
+p = Proj(proj='aeqd', ellps='WGS84', preserve_units=False)
+X, Y = p(LON, LAT)
+
 #---------------------Create land-sea mask -------------------------------------
 
 # Load bathymetry dataset
@@ -60,100 +69,30 @@ MASK[ MASK[:,:] > 0 ] = 1
 MASK[ MASK[:,:] == 0 ] = 0
 
 
-#-----------------Create list of coastline (lat, lon) points---------------------
-
-# Initialize coastline list
-COAST = []
-
-# Create LAT/LON/MASK matrices that cover a slightly greater area
-# than the cropped grid
-coastLAT = grid_ds['nav_lat'][1000:1795, 300:1300]
-coastLON = grid_ds['nav_lon'][1000:1795, 300:1300]
-coastMASK = bathy_ds['Bathymetry'][1000:1795, 300:1300]
-
-# Set all land values (>0) to 0 and ocean values (=0)
-# to 1 
-coastMASK[ coastMASK[:,:] > 0 ] = 1
-coastMASK[ coastMASK[:,:] == 0 ] = 0
-
-# Retrieve size for coast matrices
-coastYdim, coastXdim = coastLAT.shape
-
-# Iterate through all grid points and add coastline points to the list
-for y in range(coastYdim):
-    for x in range(coastXdim):
-        
-        # A land point (0) is on the coastline if an ocean
-        # point (1) is somewhere around it, for example:
-        #
-        #               1    1    1
-        #               1    0    1   
-        #               1    1    1
-        
-        if coastMASK[y,x] == 0:
-
-            isCoast = False
-            
-            for i in [-1, 0, 1]: 
-                for j in [-1, 0, 1]: 
-                    # Check if location is within boundary
-                    if 0 <= x + i < xdim and 0 <= y + j < ydim:
-                        # Check if there is a land point around
-                        isCoast = isCoast or coastMASK[y+j,x+i] == 1
-
-            if isCoast:
-                COAST.append((coastLAT[y,x], coastLON[y,x]))
-
-
 #-----------------Create distance to coastline matrix --------------------------
     
 # Initialize distances matrix to a zero matrix
 DIST = np.zeros( (ydim, xdim) )
 
-path = '/home/bdu002/2021_SeaIceDeformation/data/2020_MarApr_S1/pairs_20200301033644_20200303032021_1.csv'
-df = pd.read_csv(path)
+# Create a masked 'points traceurs' matrix in x,y coordinates
+# where all ocean points are set to nan
+maskedX = X.copy()
+maskedY = Y.copy()
 
-lon = df['sLon']
-lat = df['sLat']
-
-max_lon = lon.max()
-min_lon = lon.min()
-max_lat = lat.max()
-min_lat = lat.min()
-
-indices = zip(*np.where((min_lat <= LAT) & (LAT <= max_lat) &  (min_lon <= LON) & (LON <= max_lon)))
+maskedX[ MASK[:,:] == 1 ] = nan
+maskedY[ MASK[:,:] == 1 ] = nan
 
 # Iterate through all grid points
-for y, x in indices :
-
-    # If the point is located on sea, find its minimal 
-    # distance to land
-    # Else, the distance to land is 0
-    if MASK[y,x] == 1:
-        # Initialize a minimum distance to land variable
-        min_dist = np.Inf
-
-        # Iterate through all coast points
-        for index, coastPoint in enumerate(COAST):
-                # Find the distance between the current coast point and the sea point
-                dist = haversine(( LAT[y,x], LON[y,x]), coastPoint)
-                    
-                # If the distance found is less than the current
-                # minimal distance, update the minimal distance
-                if ( dist < min_dist ):
-                    min_dist = dist
-            
-        # Add the minimal distance found to the 
-        # distances to coastline matrix
-        DIST[y,x] = min_dist
-
-
-#-------------Create 'points traceurs' matrix in x,y coordinates-----------------
-
-# Convert grid points from lat/lon to x,y coordinates following 
-# the Azimuthal Equidistant transform
-p = Proj(proj='aeqd', ellps='WGS84', preserve_units=False)
-X, Y = p(LON, LAT)
+for y in range(ydim) :
+    for x in range(xdim):
+        # If the point is located on sea, find its minimal 
+        # distance to land
+        # Else, the distance to land is 0
+        if MASK[y,x] == 1:
+            j, i = find_nearestGridTracerPt(maskedX, maskedY, (X[y,x], Y[y,x]))
+            # Add the minimal distance found to the 
+            # distances to coastline matrix
+            DIST[y,x] = haversine( (LAT[y,x], LON[y,x]), (LAT[j,i], LON[j,i]) )
 
 #---------------------Create new netcdf grid-------------------------------------
 

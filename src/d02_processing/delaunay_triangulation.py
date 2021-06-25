@@ -8,7 +8,7 @@ and stores the results in a csv file.
 
 Output csv file format:
 
-    no., sLat1, sLat2, sLat3, sLon1, sLon2, sLon3, eLat1, eLat2, eLat3, eLon1, eLon2, eLon3, sX1_aeqd, sX2_aeqd, sX3_aeqd, sY1_aeqd, sY2_aeqd, sY3_aeqd
+    no., sLat1, sLat2, sLat3, sLon1, sLon2, sLon3, eLat1, eLat2, eLat3, eLon1, eLon2, eLon3, sX1_aeqd, sX2_aeqd, sX3_aeqd, sY1_aeqd, sY2_aeqd, sY3_aeqd, vertice_idx1, vertice_idx2
 
 where:
 
@@ -18,15 +18,15 @@ where:
     - eLat1, eLat2, eLat3, eLon1, eLon2, eLon3 are the ending latitudes and latitudes;
     - sX1_aeqd, sX2_aeqd, sX3_aeqd, sY1_aeqd, sY2_aeqd, sY3_aeqd are the x,y coordinates 
         of the starting vertices in the Azimuthal Equidistant (aeqd) transform.
-
+    - vertice_idx1, vertice_idx2, vertice_idx3 are the triangle vertices' indices in the raw csv file
 '''
 
 import csv
 
 from pyproj import Proj
 from scipy.spatial import Delaunay
-from src.d01_data.data_paths import processed_csv_path
-from src.d01_data.load_raw_csv import sLat, sLon, eLat, eLon
+from src.d01_data.get_data_paths import processed_csv_path
+from src.d01_data.load01_raw_csv import sLat, sLon, eLat, eLon
 
 # Convert starting data points from lon,lat to x,y coordinates 
 # following the Azimuthal Equidistant (aeqd) transform 
@@ -43,42 +43,45 @@ header = ['no.', 'sLat1', 'sLat2', 'sLat3',
                  'eLat1', 'eLat2', 'eLat3', 
                  'eLon1', 'eLon2', 'eLon3', 
                  'sX1_aeqd', 'sX2_aeqd', 'sX3_aeqd', 
-                 'sY1_aeqd', 'sY2_aeqd', 'sY3_aeqd' ]
+                 'sY1_aeqd', 'sY2_aeqd', 'sY3_aeqd',
+                 'vertice_idx1', 'vertice_idx2',  'vertice_idx3'
+                  ]
+
 row_list = [header]
 
 # Iterate through all triangles
 for n in range(len(tri.simplices)):
         
     # Find the index of all 3 data points that form the current triangle
-    index_node1 = tri.simplices[n][0]
-    index_node2 = tri.simplices[n][1]
-    index_node3 = tri.simplices[n][2]
+    vertice_idx1 = tri.simplices[n][0]
+    vertice_idx2 = tri.simplices[n][1]
+    vertice_idx3 = tri.simplices[n][2]
 
     # Retrieve the starting and ending latitudes and longitudes of the data points
-    sLat1 = sLat[index_node1]   # Starting latitudes
-    sLat2 = sLat[index_node2]
-    sLat3 = sLat[index_node3]
+    sLat1 = sLat[vertice_idx1]   # Starting latitudes
+    sLat2 = sLat[vertice_idx2]
+    sLat3 = sLat[vertice_idx3]
 
-    sLon1 = sLon[index_node1]    # Starting longitudes
-    sLon2 = sLon[index_node2]
-    sLon3 = sLon[index_node3]
+    sLon1 = sLon[vertice_idx1]    # Starting longitudes
+    sLon2 = sLon[vertice_idx2]
+    sLon3 = sLon[vertice_idx3]
 
-    eLat1 = eLat[index_node1]    # Ending latitudes
-    eLat2 = eLat[index_node2]
-    eLat3 = eLat[index_node3]
+    eLat1 = eLat[vertice_idx1]    # Ending latitudes
+    eLat2 = eLat[vertice_idx2]
+    eLat3 = eLat[vertice_idx3]
 
-    eLon1 = eLon[index_node1]    # Ending longitudes
-    eLon2 = eLon[index_node2]
-    eLon3 = eLon[index_node3]  
+    eLon1 = eLon[vertice_idx1]    # Ending longitudes
+    eLon2 = eLon[vertice_idx2]
+    eLon3 = eLon[vertice_idx3]  
         
     # Retrieve the starting X and Y coordinates in the aeqd transform
-    sX1_aeqd = sX_aeqd[index_node1]   # Starting latitudes
-    sX2_aeqd = sX_aeqd[index_node2]
-    sX3_aeqd = sX_aeqd[index_node3]
+    sX1_aeqd = sX_aeqd[vertice_idx1]   # Starting latitudes
+    sX2_aeqd = sX_aeqd[vertice_idx2]
+    sX3_aeqd = sX_aeqd[vertice_idx3]
 
-    sY1_aeqd = sY_aqed[index_node1]    # Starting longitudes
-    sY2_aeqd = sY_aqed[index_node2]
-    sY3_aeqd = sY_aqed[index_node3]
+    sY1_aeqd = sY_aqed[vertice_idx1]   # Starting longitudes
+    sY2_aeqd = sY_aqed[vertice_idx2]
+    sY3_aeqd = sY_aqed[vertice_idx3]
 
     # Add the data row corresponding to the current triangle to the list of data rows
     row_list.append([ n, sLat1, sLat2, sLat3, 
@@ -86,7 +89,8 @@ for n in range(len(tri.simplices)):
                          eLat1, eLat2, eLat3,
                          eLon1, eLon2, eLon3, 
                          sX1_aeqd, sX2_aeqd, sX3_aeqd, 
-                         sY1_aeqd, sY2_aeqd, sY3_aeqd ] )
+                         sY1_aeqd, sY2_aeqd, sY3_aeqd,
+                         vertice_idx1, vertice_idx2,  vertice_idx3] )
 
 
 #--------------------Write the results to a csv file---------------------------------

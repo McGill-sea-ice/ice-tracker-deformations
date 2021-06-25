@@ -9,7 +9,7 @@ Code that plots the Delaunay triangulation using the processed csv file.
 
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
-from src.d01_data.load_processed_csv import sLat1, sLat2, sLat3, sLon1, sLon2, sLon3
+from src.d01_data.load02_processed_csv import sLat1, sLat2, sLat3, sLon1, sLon2, sLon3, eLat1, eLat2, eLat3, eLon1, eLon2, eLon3
 
 # Initialize figure
 fig = plt.figure()
@@ -34,7 +34,7 @@ for i in range(len(sLat1)):
             transform=ccrs.Geodetic())
 
 # Add a title
-fig.suptitle('', fontsize=14, y=1)
+fig.suptitle('Delaunay Triangulation', fontsize=14, y=1)
 
 plt.show()
 
