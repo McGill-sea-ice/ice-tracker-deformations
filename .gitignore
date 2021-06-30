@@ -1,7 +1,7 @@
 # Ignore all hidden files, except for .gitignore and .gitkeep
 .*
 !/.gitignore
-!/.gitkeep
+!.gitkeep
 
 # Ignore csv files
 *.csv
