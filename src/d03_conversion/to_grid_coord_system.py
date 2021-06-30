@@ -9,7 +9,8 @@ These results are then stored in a converted csv file.
 ----------------------------------------------------------------------------
 
 Output csv file format:
-    no., sX1, sX2, sX3, sY1, sY2, sY3, eX1, eX2, eX3, eY1, eY2, eY3, tracer_j, tracer_i
+    _________________________________________________________________________________________________
+    no. | sX1 | sX2 | sX3 | sY1 | sY2 | sY3 | eX1 | eX2 | eX3 | eY1 | eY2 | eY3 | tracer_j | tracer_i
 
 where:
     - no. is the triangle number;
@@ -21,75 +22,99 @@ where:
 '''
 
 import csv
+import os
 from math import nan
 from src.d00_utils.grid_coord_system import (define_gridCS, find_aeqdTriCenter,
                                              find_nearestGridTracerPt,
                                              get_xy_gridCS, get_tri_angles)
-from src.d01_data.get_data_paths import converted_csv_path
-from src.d01_data.load00_grid import X_aeqd, Y_aeqd, fLAT, fLON
-from src.d01_data.load02_processed_csv import (eLat1, eLat2, eLat3, eLon1, eLon2,
-                                             eLon3, sLat1, sLat2, sLat3, sLon1,
-                                             sLon2, sLon3, sX1_aeqd, sX2_aeqd,
-                                             sX3_aeqd, sY1_aeqd, sY2_aeqd,
-                                             sY3_aeqd)
+from src.d00_utils.load_csv import load_raw_csv, load_processed_csv
 
-# Create a header and a list of data rows that will be used to create the output csv file
-header = ['no.', 'sX1', 'sX2', 'sX3',             
-                 'sY1', 'sY2', 'sY3', 
-                 'eX1', 'eX2', 'eX3', 
-                 'eY1', 'eY2', 'eY3', 
-                 'tracer_j', 'tracer_i']
-row_list = [header]
+from src.d01_grid.load00_grid import X_aeqd, Y_aeqd, fLAT, fLON
+import src.config
 
-# Iterate through every triangle in the processed csv file 
-for n in range(len(sLat1)):
+# Iterate through all raw, processed and converted .csv files listed in config.py
+for raw_csv_path, processed_csv_path, converted_csv_path in zip(src.config.raw_csv_paths, src.config.processed_csv_paths,  src.config.converted_csv_paths):
 
-    # Compute the triangle's starting central point in the aeqd transform
-    x_aeqdCenter, y_aeqdCenter = find_aeqdTriCenter( sX1_aeqd[n], sX2_aeqd[n], sX3_aeqd[n], sY1_aeqd[n], sY2_aeqd[n], sY3_aeqd[n])
+    # If the converted file already exists and overwrite (in config.py) is set to false,
+    # go to the next iteration.
+    # ELse, process the raw and processed files and write/overwrite the converted file.
+    if os.path.exists(converted_csv_path) and not src.config.overwrite:
+        continue
+    
+    if not( os.path.exists(raw_csv_path) and os.path.exists(processed_csv_path) ):
+        continue
 
-    # Find the matrix indices of the nearest grid tracer point relative to 
-    # the triangle center point
-    j, i = find_nearestGridTracerPt( X_aeqd, Y_aeqd, (x_aeqdCenter, y_aeqdCenter) )
+    # Load the raw and the processed data sets
+    sLat, sLon, eLat, eLon = load_raw_csv( raw_csv_path )
 
-    # The grid coordinate system (CS) is defined by the speed points 
-    # (A-D points shown below) associated to and around the tracer point:
-    #
-    #                       B(0,b)      A
-    #
-    #                            (j,i)
-    #
-    #                       C(0,0)    D(d,0)
+    _, sX1_aeqd, sX2_aeqd, sX3_aeqd, \
+       sY1_aeqd, sY2_aeqd, sY3_aeqd, \
+       vertice_idx1, vertice_idx2, vertice_idx3 = load_processed_csv( processed_csv_path )
 
-    # Find the (lat, lon) position of B, C and D and the distances b and d,
-    # and store these as a tuple (gridCS)
-    gridCS = define_gridCS(fLAT, fLON, (j,i))    # = (B, C, D, b, d)
+       
+    # Create a header and a list of data rows that will be used to create the output csv file
+    header = ['no.', 'sX1', 'sX2', 'sX3',             
+                    'sY1', 'sY2', 'sY3', 
+                    'eX1', 'eX2', 'eX3', 
+                    'eY1', 'eY2', 'eY3', 
+                    'tracer_j', 'tracer_i']
+    
+    row_list = [header]
 
-    # Find the x,y starting and ending positions of the triangle vertices in 
-    # the local CS
-    sX1, sY1 = get_xy_gridCS(gridCS, (sLat1[n], sLon1[n]) ) # Starting positions
-    sX2, sY2 = get_xy_gridCS(gridCS, (sLat2[n], sLon2[n]) )
-    sX3, sY3 = get_xy_gridCS(gridCS, (sLat3[n], sLon3[n]) )
+    # Iterate through every triangle in the processed csv file 
+    for n in range(len(sX1_aeqd)):
 
-    eX1, eY1 = get_xy_gridCS(gridCS, (eLat1[n], eLon1[n]) ) # Ending positions
-    eX2, eY2 = get_xy_gridCS(gridCS, (eLat2[n], eLon2[n]) )
-    eX3, eY3 = get_xy_gridCS(gridCS, (eLat3[n], eLon3[n]) )
+        # Compute the triangle's starting central point in the aeqd transform
+        x_aeqdCenter, y_aeqdCenter = find_aeqdTriCenter( sX1_aeqd[n], sX2_aeqd[n], sX3_aeqd[n], sY1_aeqd[n], sY2_aeqd[n], sY3_aeqd[n])
 
-    # Compute the initial triangle angles
-    angles = get_tri_angles( (sX1, sY1), (sX2, sY2), (sX3, sY3))
+        # Find the matrix indices of the nearest grid tracer point relative to 
+        # the triangle center point
+        j, i = find_nearestGridTracerPt( X_aeqd, Y_aeqd, (x_aeqdCenter, y_aeqdCenter) )
 
-    # If one of the angles is inferior to 10 degrees (= 0.175 rad), reject it
-    if any(angle < 0.175 for angle in angles):
-        sX1 = sX2 = sX3 = sY1 = sY2 = sY3 = eX1 = eX2 = eX3 = eY1 = eY2 = eY3 = j = i = nan
+        # The grid coordinate system (CS) is defined by the speed points 
+        # (A-D points shown below) associated to and around the tracer point:
+        #
+        #                       B(0,b)      A
+        #
+        #                            (j,i)
+        #
+        #                       C(0,0)    D(d,0)
 
-    # Add the data row corresponding to the current triangle to the list of data rows
-    row_list.append( [ n, sX1, sX2, sX3, sY1, sY2, sY3, eX1, eX2, eX3, eY1, eY2, eY3, j, i] )
+        # Find the (lat, lon) position of B, C and D and the distances b and d,
+        # and store these as a tuple (gridCS)
+        gridCS = define_gridCS(fLAT, fLON, (j,i))    # = (B, C, D, b, d)
+
+        # Retrieve each vertex's index in the raw csv file
+        v1_index = vertice_idx1[n]
+        v2_index = vertice_idx2[n]
+        v3_index = vertice_idx3[n]
+
+        # Find the x,y starting and ending positions of the triangle vertices in 
+        # the local CS
+        sX1, sY1 = get_xy_gridCS(gridCS, (sLat[v1_index], sLon[v1_index]) ) # Starting positions
+        sX2, sY2 = get_xy_gridCS(gridCS, (sLat[v2_index], sLon[v2_index]) )
+        sX3, sY3 = get_xy_gridCS(gridCS, (sLat[v3_index], sLon[v3_index]) )
+
+        eX1, eY1 = get_xy_gridCS(gridCS, (eLat[v1_index], eLon[v1_index]) ) # Ending positions
+        eX2, eY2 = get_xy_gridCS(gridCS, (eLat[v2_index], eLon[v2_index]) )
+        eX3, eY3 = get_xy_gridCS(gridCS, (eLat[v3_index], eLon[v3_index]) )
+
+        # Compute the initial triangle angles
+        angles = get_tri_angles( (sX1, sY1), (sX2, sY2), (sX3, sY3))
+
+        # If one of the angles is inferior to 10 degrees (= 0.175 rad), reject it
+        if any(angle < 0.175 for angle in angles):
+            sX1 = sX2 = sX3 = sY1 = sY2 = sY3 = eX1 = eX2 = eX3 = eY1 = eY2 = eY3 = j = i = nan
+
+        # Add the data row corresponding to the current triangle to the list of data rows
+        row_list.append( [ n, sX1, sX2, sX3, sY1, sY2, sY3, eX1, eX2, eX3, eY1, eY2, eY3, j, i] )
 
 
-#--------------------Write the results to a csv file---------------------------------
+    #--------------------Write the results to a csv file---------------------------------
 
-# Write the results in the converted_csv_path file path
-with open(converted_csv_path, 'w', encoding='UTF8', newline='') as f:
-    writer = csv.writer(f)
+    # Write the results in the converted_csv_path file path
+    with open(converted_csv_path, 'w', encoding='UTF8', newline='') as f:
+        writer = csv.writer(f)
 
-    # Write the data rows to the csv file
-    writer.writerows(row_list)
+        # Write the data rows to the csv file
+        writer.writerows(row_list)

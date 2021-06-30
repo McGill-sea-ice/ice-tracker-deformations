@@ -10,11 +10,40 @@ with tracer point and x/y axis shown
 
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
-from src.d01_data.load02_processed_csv import sLat1, sLat2, sLat3, sLon1, sLon2, sLon3
-from src.d01_data.load03_converted_csv import sX1, sX2, sX3, sY1, sY2, sY3, j, i
-from src.d01_data.load00_grid import LAT, LON, fLAT, fLON
+import src.config
 from src.d00_utils.grid_coord_system import define_gridCS
+from src.d00_utils.load_csv import load_raw_csv, load_processed_csv, load_converted_csv
+from src.d01_data.load00_grid import LAT, LON, fLAT, fLON
 
+
+'''
+_________________________________________________________________________________________
+LOAD DATA SET
+'''
+
+# Initialize the config global variables (i.e. .csv file path lists for all stages of data processing)
+src.config.init()
+
+# Retrieve a single data set (n is the index of an element in the list of .csv file paths)
+n = 0
+raw_csv_path = src.config.raw_csv_paths[n]
+processed_csv_path = src.config.processed_csv_paths[n]
+converted_csv_path = src.config.converted_csv_paths[n]
+
+# Load a raw dataset
+sLat, sLon, eLat, eLon = load_raw_csv( raw_csv_path )
+
+# Load a processed dataset
+_, _, _, _, _, _, _, vertice_idx1, vertice_idx2, vertice_idx3 = load_processed_csv( processed_csv_path )
+
+# Load a converted dataset
+_, sX1,sX2, sX3, sY1, sY2, sY3, _, _, _, _, _, _, j_tracers, i_tracers = load_converted_csv( converted_csv_path )
+
+
+'''
+_________________________________________________________________________________________
+PLOT
+'''
 # Select which triangle to visualise
 n = 100
 
@@ -28,18 +57,18 @@ ax_latlon = fig.add_subplot(211,
 
 
 # Plot the triangle
-ax_latlon.plot([sLon1[n], sLon2[n], sLon3[n], sLon1[n]],
-            [sLat1[n], sLat2[n], sLat3[n], sLat1[n]], 
+ax_latlon.plot([sLon[vertice_idx1[n]], sLon[vertice_idx2[n]], sLon[vertice_idx3[n]], sLon[vertice_idx1[n]]],
+            [sLat[vertice_idx1[n]], sLat[vertice_idx2[n]], sLat[vertice_idx3[n]], sLat[vertice_idx1[n]]], 
             color = 'xkcd:sky blue', 
             transform=ccrs.Geodetic())
 
 # Plot the tracer point
-ax_latlon.scatter(LON[j[n],i[n]], LAT[j[n],i[n]], 
+ax_latlon.scatter(LON[ int(j_tracers[n]), int(i_tracers[n])], LAT[int(j_tracers[n]), int(i_tracers[n])], 
             color = 'red', 
             transform=ccrs.Geodetic(), label = "Tracer point")
 
 # Get the triangle's B,C and D points which define the local grid CS
-(BLat, BLon), (CLat, CLon), (DLat, DLon), _, _ = define_gridCS(fLAT, fLON, (j[n],i[n]))
+(BLat, BLon), (CLat, CLon), (DLat, DLon), _, _ = define_gridCS(fLAT, fLON, (int(j_tracers[n]),int(i_tracers[n])))
 
 
  # Create a matplotlib transform from the cartopy coordinate system
@@ -52,7 +81,7 @@ ax_latlon.plot([BLon, CLon, DLon], [BLat, CLat, DLat],
             transform=ccrs.Geodetic(), label = "Axis of reference in the local grid CS")
 
 # Add labels to the drawn axis of reference
-ax_latlon.annotate("y", (BLon, BLat), xytext=(1, 1), xycoords=transform, textcoords='offset points', color="green") #
+ax_latlon.annotate("y", (BLon, BLat), xytext=(1, 1), xycoords=transform, textcoords='offset points', color="green") 
 ax_latlon.annotate("x", (DLon, DLat), xytext=(1, 1), xycoords=transform, textcoords='offset points', color="green")
 
 # Add a legend 
@@ -71,8 +100,6 @@ ax_gridCS.set_xlabel('x')
 
 # Add a title
 fig.suptitle('Individual Data Point Triangle Drawn Using (lat, lon) Coordinates (top)\n and (x, y) Coordinates in a Local Grid Coordinate System (CS) (bottom) \n (triangle no. ' + str(n) + ')', fontsize=10, y=1)
-
-
 
 plt.show()
 

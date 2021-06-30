@@ -10,19 +10,46 @@ Code that plots data points' displacement and the sign of their velocity compone
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import numpy as np
-from src.d01_data.load01_raw_csv import sLat, sLon, eLat, eLon
+from pyproj import Proj
+import src.config
 from src.d00_utils.datetime_raw_csv import dataDatetimes, dT
-from src.d01_data.get_data_paths import calculations_csv_path
 from src.d00_utils.grid_coord_system import (define_gridCS,
                                              find_nearestGridTracerPt,
                                              get_xy_gridCS)
-from src.d00_utils.deformation_computations import (calculate_uv_lists)
-from pyproj import Proj
+from src.d00_utils.deformation_computations import calculate_uv_lists
+from src.d00_utils.load_csv import load_raw_csv, load_converted_csv
 from src.d01_data.load00_grid import X_aeqd, Y_aeqd, fLAT, fLON
-from src.d01_data.load03_converted_csv import i_tracers, j_tracers
+
+'''
+_________________________________________________________________________________________
+LOAD DATA SET
+'''
+
+# Initialize the config global variables (i.e. .csv file paths for all stages of data processing)
+src.config.init()
+
+# Retrieve a single data set (n is the index of an element in the list of .csv file paths)
+n = 0
+raw_csv_path = src.config.raw_csv_paths[n]
+converted_csv_path = src.config.converted_csv_paths[n]
+calculations_csv_path = src.config.calculations_csv_paths[n]
+
+# Load a raw dataset
+sLat, sLon, eLat, eLon = load_raw_csv( raw_csv_path )
+
+# Load a converted dataset
+_, _, _, _, _, _, _, _, _, _, _, _, _, j_tracers, i_tracers = load_converted_csv( converted_csv_path )
+
+
+'''
+_________________________________________________________________________________________
+COMPUTE SPEED COMPONENTS
+'''
 
 # Get start and end times as datetime objects
 start, end = dataDatetimes(calculations_csv_path)
+
+
 
 # Compute the time interval (days)
 dt = dT( (start, end) )
@@ -67,6 +94,12 @@ for n in range(len(sLat)):
     
 # Compute the u and v speed components
 u_list, v_list = calculate_uv_lists( sx_list, sy_list, sy_list, ey_list, dt)    
+
+
+'''
+_________________________________________________________________________________________
+PLOT
+'''
 
 # Initialize figure
 fig = plt.figure()

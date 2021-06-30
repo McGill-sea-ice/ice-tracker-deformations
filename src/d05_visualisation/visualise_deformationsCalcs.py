@@ -12,16 +12,45 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 from src.d00_utils.datetime_raw_csv import dataDatetimes
-from src.d01_data.get_data_paths import calculations_csv_path
+from src.d00_utils.load_csv import load_raw_csv, load_processed_csv, load_converted_csv, load_calculations_csv
 from src.d01_data.load00_grid import fLAT, fLON
-from src.d01_data.load01_raw_csv import sLat, sLon, eLat, eLon
-from src.d01_data.load02_processed_csv import vertice_idx1, vertice_idx2, vertice_idx3, sLat1, sLat2, sLat3, sLon1, sLon2, sLon3
-from src.d01_data.load03_converted_csv import i_tracers, j_tracers
-from src.d01_data.load04_calculations_csv import eps_tot, eps_I, eps_II, dudx, dudy, dvdy, dvdx
+import src.config
 
+'''
+_________________________________________________________________________________________
+LOAD DATA SET
+'''
+
+# Initialize the config global variables (i.e. .csv file paths for all stages of data processing)
+src.config.init()
+
+# Retrieve a single data set (n is the index of an element in the list of .csv file paths)
+n = 0
+raw_csv_path = src.config.raw_csv_paths[n]
+processed_csv_path = src.config.processed_csv_paths[n]
+converted_csv_path = src.config.converted_csv_paths[n]
+calculations_csv_path = src.config.calculations_csv_paths[n]
+
+# Load a raw dataset
+sLat, sLon, eLat, eLon = load_raw_csv( raw_csv_path )
+
+# Load a processed dataset
+_, _, _, _, _, _, _, vertice_idx1, vertice_idx2, vertice_idx3 = load_processed_csv( processed_csv_path )
+
+# Load a converted dataset
+_, _, _, _, _, _, _, _, _, _, _, _, _, j_tracers, i_tracers = load_converted_csv( converted_csv_path )
+
+# Load a calculations dataset
+_, dudx, dudy, dvdx, dvdy, eps_I, eps_II, eps_tot = load_calculations_csv( calculations_csv_path )
 
 # Get start and end times as datetime objects
-start, end = dataDatetimes(calculations_csv_path)
+start, end = dataDatetimes(raw_csv_path)
+
+
+'''
+_________________________________________________________________________________________
+PLOT
+'''
 
 # Initialize figure and add subplots
 fig = plt.figure()
@@ -62,12 +91,12 @@ for n in range(len(sLat)):
     xytext = (sLon[n], sLat[n]), textcoords = as_mpl_transform, fontsize = 7, \
     color = '#303030', arrowprops=dict(edgecolor='black', arrowstyle = '->'))
     
-for n in range( len(sLat1)):
+for n in range( len(vertice_idx1)):
     # Plot the triangles
-    ax_displacement.plot([sLon1[n], sLon2[n], sLon3[n], sLon1[n]],
-            [sLat1[n], sLat2[n], sLat3[n], sLat1[n]], 
-            color = 'xkcd:sky blue', 
-            transform=trans)
+    ax_displacement.plot([sLon[vertice_idx1[n]], sLon[vertice_idx1[n]], sLon[vertice_idx1[n]], sLon[vertice_idx1[n]]],
+                         [sLat[vertice_idx1[n]], sLat[vertice_idx1[n]], sLat[vertice_idx1[n]], sLat[vertice_idx1[n]]], 
+                         color = 'xkcd:sky blue', 
+                         transform=trans)
 
 # Plot observation point
 if plot_obs_pt:

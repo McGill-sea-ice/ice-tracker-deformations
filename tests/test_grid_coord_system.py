@@ -14,16 +14,35 @@ import matplotlib.pyplot as plt
 from haversine import haversine
 from pyproj import Proj
 from scipy.spatial import Delaunay
+import src.config
+from src.d00_utils.load_csv import load_raw_csv
 from src.d00_utils.grid_coord_system import *
-from src.d01_data.load01_raw_csv import sLat, sLon
 from src.d01_data.load00_grid import LAT, LON, X_aeqd, Y_aeqd, fLAT, fLON
 
+'''
+_________________________________________________________________________________________
+LOAD RAW DATA SET
+'''
+
+# Initialize the config global variables (i.e. .csv file paths for all stages of data processing)
+src.config.init()
+
+# Retrieve a single data set (n is the index of an element in the list of .csv file paths)
+n = 0
+raw_csv_path = src.config.raw_csv_paths[n]
+
+# Load a raw dataset
+sLat, sLon, eLat, eLon = load_raw_csv( raw_csv_path )
 
 # Convert data points from lon,lat to x,y coordinates following 
 # the Azimuthal Equidistant transform
 p = Proj(proj='aeqd', ellps='WGS84', preserve_units=False)
 xs, ys = p(sLon, sLat)
 
+'''
+_________________________________________________________________________________________
+TESTS (1-3)
+'''
 
 #-----------------------TEST 1 - find_nearestGridTracerPt-------------------------------
 

@@ -45,7 +45,7 @@ def show_SpatialCoverage( dir ):
             if df.shape[0] > 1 :
                 # Plot starting data points on the map
                 ax.scatter(list(df['sLon']), list(df['sLat']), transform=ccrs.Geodetic())
-
+                
     # Add coastlines and gridlines
     ax.coastlines()
     ax.gridlines()

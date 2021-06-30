@@ -3,6 +3,10 @@ Author: Beatrice Duval (bdu002)
 
 ---------------------------------------------------------------------------------
 Script that executes all steps towards the calculation of sea-ice deformations.
+
+All raw .csv files listed in config.py are processed. See config.py file to modify 
+parameters.
+
 The execution time is displayed.
 ---------------------------------------------------------------------------------
 
@@ -13,7 +17,19 @@ start_time = time.time()
 
 
 '''
-1) Processing 
+1) Initialize global variables 
+
+Initialize .csv file path lists for all data processing stages (processed, 
+converted and calculated .csv's).
+
+'''
+
+import src.config
+src.config.init()
+
+
+'''
+2) Processing 
 
 Perform a Delaunay triangulation and store the results in a csv file
 
@@ -25,7 +41,7 @@ import src.d02_processing.delaunay_triangulation
 
 
 '''
-2) Conversion 
+3) Conversion 
 
 Convert the triangulation results to a local cartesian grid coordinate system
 
@@ -37,7 +53,7 @@ import src.d03_conversion.to_grid_coord_system
 
 
 '''
-3) Calculation
+4) Calculation
 
 Compute sea-ice deformations rates using the converted triangulations results
 

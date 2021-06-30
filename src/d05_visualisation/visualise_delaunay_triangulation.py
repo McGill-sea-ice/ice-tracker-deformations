@@ -9,7 +9,33 @@ Code that plots the Delaunay triangulation using the processed csv file.
 
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
-from src.d01_data.load02_processed_csv import sLat1, sLat2, sLat3, sLon1, sLon2, sLon3, eLat1, eLat2, eLat3, eLon1, eLon2, eLon3
+import src.config
+from src.d00_utils.load_csv import load_processed_csv, load_raw_csv
+
+'''
+_________________________________________________________________________________________
+LOAD DATA SET
+'''
+
+# Initialize the config global variables (i.e. .csv file paths for all stages of data processing)
+src.config.init()
+
+# Retrieve a single data set (n is the index of an element in the list of .csv file paths)
+n = 0
+raw_csv_path = src.config.raw_csv_paths[n]
+processed_csv_path = src.config.processed_csv_paths[n]
+
+# Load a raw dataset
+sLat, sLon, eLat, eLon = load_raw_csv( raw_csv_path )
+
+# Load a processed data set
+_, _, _, _, _, _, _, vertice_idx1, vertice_idx2, vertice_idx3 = load_processed_csv( processed_csv_path )
+
+
+'''
+_________________________________________________________________________________________
+PLOT
+'''
 
 # Initialize figure
 fig = plt.figure()
@@ -27,9 +53,9 @@ ax.coastlines()
 ax.gridlines()
 
 # Plot all triangles
-for i in range(len(sLat1)):
-    ax.plot([sLon1[i], sLon2[i], sLon3[i], sLon1[i]],
-            [sLat1[i], sLat2[i], sLat3[i], sLat1[i]], 
+for n in range(len(vertice_idx1)):
+    ax.plot([sLon[vertice_idx1[n]], sLon[vertice_idx2[n]], sLon[vertice_idx3[n]], sLon[vertice_idx1[n]]],
+            [sLat[vertice_idx1[n]], sLat[vertice_idx2[n]], sLat[vertice_idx3[n]], sLat[vertice_idx1[n]]], 
             color = 'xkcd:sky blue', 
             transform=ccrs.Geodetic())
 
