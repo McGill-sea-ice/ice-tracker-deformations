@@ -35,11 +35,23 @@ Install the python dependencies on the virtual environment:
 python -m pip install -r requirements.txt
 ```
 
-To avoid any module importation errors, append the project's root directory to `PYTHONPATH`:
+## Usage
+
+This section is currently empty.
+
+
+## Documentation
+
+To generate PDF documentation for this project, start by accessing the `docs/SeaIceDeformation_Methods` folder (assuming we are already in the project folder):
 
 ```
-export PYTHONPATH="${PYTHONPATH}:/path/to/2021_SeaIceDeformation/"
+cd docs/SeaIceDeformation_Methods
 ```
 
+Finally, write the following command:
 
+```
+make SeaIceDeformation_Methods.pdf
+```
 
+*SeaIceDeformation_Methods.pdf* will be stored in the current directory.

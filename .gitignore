@@ -6,3 +6,12 @@
 # Ignore csv files
 *.csv
 
+# Ignore pdf files
+*.pdf
+
+# Ignore figures
+*.png
+
+# Ignore bytecodes
+*.pyc
+

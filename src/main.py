@@ -13,19 +13,14 @@ The execution time is displayed.
 '''
 
 import time
+
+import d02_delaunay_triangulation 
+import d03_to_grid_coord_system  
+import d04_compute_deformations 
+
+
+# Retrieve the starting time
 start_time = time.time()
-
-
-'''
-1) Initialize global variables 
-
-Initialize .csv file path lists for all data processing stages (processed, 
-converted and calculated .csv's).
-
-'''
-
-import src.config
-src.config.init()
 
 
 '''
@@ -36,8 +31,7 @@ Perform a Delaunay triangulation and store the results in a csv file
 '''
 
 print('--- Performing a Delaunay triangulation ---')
-
-import src.d02_processing.delaunay_triangulation
+d02_delaunay_triangulation.delaunay_triangulation()
 
 
 '''
@@ -48,8 +42,7 @@ Convert the triangulation results to a local cartesian grid coordinate system
 '''
 
 print('--- Converting to local grid coordinate systems ---')
-
-import src.d03_conversion.to_grid_coord_system
+d03_to_grid_coord_system.to_grid_coord_syst()
 
 
 '''
@@ -60,8 +53,7 @@ Compute sea-ice deformations rates using the converted triangulations results
 '''
 
 print('--- Computing sea-ice deformations ---')
-
-import src.d04_calculating.compute_deformations
+d04_compute_deformations.compute_deformations()
 
 
 # Display the run time

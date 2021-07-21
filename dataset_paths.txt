@@ -1,0 +1,3 @@
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301114750_20200302055637_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301114750_20200302055637_2.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301114750_20200302055637_3.dat
