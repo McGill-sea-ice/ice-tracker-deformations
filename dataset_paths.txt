@@ -1,3 +1,12 @@
-/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301114750_20200302055637_1.dat
-/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301114750_20200302055637_2.dat
-/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301114750_20200302055637_3.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301001804_20200301015705_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301002008_20200313002008_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301002108_20200313002108_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301015600_20200301200351_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301015705_20200302032728_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301015905_20200302015136_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301020005_20200302015240_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301024911_20200302033021_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301025016_20200302033125_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301025116_20200304031556_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301025216_20200304031656_1.dat
+/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301033540_20200301065144_1.dat

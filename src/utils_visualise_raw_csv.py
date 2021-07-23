@@ -10,7 +10,7 @@ Visualisation tools for raw csv data files.
 import os
 
 import cartopy.crs as ccrs
-import utils_datetime_raw_csv as dt_raw_csv
+import utils_datetime 
 import matplotlib.pyplot as plt
 import pandas as pd
 from haversine import haversine
@@ -71,7 +71,7 @@ def show_ConsecutiveDists(path):
     
     # Create datetime objects for the starting and ending
     # times of the data
-    start, end = dt_raw_csv.dataDatetimes(path)
+    start, _ = utils_datetime.dataDatetimes(path)
 
     # Initialize scatter plot arrays
     distances = []
@@ -115,7 +115,7 @@ def show_numberedDP(path):
     
     # Create datetime objects for the starting and ending
     # times of the data
-    start, _ = dt_raw_csv.dataDatetimes(path)
+    start, _ = utils_datetime.dataDatetimes(path)
 
     # Initialize figure and plot
     fig = plt.figure()
@@ -165,7 +165,7 @@ def show_DP(path):
     
     # Create datetime objects for the starting and ending
     # times of the data
-    start, end = dt_raw_csv.dataDatetimes(path)
+    start, _ = utils_datetime.dataDatetimes(path)
 
     # Initialize figure
     fig = plt.figure()

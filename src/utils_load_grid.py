@@ -15,7 +15,7 @@ def load_grid():
 
     # Find absolute path in which the RIOPS grid is stored
     projPath = os.path.dirname(os.path.realpath(__file__))
-    gridPath = projPath + '/../../data/00_grid/cropped_grid.nc'
+    gridPath = projPath + '/../data/00_grid/cropped_grid.nc'
 
     # Load RIOPS grid dataset
     ds = Dataset(gridPath)

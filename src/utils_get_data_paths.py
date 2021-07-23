@@ -65,7 +65,7 @@ def get_processed_csv_path(raw_csv_path):
     processed_filename = 'tri' + raw_filename[5:len(raw_filename)]
 
     # Get the directory in which the processed .csv file is to be stored
-    processed_csv_path = raw_directory + '/../../02_processed/' + parent_folder + '/' +processed_filename
+    processed_csv_path = raw_directory + '/../../02_triangulated/' + parent_folder + '/' +processed_filename
 
     # Return a normalized processed csv path
     return os.path.normpath(processed_csv_path)
