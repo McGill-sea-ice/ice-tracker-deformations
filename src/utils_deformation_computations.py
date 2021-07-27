@@ -26,19 +26,9 @@ def calculate_uv_lists( sx_list, ex_list, sy_list, ey_list, dT):
     # Find the number of cell vertices
     n = len(sx_list)
 
-    # Create u and v velocity component lists
-    u_list = []
-    v_list = []
-
-    # Iterate through each vertex of the cell
-    for vtx in range( n ):
-        # Compute the u and v velocity components at the current vertex
-        u = (ex_list[vtx] - sx_list[vtx]) / dT
-        v = (ey_list[vtx] - sy_list[vtx]) / dT
-
-        # Append the velocity components to the velocity lists
-        u_list.append(u)
-        v_list.append(v)
+    # Compute the u and v velocity components at the current vertex
+    u = (ex_list - sx_list) / dT
+    v = (ey_list - sy_list) / dT
 
     return u_list, v_list
 
