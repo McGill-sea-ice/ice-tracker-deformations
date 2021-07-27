@@ -26,25 +26,15 @@ def calculate_uv_lists( sx_list, ex_list, sy_list, ey_list, dT):
     # Find the number of cell vertices
     n = len(sx_list)
 
-    # Create u and v velocity component lists
-    u_list = []
-    v_list = []
-
-    # Iterate through each vertex of the cell
-    for vtx in range( n ):
-        # Compute the u and v velocity components at the current vertex
-        u = (ex_list[vtx] - sx_list[vtx]) / dT
-        v = (ey_list[vtx] - sy_list[vtx]) / dT
-
-        # Append the velocity components to the velocity lists
-        u_list.append(u)
-        v_list.append(v)
+    # Compute the u and v velocity components at the current vertex
+    u = (ex_list - sx_list) / dT
+    v = (ey_list - sy_list) / dT
 
     return u_list, v_list
 
 
 def calculate_strainRates( u_list, v_list, sx_list, sy_list ):
-    ''' (float, list, list) -> float
+    ''' (float, list, list) float
 
     Computes the strain rates (or velocity derivatives).
 
@@ -57,35 +47,38 @@ def calculate_strainRates( u_list, v_list, sx_list, sy_list ):
 
     # Find the number of cell vertices
     n = len(sx_list)
-
+    
+    
 
     #----- Compute the Lagrangian cell area A -----
 
     # Initialize the cell area to 0
-    A = 0
+    A = 0.0
 
     # Perform a summation to compute A (see Bouchat et al. (2020) eqn. 6)
     for i in range( n ):
-        A += 1/2 * ( sx_list[i] * sy_list[((i+1) % n)] - sx_list[((i+1) % n)] *  sy_list[i]) 
-
+        A += (1.0/2.0) * ( sx_list[i] * sy_list[((i+1) % n)] - sx_list[((i+1) % n)] *  sy_list[i]) 
 
     #----- Compute the strain rates ---------------
 
     # Initialize the strain rates to 0
-    dudx = 0
-    dudy = 0
-    dvdx = 0
-    dvdy = 0
+    dudx = 0.0
+    dudy = 0.0
+    dvdx = 0.0
+    dvdy = 0.0
 
     # Perform a summation to compute strain rates (see Bouchat et al. (2020) eqn. 5)
     for i in range( n ):
  
-        dudx += 1/(2*A)  * ( u_list[((i+1) % n)] + u_list[i] ) * ( sy_list[((i+1) % n)] - sy_list[i] ) 
+        dudx += 1.0/(2.0*A)  * ( u_list[((i+1) % n)] + u_list[i] ) * ( sy_list[((i+1) % n)] - sy_list[i] ) 
 
-        dudy += -1/(2*A) * ( u_list[((i+1) % n)] + u_list[i] ) * ( sx_list[((i+1) % n)] - sx_list[i] ) 
+        dudy += -1.0/(2.0*A) * ( u_list[((i+1) % n)] + u_list[i] ) * ( sx_list[((i+1) % n)] - sx_list[i] ) 
 
-        dvdx += 1/(2*A)  * ( v_list[((i+1) % n)] + v_list[i] ) * ( sy_list[((i+1) % n)] - sy_list[i] ) 
+        dvdx += 1.0/(2.0*A)  * ( v_list[((i+1) % n)] + v_list[i] ) * ( sy_list[((i+1) % n)] - sy_list[i] ) 
 
-        dvdy += -1/(2*A) * ( v_list[((i+1) % n)] + v_list[i] ) * ( sx_list[((i+1) % n)] - sx_list[i] ) 
+        dvdy += -1.0/(2.0*A) * ( v_list[((i+1) % n)] + v_list[i] ) * ( sx_list[((i+1) % n)] - sx_list[i] ) 
+
+        #print(dudx,dvdx,dudy,dvdy)
+    
 
     return dudx, dudy, dvdx, dvdy
