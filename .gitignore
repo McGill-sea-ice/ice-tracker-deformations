@@ -15,3 +15,5 @@
 # Ignore bytecodes
 *.pyc
 
+# Ignore .txt files
+*.txt
