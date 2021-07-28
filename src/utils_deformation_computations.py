@@ -20,15 +20,15 @@ def calculate_uv_lists( sx_list, ex_list, sy_list, ey_list, dT):
     ex_list -- list of ending x positions of each cell vertices
     sy_list -- list of starting x positions of each cell vertices
     ey_list -- list of ending x positions of each cell vertices
-    dT      -- time interval (s)
+    dT      -- time interval
     '''
     
     # Find the number of cell vertices
     n = len(sx_list)
 
     # Compute the u and v velocity components at the current vertex
-    u = (ex_list - sx_list) / dT
-    v = (ey_list - sy_list) / dT
+    u_list = (ex_list - sx_list) / dT
+    v_list = (ey_list - sy_list) / dT
 
     return u_list, v_list
 
@@ -47,8 +47,6 @@ def calculate_strainRates( u_list, v_list, sx_list, sy_list ):
 
     # Find the number of cell vertices
     n = len(sx_list)
-    
-    
 
     #----- Compute the Lagrangian cell area A -----
 
@@ -76,9 +74,6 @@ def calculate_strainRates( u_list, v_list, sx_list, sy_list ):
 
         dvdx += 1.0/(2.0*A)  * ( v_list[((i+1) % n)] + v_list[i] ) * ( sy_list[((i+1) % n)] - sy_list[i] ) 
 
-        dvdy += -1.0/(2.0*A) * ( v_list[((i+1) % n)] + v_list[i] ) * ( sx_list[((i+1) % n)] - sx_list[i] ) 
-
-        #print(dudx,dvdx,dudy,dvdy)
-    
+        dvdy += -1.0/(2.0*A) * ( v_list[((i+1) % n)] + v_list[i] ) * ( sx_list[((i+1) % n)] - sx_list[i] )     
 
     return dudx, dudy, dvdx, dvdy

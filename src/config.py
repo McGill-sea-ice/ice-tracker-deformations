@@ -5,12 +5,6 @@ Author: Beatrice Duval (bdu002)
 Configuration script for data processing.
 -----------------------------------------
 
-Argparse Parameters:
-overwrite -- (True, False) If overwrite is set to true, files that have already 
-              been processed will be processed again and overwritten. 
-              If overwrite is set to false, files that have aleady been processed 
-              will not be processed during the program's execution.
-
 '''
 import argparse
 import os

@@ -2,9 +2,17 @@
 
 ## Overview
 
-This project aims at computing arctic sea ice deformations from icetracker data (Sentinel-1 and RCM). 
+This project aims at computing arctic sea-ice deformations from icetracker data (Sentinel-1 and RCM). 
 
-A Delaunay triangulation is performed on data points and the RIOPS grid is used to create local cartesian coordinate systems for each triangular data cell. The processed data set is then used to compute sea ice deformations following *Bouchat et al. (2020)*.
+Two distinct methods can be used to compute sea-ice deformations. 
+
+###### Method M00
+
+In the first method, data points with Latitude/Longitude coordinates are processed. A Delaunay triangulation is performed on these data points and the RIOPS grid is used to create local cartesian coordinate systems for each triangular data cell. The triangulated and converted data set is then used to compute sea-ice deformations following *Bouchat et al. (2020)*.
+
+###### Method M01
+
+In the second method, data points with X/Y coordinates are processed. After performing a Delaunay triangulation, we compute sea-ice deformations following *Bouchat et al. (2020)*.
 
 ## Installation
 
@@ -38,7 +46,6 @@ python -m pip install -r requirements.txt
 ## Usage
 
 This section is currently empty.
-
 
 ## Documentation
 

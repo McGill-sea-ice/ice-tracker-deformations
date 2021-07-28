@@ -22,6 +22,7 @@ elif config.args.method == 'M01':
     import M01_d01_delaunay_triangulation as delaunay_triangulation
     import M01_d03_compute_deformations as compute_deformations
 
+import visualise_deformation
 
 # Retrieve the starting time
 start_time = time.time()
@@ -65,5 +66,15 @@ print('--- Computing sea-ice deformations ---')
 compute_deformations.compute_deformations()
 
 
+'''
+4) Visualise Deformations
+'''
+
+print('--- Creating sea-ice deformations figures ---')
+
+visualise_deformation.visualise_deformations()
+
 # Display the run time
 print("--- %s seconds ---" % (time.time() - start_time))
+
+

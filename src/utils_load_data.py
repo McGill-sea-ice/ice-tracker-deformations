@@ -28,7 +28,7 @@ def load_raw( path_raw ):
     Loads data from a raw .dat file. 
     
     Returns a dictionnary containing sLat, sLon, eLat, eLon, startX, startY, 
-    endX, endY, dispX, dispY', velX and velY.
+    endX, endY, dispX, and dispY'.
     
     An error is raised if the file is not a .dat file, or if the file 
     is empty or contains less than 3 data points (not enough to perform a triangulation).
@@ -57,8 +57,6 @@ def load_raw( path_raw ):
     startY  = df['startY']  # Starting Y positions (px)
     endX    = df['endX']    # Ending X positions (px)
     endY    = df['endY']    # Ending Y positions (px)
-    velX    = df['velX']    # X component of velocity (px/hours)
-    velY    = df['velY']    # Y component of velocity (px/)
     dispX   = df['dispX']   # X displacement (px)
     dispY   = df['dispY']   # Y displacement (px)
         
@@ -74,7 +72,7 @@ def load_raw( path_raw ):
     # Create a dictionnarY of raw data and return it
     raw_data = {'sLat': sLat, 'sLon': sLon, 'eLat': eLat, 'eLon': eLon, 
                         'startX': startX, 'startY': startY, 'endX': endX, 'endY': endY,
-                        'dispX': dispX, 'dispY': dispY, 'velX': velX, 'velY': velY}
+                        'dispX': dispX, 'dispY': dispY}
 
     return raw_data
 

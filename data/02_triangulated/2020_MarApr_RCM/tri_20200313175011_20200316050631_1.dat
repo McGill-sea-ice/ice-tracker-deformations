@@ -1,0 +1,7 @@
+no.,vertice_idx1,vertice_idx2,vertice_idx3
+0,1,2,0
+1,2,5,0
+2,3,4,5
+3,2,3,5
+4,4,3,1
+5,3,2,1

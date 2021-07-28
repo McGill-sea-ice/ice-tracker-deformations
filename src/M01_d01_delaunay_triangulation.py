@@ -23,7 +23,7 @@ from scipy.spatial import Delaunay
 
 import config
 import utils_load_data as load_data
-
+import utils_grid_coord_system as grid_coord_system
 
 def delaunay_triangulation():
 
@@ -62,8 +62,22 @@ def delaunay_triangulation():
             vertice_idx2 = tri.simplices[n][1]
             vertice_idx3 = tri.simplices[n][2]
 
-            # Add the data row corresponding to the current triangle to the list of data rows
-            row_list.append([ n, vertice_idx1, vertice_idx2,  vertice_idx3] )
+            # Find the starting X/Y position of each triangle vertex
+            sX1 = startX[vertice_idx1]
+            sY1 = startY[vertice_idx1]
+            sX2 = startX[vertice_idx2]
+            sY2 = startY[vertice_idx2]
+            sX3 = startX[vertice_idx3]
+            sY3 = startY[vertice_idx3]
+
+            # Compute the current triangle's angles
+            angles = grid_coord_system.get_tri_angles( (sX1, sY1), (sX2, sY2), (sX3, sY3))
+
+            # Keep the triangle if and only if none of its angles are inferior to 10 degrees (= 0.175 rad)
+            if not any(angle < 0.175 for angle in angles):
+                
+                # Add the data row corresponding to the current triangle to the list of data rows
+                row_list.append([ n, vertice_idx1, vertice_idx2,  vertice_idx3] )
 
 
         #--------------------Write the results to a csv file---------------------------------

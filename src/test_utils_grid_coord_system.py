@@ -17,7 +17,7 @@ from scipy.spatial import Delaunay
 
 import config
 import utils_grid_coord_system as grid_cs
-import utils_load_csv as load_csv
+import utils_load_data as load_data
 import utils_load_grid as load_grid
 
 '''
@@ -30,7 +30,7 @@ n = 0
 raw_csv_path = config.csv_paths['raw'][n]
 
 # Load a raw dataset
-sLat, sLon, eLat, eLon = load_csv.load_raw_csv( raw_csv_path )
+sLat, sLon, eLat, eLon = load_data.load_raw_csv( raw_csv_path )
 
 # Convert data points from lon,lat to x,y coordinates following 
 # the Azimuthal Equidistant transform
