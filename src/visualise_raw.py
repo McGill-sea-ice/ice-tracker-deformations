@@ -5,8 +5,8 @@ Author: Beatrice Duval (bdu002)
 Visualise raw dataset
 -----------------------------------------------------------------------
 
-Visualise raw datasets and identify them by the filename using the datasets 
-listed in a txt file (see config).
+Visualise raw datasets and identify them by the filename using the 
+datasets listed in a txt file (see config).
 
 '''
 
