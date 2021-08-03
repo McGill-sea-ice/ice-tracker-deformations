@@ -2,9 +2,10 @@
 Author: Beatrice Duval (bdu002)
 
 -----------------------------------------------------------------
-Helper code for loading files from all stages of data processing.
+Utils - Load data
 -----------------------------------------------------------------
 
+Helper code for loading files from all stages of data processing.
 '''
 
 import os
@@ -49,10 +50,10 @@ def load_raw( path_raw ):
     df = pd.read_csv(path_raw, sep='\s\s+', engine='python')
 
     # Retrieve data points
-    sLat = df['sLat']       # Starting latitudes
-    sLon = df['sLon']       # Starting longitudes
-    eLat = df['eLat']       # Ending latitudes
-    eLon = df['eLon']       # Ending longitudes
+    sLat    = df['sLat']    # Starting latitudes
+    sLon    = df['sLon']    # Starting longitudes
+    eLat    = df['eLat']    # Ending latitudes
+    eLon    = df['eLon']    # Ending longitudes
     startX  = df['startX']  # Starting X positions (px)
     startY  = df['startY']  # Starting Y positions (px)
     endX    = df['endX']    # Ending X positions (px)

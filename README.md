@@ -2,9 +2,7 @@
 
 ## Overview
 
-This project aims at computing arctic sea-ice deformations from icetracker data (Sentinel-1 and RCM). 
-
-Two distinct methods can be used to compute sea-ice deformations. 
+This project aims at computing arctic sea-ice deformations from icetracker data (Sentinel-1 and RCM). Two distinct methods can be used to compute sea-ice deformations. 
 
 ###### Method M00
 

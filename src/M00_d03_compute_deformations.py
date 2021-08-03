@@ -1,22 +1,24 @@
 '''
 Author: Beatrice Duval (bdu002)
 
------------------------------------------------------------------------------------
+------------------------------------------
+M00 - Sea-ice deformations calculations
+------------------------------------------
+
 Code that computes triangle cells' sea-ice deformations using a converted csv file. 
-
 The results are then stored in a calculations csv file.
------------------------------------------------------------------------------------
 
-Output csv file format:
-    __________________________________________________________
-    no. | dudx | dudy | dvdx | dvdy | eps_I | eps_II | eps_tot
+1. Output csv file
 
-where:
-    - no. is the triangle number;
-    - dudx, dudy, dvdx, dvdy are strain rates;
-    - eps_I is the divergence rate;
-    - eps_II is the maximum shear strain rate;
-    - eps_tot is the total sea-ice deformation rate;
+    Format:
+        no. | dudx | dudy | dvdx | dvdy | eps_I | eps_II | eps_tot
+
+    Variables:
+    - no.: triangle number;
+    - dudx, dudy, dvdx, dvdy: strain rates;
+    - eps_I: divergence rate;
+    - eps_II: maximum shear strain rate;
+    - eps_tot: total sea-ice deformation rate;
 
 '''
 

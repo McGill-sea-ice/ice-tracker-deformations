@@ -2,19 +2,23 @@
 Author: Beatrice Duval (bdu002)
 
 --------------------------------------------------------------------
-Code that performs a Delaunay triangulation on a set of LAT/LON data  
-points and stores the results in a csv file.
+M00 - Delaunay triangulation
 --------------------------------------------------------------------
 
-Output csv file format:
-    __________________________________________________________________________________________________________________
-    no. | sX1_aeqd | sX2_aeqd | sX3_aeqd | sY1_aeqd | sY2_aeqd | sY3_aeqd | vertice_idx1 | vertice_idx2 | vertice_idx3
+Code that performs a Delaunay triangulation on a set of LAT/LON data  
+points and stores the results in a csv file.
 
-where:
-    - no. is the triangle number;
-    - sX1_aeqd, sX2_aeqd, sX3_aeqd, sY1_aeqd, sY2_aeqd, sY3_aeqd are the x,y coordinates 
+1. Output csv file
+
+    Format:
+
+        no. | sX1_aeqd | sX2_aeqd | sX3_aeqd | sY1_aeqd | sY2_aeqd | sY3_aeqd | vertice_idx1 | vertice_idx2 | vertice_idx3
+
+    Variables:
+    - no.: triangle number;
+    - sX1_aeqd, sX2_aeqd, sX3_aeqd, sY1_aeqd, sY2_aeqd, sY3_aeqd: x/y coordinates 
         of the starting vertices in the Azimuthal Equidistant (aeqd) transform.
-    - vertice_idx1, vertice_idx2, vertice_idx3 are the triangle vertices' indices in the raw file
+    - vertice_idx1, vertice_idx2, vertice_idx3: triangle vertices' indices in the raw file
 '''
 
 import csv

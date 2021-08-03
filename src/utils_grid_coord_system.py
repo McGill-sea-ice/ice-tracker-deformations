@@ -2,10 +2,11 @@
 Author: Beatrice Duval (bdu002)
 
 ----------------------------------------------------------------------
-Helper code for the conversion of a triangle's lat,lon coordinates to 
-x,y coordinates in a local cartesian grid coordinate system.
+Utils - Grid coordinate system
 ----------------------------------------------------------------------
 
+Helper code for the conversion of a triangle's lat,lon coordinates to 
+x,y coordinates in a local cartesian grid coordinate system.
 '''
 
 import numpy as np

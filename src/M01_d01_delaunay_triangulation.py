@@ -1,17 +1,19 @@
 '''
 Author: Beatrice Duval (bdu002)
 
---------------------------------------------------------------------
-Code that performs a Delaunay triangulation on a set of X/Y data 
-points and stores the results in a csv file.
---------------------------------------------------------------------
+----------------------
+M01 - Delaunay triangulation
+----------------------
 
-Output csv file format:
-    ________________________________________________
-    no. | vertice_idx1 | vertice_idx2 | vertice_idx3
+Code that performs a Delaunay triangulation on a set of X/Y data points and stores the results in a csv file.
 
-where:
-    - no. is the triangle number;
+1. Output csv file
+    
+    Format:
+        no. | vertice_idx1 | vertice_idx2 | vertice_idx3
+
+    Variables:
+    - no. is the triangle number
     - vertice_idx1, vertice_idx2, vertice_idx3 are the triangle vertices' indices in the raw file
 
 '''

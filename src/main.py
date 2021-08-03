@@ -1,11 +1,11 @@
 '''
 Author: Beatrice Duval (bdu002)
 
----------------------------------------------------------------------------------
-Script that executes all steps towards the calculation of sea-ice deformations.
+---------------------------------
+Main script for data processing
+--------------------------------
 
-The execution time is displayed.
----------------------------------------------------------------------------------
+Script that executes all steps towards the calculation of sea-ice deformations and displays the execution time.
 
 '''
 
@@ -68,11 +68,12 @@ compute_deformations.compute_deformations()
 
 '''
 4) Visualise Deformations
-'''
+
 
 print('--- Creating sea-ice deformations figures ---')
 
 visualise_deformation.visualise_deformations()
+'''
 
 # Display the run time
 print("--- %s seconds ---" % (time.time() - start_time))

@@ -2,8 +2,10 @@
 Author: Beatrice Duval (bdu002)
 
 ------------------------------------------
-Visualisation tools for netcdf grid data.
+Utils - Visualise grid
 ------------------------------------------
+
+Visualisation tools for netcdf RIOPS grid data.
 
 '''
 

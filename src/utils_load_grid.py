@@ -2,8 +2,10 @@
 Author: Beatrice Duval (bdu002)
 
 ----------------------------------------------------------------
-Code that provides a function that loads the project RIOPS grid.
+Utils - Load modified RIOPS grid
 ----------------------------------------------------------------
+
+Code that provides a function that loads the project RIOPS grid.
 
 '''
 

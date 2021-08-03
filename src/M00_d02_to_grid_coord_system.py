@@ -2,22 +2,26 @@
 Author: Beatrice Duval (bdu002)
 
 ----------------------------------------------------------------------------
-Code that converts the triangles' lat,lon coordinates from the triangulated 
+M00 - Lat/Lon to grid X/Y coordinate system conversion
+----------------------------------------------------------------------------
+
+Code that converts the triangles' lat/lon coordinates from the triangulated 
 csv file to x,y coordinates in a local cartesian grid coordinate system (CS). 
 
 These results are then stored in a converted csv file.
-----------------------------------------------------------------------------
 
-Output csv file format:
-    _________________________________________________________________________________________________
+1. Output csv file
+
+    Format:
+    
     no. | sX1 | sX2 | sX3 | sY1 | sY2 | sY3 | eX1 | eX2 | eX3 | eY1 | eY2 | eY3 | tracer_j | tracer_i
 
-where:
-    - no. is the triangle number;
-    - sX1, sX2, sX3 are the starting x coordinates for the 1st, 2nd and 3rd vertices;
-    - sY1, sY2, sY3 are the ending y coordinates for the 1st, 2nd and 3rd vertices;
-    - eX1, eX2, eX3, eY1, eY2, eY3 are the ending x and y coordinates;
-    - tracer_j and tracer_i are the indices of the tracer points defining local CS.
+    Variables:
+    - no.: triangle number
+    - sX1, sX2, sX3: starting x coordinates for the 1st, 2nd and 3rd vertices;
+    - sY1, sY2, sY3: ending y coordinates for the 1st, 2nd and 3rd vertices;
+    - eX1, eX2, eX3, eY1, eY2, eY3: ending x and y coordinates;
+    - tracer_j and tracer_i: indices of the tracer points defining local CS.
 
 '''
 

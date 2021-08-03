@@ -9,7 +9,7 @@ import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import src.config
 from utils_grid_coord_system import define_gridCS
-from utils_load_csv import load_raw_csv, load_processed_csv, load_converted_csv
+import utils_load_data as load_data
 import utils_load_grid as load_grid
 
 '''

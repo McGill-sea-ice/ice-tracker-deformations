@@ -2,7 +2,7 @@
 Author: Beatrice Duval (bdu002)
 
 -----------------------------------------
-Configuration script for data processing.
+Configuration script for data processing
 -----------------------------------------
 
 '''
@@ -13,102 +13,10 @@ import re
 import utils_datetime
 import utils_get_data_paths as get_data_paths
 
+# Create a class of errors for datasets selection
+class datasetSelectionError(Exception):
+    pass
 
-def load_config(filename):
-    ''' (string) -> dict[str, list]
-
-    Function that initializes the lists that store .csv file paths for 
-    every stage of data processing (triangulation, conversion and calculations), 
-    using the global list of raw .csv data paths.
-
-    Returns a dictionnary of the lists of .csv file paths.
-
-    Every raw .csv file (e.g. pairs_20200320010317_20200401010317_1.csv) is 
-    associated to a triangulated (e.g. tri_20200320010317_20200401010317_1.csv), 
-    converted (e.g. tri_gridCS_20200320010317_20200401010317_1.csv) and 
-    calculated (e.g. calc_20200320010317_20200401010317_1.csv) .csv file.
-
-    The files are stored in the following tree structure, where 
-    some_parent_folder can have any name, but will be the same for all
-    .csv files resulting from a common raw .csv file :
-
-    ├── 2021_SeaIceDeformations
-    |    ...
-    |    ├── data
-    |    |   ├── 00_grid /etc
-    |    |   ├── 01_raw
-    |    |   |   └── some_parent_folder
-    |    |   |       └── pairs_20200320010317_20200401010317_1.csv
-    |    |   ├── 02_triangulated
-    |    |   |   └── some_parent_folder
-    |    |   |       └── tri_20200320010317_20200401010317_1.csv
-    |    |   ├── 03_converted
-    |    |   |   └── some_parent_folder
-    |    |   |       └── tri_gridCS_20200320010317_20200401010317_1.csv
-    |    |   └── 04_calculations
-    |    |       └── some_parent_folder
-    |    |           └── calc_20200320010317_20200401010317_1.csv
-    ...
-    
-    '''
-    with open(filename, 'r') as f:
-        lines = f.read().splitlines()
-
-    triangulated_paths  = []
-    converted_paths     = []
-    calculations_paths  = []
-
-    # Iterate through all raw .csv file paths
-    for raw_path in lines:
-     
-        # For each raw .csv file path, find the appropriate path for each subsequent stages of processing
-        pr = get_data_paths.get_processed_csv_path(raw_path)     # path for triangulated data file
-        cv = get_data_paths.get_converted_csv_path(raw_path)     # path for converted data file
-        cl = get_data_paths.get_calculations_csv_path(raw_path)  # path for calculated data file
-
-        # Add the .csv file paths to the file path lists
-        triangulated_paths.append(pr)
-        converted_paths.append(cv)
-        calculations_paths.append(cl)
-    
-    return {'raw': lines, 'triangulated': triangulated_paths, 'converted': converted_paths, 'calculations': calculations_paths}
-
-
-def select_ds(foldername, txt, startYear, startMonth, startDay, duration):
-    # Initialize a string of data paths to process
-    data_paths = ''
-    
-    # Create constants for the beginning and the end of the regex for raw data file names
-    BEG = '^pairs_'
-    END = '[0-2][0-9][0-6][0-9][0-6][0-9]_[1-2][0-9][0-9][0-9][0-1][0-9][0-3][0-9][0-2][0-9][0-6][0-9][0-6][0-9]_[0-9].dat$'
-    
-    # Create a regex sequence for raw data file names using the specified start time in the command-line arguments
-    regex=re.compile('{0}{1}{2}{3}{4}'.format(BEG, startYear, startMonth, startDay, END))
-
-    # Iterate through all files in the given directory to find matches
-    for filename in os.listdir(foldername):
-        
-        # Check if the current file matches the regex
-        if regex.match(filename):
-            
-            # Compute the time over which the dataset spans
-            dt = utils_datetime.dT( utils_datetime.dataDatetimes(filename) )
-            
-            # Select the current file for processing if:
-            #   1) the duration over which datasets must span is not specified in the command-line argument (is None);
-            #   2) it spans over a time that is approx. equal to the specified duration (± 6 hours, or ± 0.25 days). 
-            if duration is None or (duration-0.25 < dt < duration+0.25):
-                # Append the data path to the datapaths string
-                data_paths += foldername + '/' + filename + '\n'
-
-    # Remove the last escape sequence from the string of datasets to process
-    if len(data_paths) != 0:
-        data_paths = data_paths[0:-1]
-    
-    # Write the file paths to the .txt file
-    with open(txt, "w") as myfile:
-        myfile.write(data_paths)
-    
 
 def get_args():
     
@@ -126,7 +34,7 @@ def get_args():
                                                                             refers to the method that uses X/Y       \
                                                                             coordinates from the input datasets.')
     
-    p.add_argument('--data_folder', default='/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_RCM', 
+    p.add_argument('--data_folder', default='/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1', 
                                     help='Absolute path of the folder from which datasets are selected for processing.')
     
     p.add_argument('--select_file', default='/home/bdu002/2021_SeaIceDeformation/dataset_paths.txt', 
@@ -151,7 +59,125 @@ def get_args():
     p.add_argument('--duration', help='Time span (in days) of the datasets to process.', type=int)
 
     return p.parse_args()
+
+
+
+def select_ds(foldername, txt, startYear, startMonth, startDay, duration):
+    # Initialize a string of data paths to process
+    data_paths = ''
     
+    # Create constants for the beginning and the end of the regex for raw data file names
+    BEG = '^pairs_'
+    END = '[0-2][0-9][0-6][0-9][0-6][0-9]_[1-2][0-9][0-9][0-9][0-1][0-9][0-3][0-9][0-2][0-9][0-6][0-9][0-6][0-9]_[0-9].dat$'
+    
+    # Create a regex sequence for raw data file names using the specified start time in the command-line arguments
+    regex = re.compile('{0}{1}{2}{3}{4}'.format(BEG, startYear, startMonth, startDay, END))
+
+    # Iterate through all files in the given directory to find matches
+    for filename in os.listdir(foldername):
+        
+        # Check if the current file matches the regex
+        if regex.match(filename):
+            
+            # Compute the time over which the dataset spans
+            dt = utils_datetime.dT( utils_datetime.dataDatetimes(filename) ) / 86400
+            
+            # Select the current file for processing if:
+            #   1) the duration over which datasets must span is not specified in the command-line argument (is None);
+            #   2) it spans over a time that is approx. equal to the specified duration (± 6 hours, or ± 0.25 days). 
+            if duration is None or (duration-0.25 < dt < duration+0.25):
+                # Append the data path to the datapaths string
+                data_paths += foldername + '/' + filename + '\n'
+
+    # Remove the last escape sequence from the string of datasets to process
+    if len(data_paths) != 0:
+        data_paths = data_paths[0:-1]
+    
+    # Write the file paths to the .txt file
+    with open(txt, "w") as myfile:
+        myfile.write(data_paths)
+
+
+
+def load_config(filename, start_year, start_month, start_day):
+    ''' (string) -> dict[str, list]
+
+    Function that initializes the lists that store .csv file paths for 
+    every stage of data processing (triangulation, conversion and calculations),
+    and the output netcdf file path, using the global list of raw .csv data paths.
+
+    Returns a dictionnary of the lists of .csv file paths and of the output 
+    netcdf file path.
+
+    Every raw .csv file (e.g. pairs_20200320010317_20200401010317_1.csv) is 
+    associated to a triangulated (e.g. tri_20200320010317_20200401010317_1.csv), 
+    converted (e.g. tri_gridCS_20200320010317_20200401010317_1.csv) and 
+    calculated (e.g. calc_20200320010317_20200401010317_1.csv) .csv file.
+
+    The output netcdf file combines the output data of all processed datasets 
+    listed in a .txt file and indicates in its name the common starting times 
+    of all datasets.
+
+    The files are stored in the following tree structure, where 
+    some_parent_folder can have any name, but will be the same for all
+    .csv files resulting from a common raw .csv file :
+
+    ├── 2021_SeaIceDeformations
+    |    ...
+    |    ├── data
+    |    |   ├── 00_grid /etc
+    |    |   ├── 01_raw
+    |    |   |   └── some_parent_folder
+    |    |   |       └── pairs_20200320010317_20200401010317_1.csv
+    |    |   ├── 02_triangulated
+    |    |   |   └── some_parent_folder
+    |    |   |       └── tri_20200320010317_20200401010317_1.csv
+    |    |   ├── 03_converted
+    |    |   |   └── some_parent_folder
+    |    |   |       └── tri_gridCS_20200320010317_20200401010317_1.csv
+    |    |   ├── 04_calculations
+    |    |   |   └── some_parent_folder
+    |    |   |       └── calc_20200320010317_20200401010317_1.csv
+    |    |   └──05_output
+    |    |       └── some_parent_folder
+    |    |           └── RCMS1SID_20200320010317_dx.nc
+    ...
+    
+    '''
+    with open(filename, 'r') as f:
+        lines = f.read().splitlines()
+    
+    # Raise an error if the txt file is empty
+    if lines ==  []:
+        raise datasetSelectionError( filename + ' is empty and does not contain any paths of datasets to process.')
+    
+    triangulated_paths  = []
+    converted_paths     = []
+    calculations_paths  = []
+
+    # Iterate through all raw .csv file paths
+    for raw_path in lines:
+     
+        # For each raw .csv file path, find the appropriate path for each subsequent stages of processing
+        pr = get_data_paths.get_processed_csv_path(raw_path)     # path for triangulated data file
+        cv = get_data_paths.get_converted_csv_path(raw_path)     # path for converted data file
+        cl = get_data_paths.get_calculations_csv_path(raw_path)  # path for calculated data file
+
+        # Add the .csv file paths to the file path lists
+        triangulated_paths.append(pr)
+        converted_paths.append(cv)
+        calculations_paths.append(cl)
+    
+    # Find the appropriate path for the output netcdf file
+    output_path = get_data_paths.get_output_nc_path(raw_path, start_year, start_month, start_day)
+
+    return { 'raw': lines, 
+             'triangulated': triangulated_paths, 
+             'converted': converted_paths, 
+             'calculations': calculations_paths, 
+             'output': output_path }
+
+
 # Retrieve command line arguments
 args = get_args()
 
@@ -160,7 +186,7 @@ if not args.keep_select:
     select_ds(args.data_folder, args.select_file, args.start_year, args.start_month, args.start_day, args.duration)
 
 # Load file paths for all stages of data processing
-data_paths = load_config(args.select_file)
+data_paths = load_config(args.select_file, args.start_year, args.start_month, args.start_day)
 
 if __name__ == '__main__':
 

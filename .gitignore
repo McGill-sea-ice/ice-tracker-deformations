@@ -15,5 +15,6 @@
 # Ignore bytecodes
 *.pyc
 
-# Ignore .txt files
+# Ignore .txt files except for requirements.txt
 *.txt
+!requirements.txt

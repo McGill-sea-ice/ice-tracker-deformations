@@ -2,9 +2,10 @@
 Author: Beatrice Duval (bdu002)
 
 -------------------------------------------------------
-Helper code for the calculation of sea-ice deformations.
+Utils - Deformation computations
 -------------------------------------------------------
 
+Helper code for the calculation of sea-ice deformations.
 '''
 
 def calculate_uv_lists( sx_list, ex_list, sy_list, ey_list, dT):

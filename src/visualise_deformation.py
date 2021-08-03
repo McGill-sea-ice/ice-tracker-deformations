@@ -2,10 +2,14 @@
 Author: Beatrice Duval (bdu002)
 
 ------------------------------------------------------------------------------
-Code that plots total sea-ice deformations, divergence and shear strain rates.
+Visualise deformations
 ------------------------------------------------------------------------------
 
+Code that plots total sea-ice deformations, divergence and shear strain rates 
+using the datasets listed in a txt file (see config).
+
 '''
+
 import os
 
 import cartopy.crs as ccrs
@@ -101,60 +105,56 @@ def visualise_deformations():
     ADD FEATURES TO THE PLOTS
     '''
 
-    # Create a list of colorbars and titles to be iterated over
-    cb_list = [cb_tot, cb_I, cb_II]
-    title_list = ['Total Deformation Rate $(Days^{-1})$', 'Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$']
+    # Check if at least one dataset has been plotted
+    try: 
+        cb_tot
+    except NameError: 
+        cb_tot = None
 
-    # Iterate through all axes
-    for ax, title, cb in zip(ax_list, title_list, cb_list):
-        # Add a colorbar
-        plt.colorbar(cb, ax=ax)
+    if cb_tot is not None:
 
-        # Add a title
-        ax.set_title(title)
+        # Create a list of colorbars and titles to be iterated over
+        cb_list = [cb_tot, cb_I, cb_II]
+        title_list = ['Total Deformation Rate $(Days^{-1})$', 'Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$']
 
-        # Add gridlines
-        ax.gridlines()
+        # Iterate through all axes
+        for ax, title, cb in zip(ax_list, title_list, cb_list):
+            # Add a colorbar
+            plt.colorbar(cb, ax=ax)
 
-        # Hide deformations over land
-        ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
+            # Add a title
+            ax.set_title(title)
 
-    # Retrieve the command-line arguments that define the dataset 
-    # that has been selected for processing
-    data_folder = os.path.basename(config.args.data_folder)
-    start_year  = config.args.start_year
-    start_month = config.args.start_month
-    start_day   = config.args.start_day
-    duration    = config.args.duration
+            # Add gridlines
+            ax.gridlines()
 
-    # Set a directory to store figures
-    currPath = os.path.dirname(os.path.realpath(__file__))
-    figsPath = currPath + '/../figs/' + data_folder
+            # Hide deformations over land
+            ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
 
-    # Create the directory if it does not exist already
-    os.makedirs(figsPath, exist_ok=True)
+        # Retrieve the command-line arguments that define the dataset 
+        # that has been selected for processing
+        data_folder = os.path.basename(config.args.data_folder)
+        start_year  = config.args.start_year
+        start_month = config.args.start_month
+        start_day   = config.args.start_day
+        duration    = config.args.duration
 
-    prefix_dur = prefix_start_time = ''
+        # Set a directory to store figures
+        currPath = os.path.dirname(os.path.realpath(__file__))
+        figsPath = currPath + '/../figs/' + data_folder
 
+        # Create the directory if it does not exist already
+        os.makedirs(figsPath, exist_ok=True)
 
-    if duration is not None:
-        prefix_dur += '_' + str(duration)
+        # Create a prefix for the figure filenames
+        prefix = start_year + start_month + start_day + '_' + str(duration) + '.png'
 
-        if duration > 1:
-            prefix_dur += 'days'
-        else:
-            prefix_dur += 'day'
+        fig_tot.savefig(figsPath + '/tot_' + prefix , bbox_inches='tight')
+        fig_I.savefig(figsPath + '/div_'+ prefix , bbox_inches='tight')
+        fig_II.savefig(figsPath + '/shear_' + prefix , bbox_inches='tight')
 
-    is_default_year = start_year == '[1-2][0-9][0-9][0-9]'
-    is_default_month = start_month == '[0-1][0-9]'
-    is_default_day = start_day == '[0-3][0-9]'
+    else:
+        print('')
 
-    if start_year != '[1-2][0-9][0-9][0-9]':
-        prefix_start_time += '_' + start_year
-
-    # Create a prefix for the figure filenames
-    prefix = '/' + start_year + start_month + start_day + '_' + str(duration) + 'days'
-
-    fig_tot.savefig(figsPath + prefix + '_tot.png', bbox_inches='tight')
-    fig_I.savefig(figsPath + prefix + '_div.png', bbox_inches='tight')
-    fig_II.savefig(figsPath + prefix + '_shear.png', bbox_inches='tight')
+if __name__ == '__main__':
+    visualise_deformations()

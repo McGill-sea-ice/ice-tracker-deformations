@@ -2,13 +2,13 @@
 Author: Beatrice Duval (bdu002)
 
 --------------------------------------------------------------------
-Code for creation of a netcdf grid, adapted from original RIOPS grid
+Crop grid
 --------------------------------------------------------------------
 
-Crops the RIOPS grid to region of interest. 
-Creates a new netcdf cropped grid containing tracer points (lat,lon and 
-    x,y coordinates in the aeqd transform), speed points (lat,lon), 
-    distance between tracer points and land, and a sea-land mask.exi
+Code for creation of a netcdf grid, adapted from original RIOPS grid.
+
+    - Crops the RIOPS grid to region of interest
+    - Creates a new netcdf cropped grid containing tracer points (lat,lon and x,y coordinates in the aeqd transform), speed points (lat,lon), distance between tracer points and land, and a sea-land mask
 '''
 
 import os

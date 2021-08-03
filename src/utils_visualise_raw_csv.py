@@ -2,18 +2,20 @@
 Author: Beatrice Duval (bdu002)
 
 -------------------------------------------
-Visualisation tools for raw csv data files. 
+Utils - Visualise raw data
 -------------------------------------------
 
+Visualisation tools for raw data files. 
 '''
 
 import os
 
 import cartopy.crs as ccrs
-import utils_datetime 
 import matplotlib.pyplot as plt
 import pandas as pd
 from haversine import haversine
+
+import utils_datetime
 
 
 def show_SpatialCoverage( dir ):
