@@ -34,7 +34,7 @@ def delaunay_triangulation():
         # If the triangulated file already exists and overwrite (in config) is set to false,
         # go to the next iteration.
         # ELse, process the raw file and write/overwrite the triangulated file.
-        if os.path.exists(triangulated_path) and not config.args.overwrite:
+        if os.path.exists(triangulated_path) and not config.config['Processing_options'].getboolean('overwrite'):
             continue
 
         # Load the raw data set. If an error is encountered (no or not enough data points), 

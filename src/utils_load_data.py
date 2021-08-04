@@ -102,8 +102,11 @@ def load_triangulated( path_triangulated ):
     # Retrieve data
     no           = df['no.']          # Triangle number
     
+    # Retrieve the selected processing method
+    method = config.config['Processing_options']['method']
+
     # Create a return dictionnary of triangulated data for method M00 and M01
-    if config.args.method == 'M00':
+    if method == 'M00':
 
         sX1_aeqd     = df['sX1_aeqd']     # Starting X coordinates in the aeqd transform
         sX2_aeqd     = df['sX2_aeqd']
@@ -121,7 +124,7 @@ def load_triangulated( path_triangulated ):
                               'sY1_aeqd': sY1_aeqd, 'sY2_aeqd': sY2_aeqd, 'sY3_aeqd': sY3_aeqd,
                               'vertice_idx1': vertice_idx1, 'vertice_idx2': vertice_idx2, 'vertice_idx3': vertice_idx3}
 
-    if config.args.method == 'M01':
+    if method == 'M01':
 
         vertice_idx1 = df['vertice_idx1'] # Vertex indices in raw csv file
         vertice_idx2 = df['vertice_idx2']

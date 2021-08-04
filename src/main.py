@@ -13,12 +13,15 @@ import time
 
 import config
 
-if config.args.method == 'M00':
+# Retrieve the selected processing method
+method = config.config['Processing_options']['method'] 
+
+if method == 'M00':
     import M00_d01_delaunay_triangulation as delaunay_triangulation
     import M00_d02_to_grid_coord_system as to_grid_coord_system
     import M00_d03_compute_deformations as compute_deformations
 
-elif config.args.method == 'M01':
+elif method == 'M01':
     import M01_d01_delaunay_triangulation as delaunay_triangulation
     import M01_d03_compute_deformations as compute_deformations
 
@@ -47,7 +50,7 @@ Convert the triangulation results to a local cartesian grid coordinate system
 
 '''
 
-if config.args.method == 'M00':
+if method == 'M00':
 
     print('--- Converting to local grid coordinate systems ---')
 
@@ -68,12 +71,12 @@ compute_deformations.compute_deformations()
 
 '''
 4) Visualise Deformations
-
+'''
 
 print('--- Creating sea-ice deformations figures ---')
 
 visualise_deformation.visualise_deformations()
-'''
+
 
 # Display the run time
 print("--- %s seconds ---" % (time.time() - start_time))

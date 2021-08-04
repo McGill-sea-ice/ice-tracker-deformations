@@ -27,7 +27,6 @@ single output netcdf4 file that combines all datasets.
     - eps_tot: total sea-ice deformation rate (days^-1)
 
 
-
 2. Output netcdf4 file:
 
     Description: The deformation results of all datasets to process are stored
@@ -84,9 +83,10 @@ def compute_deformations():
         = ([] for i in range(16))
     
     # Retrieve the starting date common to all processed datasets
-    YYYY = config.args.start_year 
-    MM = config.args.start_month
-    DD = config.args.start_day
+    Date_options = config.config['Date_options']
+    YYYY = Date_options['start_year'] 
+    MM = Date_options['start_month'] 
+    DD = Date_options['start_day'] 
 
     # Create a datetime object for the reference start time
     refTime = datetime.datetime(int(YYYY), # Year
@@ -105,7 +105,7 @@ def compute_deformations():
         # If the calculations file already exists and overwrite (in args config) is set to false,
         # go to the next iteration.
         # ELse, process the triangulated file and write/overwrite the calculations file.
-        if os.path.exists(calculations_path) and not config.args.overwrite:
+        if os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite'):
             continue
         
         # Check if the triangulated data set exists. If it does not, go to the next iteration
@@ -269,10 +269,11 @@ def compute_deformations():
     output_ds = Dataset(output_path, 'w', format = 'NETCDF4')
     
     # Add metadata
-    output_ds.iceTracker = 'S1'
+    Metadata = config.config['Metadata']
+    output_ds.iceTracker = Metadata['ice_tracker']
     output_ds.referenceTime = YYYY + '-' + MM + '-' + DD + ' 00:00:00' 
-    output_ds.trackingError = '200 m'
-    output_ds.version = '01'
+    output_ds.trackingError = Metadata['tracking_error'] + ' m'
+    output_ds.version = Metadata['version']
 
     # Create x array to store output data
     x = output_ds.createDimension('x', len(sTime))

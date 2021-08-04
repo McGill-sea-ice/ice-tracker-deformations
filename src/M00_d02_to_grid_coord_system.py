@@ -18,10 +18,10 @@ These results are then stored in a converted csv file.
 
     Variables:
     - no.: triangle number
-    - sX1, sX2, sX3: starting x coordinates for the 1st, 2nd and 3rd vertices;
-    - sY1, sY2, sY3: ending y coordinates for the 1st, 2nd and 3rd vertices;
-    - eX1, eX2, eX3, eY1, eY2, eY3: ending x and y coordinates;
-    - tracer_j and tracer_i: indices of the tracer points defining local CS.
+    - sX1, sX2, sX3: starting x coordinates for the 1st, 2nd and 3rd vertices
+    - sY1, sY2, sY3: ending y coordinates for the 1st, 2nd and 3rd vertices
+    - eX1, eX2, eX3, eY1, eY2, eY3: ending x and y coordinates
+    - tracer_j and tracer_i: indices of the tracer points defining local CS
 
 '''
 
@@ -43,7 +43,7 @@ def to_grid_coord_syst():
         # If the converted file already exists and overwrite (in config.py) is set to false,
         # go to the next iteration.
         # ELse, process the raw and triangulated files and write/overwrite the converted file.
-        if os.path.exists(converted_path) and not config.args.overwrite:
+        if os.path.exists(converted_path) and not config.config['Processing_options'].getboolean('overwrite'):
             continue
         
         # Check if the raw and triangulated .csv files exist

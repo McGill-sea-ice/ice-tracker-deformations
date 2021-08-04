@@ -15,9 +15,9 @@ points and stores the results in a csv file.
         no. | sX1_aeqd | sX2_aeqd | sX3_aeqd | sY1_aeqd | sY2_aeqd | sY3_aeqd | vertice_idx1 | vertice_idx2 | vertice_idx3
 
     Variables:
-    - no.: triangle number;
+    - no.: triangle number
     - sX1_aeqd, sX2_aeqd, sX3_aeqd, sY1_aeqd, sY2_aeqd, sY3_aeqd: x/y coordinates 
-        of the starting vertices in the Azimuthal Equidistant (aeqd) transform.
+        of the starting vertices in the Azimuthal Equidistant (aeqd) transform
     - vertice_idx1, vertice_idx2, vertice_idx3: triangle vertices' indices in the raw file
 '''
 
@@ -41,7 +41,7 @@ def delaunay_triangulation():
         # If the processed file already exists and overwrite (in config) is set to false,
         # go to the next iteration.
         # ELse, process the raw file and write/overwrite the processed file.
-        if os.path.exists(triangulated_path) and not config.args.overwrite:
+        if os.path.exists(triangulated_path) and not config.config['Processing_options'].getboolean('overwrite'):
             continue
 
         # Load the raw data set. If an error is encountered (no or not enough data points), 

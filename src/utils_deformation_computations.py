@@ -23,9 +23,6 @@ def calculate_uv_lists( sx_list, ex_list, sy_list, ey_list, dT):
     ey_list -- list of ending x positions of each cell vertices
     dT      -- time interval
     '''
-    
-    # Find the number of cell vertices
-    n = len(sx_list)
 
     # Compute the u and v velocity components at the current vertex
     u_list = (ex_list - sx_list) / dT
