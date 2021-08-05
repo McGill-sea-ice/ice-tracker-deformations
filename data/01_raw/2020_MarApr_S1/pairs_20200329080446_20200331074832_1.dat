@@ -1,2 +1,0 @@
-CP      startX  startY  dispX   dispY   sLat          sLon          theta   pCorr   pkStr   cCorr   conf   velX    velY    endX    endY    eLat          eLon          nps_startX    nps_startY    nps_endX      nps_endY      
-0       1592    1064    0       -2      66.0600048    -19.5806727   0.000   0.115   11.668  0.334   1      0.000   -0.200  1592    1062    66.0615240    -19.5885431   1129000.0000000  -2375600.0000000  1128600.0000000  -2375600.0000000  
