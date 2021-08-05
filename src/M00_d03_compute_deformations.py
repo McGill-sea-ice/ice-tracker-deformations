@@ -75,7 +75,7 @@ def compute_deformations():
 
         # Compute the time interval (days)
         dt = utils_datetime.dT( utils_datetime.dataDatetimes(calculations_path) ) / 86400
-        num=0
+
         # Iterate through every triangle in the converted csv file 
         for n in range(len(sX1)):
 

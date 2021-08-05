@@ -3,9 +3,10 @@
 !/.gitignore
 !.gitkeep
 
-# Ignore data (.csv and .dat) files
+# Ignore data (.csv, .dat and .nc) files
 *.csv
 *.dat
+*.nc
 
 # Ignore pdf files
 *.pdf

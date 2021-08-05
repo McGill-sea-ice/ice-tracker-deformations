@@ -14,7 +14,6 @@ import os
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -33,11 +32,6 @@ def visualise_deformations():
     proj = ccrs.AzimuthalEquidistant(central_longitude=0,central_latitude=90)
     trans = ccrs.Geodetic()
 
-    # Create a colormap for the divergence ax in order that 0 is 
-    # associated to the same color as the other plots 
-    #cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["red","#110788","yellow"])
-    #cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["red","#110788","#3e0b15"])
-    
     # Initialize figures for total deformation (tot), divergence (I) and shear (II)
     fig_tot = plt.figure()
     fig_I = plt.figure()
@@ -58,7 +52,7 @@ def visualise_deformations():
         ax.set_extent((-3000000, 4000000, 8500000, 11500000), ccrs.AzimuthalEquidistant())
 
     # Iterate through data files in config
-    for raw_path, triangulated_path, calculated_path, converted_path in zip(config.data_paths['raw'], config.data_paths['triangulated'], config.data_paths['calculations'], config.data_paths['converted']):
+    for raw_path, triangulated_path, calculated_path in zip(config.data_paths['raw'], config.data_paths['triangulated'], config.data_paths['calculations']):
 
         try:
             '''
@@ -75,25 +69,7 @@ def visualise_deformations():
             vertice_idx1      = triangulated_data['vertice_idx1']   # Vertex indices in raw csv file
             vertice_idx2      = triangulated_data['vertice_idx2']
             vertice_idx3      = triangulated_data['vertice_idx3']
-
-            # Load converted data
-            converted_data = load_data.load_converted(converted_path)
-            sX1         = converted_data['sX1']             # Starting x coordinates in a local grid CS
-            sX2         = converted_data['sX2']
-            sX3         = converted_data['sX3']
-
-            sY1         = converted_data['sY1']             # Starting y coordinates in a local grid CS
-            sY2         = converted_data['sY2']
-            sY3         = converted_data['sY3']
-
-            eX1         = converted_data['eX1']             # Starting x coordinates in a local grid CS
-            eX2         = converted_data['eX2']
-            eX3         = converted_data['eX3']
-
-            eY1         = converted_data['eY1']             # Starting y coordinates in a local grid CS
-            eY2         = converted_data['eY2']
-            eY3         = converted_data['eY3']
-            
+            print(len(vertice_idx1))
             # Load calculated data
             calculated_data = load_data.load_calculations(calculated_path)
             eps_I           = calculated_data['eps_I']    # Divergence rate
@@ -101,10 +77,8 @@ def visualise_deformations():
             eps_tot         = calculated_data['eps_tot']  # Total deformation rate
             dvdx            = calculated_data['dvdx']       
             dudy            = calculated_data['dudy']
-            dvdy            = calculated_data['dvdy']       
-            dudx            = calculated_data['dudx']
             rot             = dvdx - dudy
-
+            print(len(eps_tot))
 
         except:
             continue
@@ -119,8 +93,8 @@ def visualise_deformations():
 
         # Plot total deformations, divergence and shear
         cb_tot = ax_tot.tripcolor( sLon, sLat, triangles, facecolors=eps_tot, transform=trans, cmap='plasma', vmin=0, vmax=0.1 )
-        cb_I = ax_I.tripcolor( sLon, sLat, triangles, facecolors=eps_I, transform=trans, cmap='coolwarm', vmin=-0.04, vmax=0.04 )
-        cb_II = ax_II.tripcolor( sLon, sLat, triangles, facecolors=eps_II, transform=trans, cmap='plasma', vmin=0, vmax=0.1 )
+        cb_I   = ax_I.tripcolor( sLon, sLat, triangles, facecolors=eps_I, transform=trans, cmap='coolwarm', vmin=-0.04, vmax=0.04 )
+        cb_II  = ax_II.tripcolor( sLon, sLat, triangles, facecolors=eps_II, transform=trans, cmap='plasma', vmin=0, vmax=0.1 )
         cb_rot = ax_rot.tripcolor( sLon, sLat, triangles, facecolors=rot, transform=trans, cmap='coolwarm', vmin=-0.1, vmax=0.1 )
 
     '''
@@ -128,7 +102,9 @@ def visualise_deformations():
     ADD FEATURES TO THE PLOTS
     '''
 
-    # Check if at least one dataset has been plotted
+    # Check if at least one dataset has been plotted, 
+    # ie if the figures have been plotted (cb_tot should 
+    # have been initialized in that case)
     try: 
         cb_tot
     except NameError: 
@@ -143,6 +119,7 @@ def visualise_deformations():
     start_day    = Date_options['start_day']
     duration     = Date_options['duration']
 
+    # All figures have been plotted
     if cb_tot is not None:
 
         # Create a list of colorbars and titles to be iterated over
@@ -163,8 +140,6 @@ def visualise_deformations():
             # Hide deformations over land
             ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
 
-        
-
         # Set a directory to store figures
         currPath = os.path.dirname(os.path.realpath(__file__))
         figsPath = currPath + '/../figs/' + data_folder
@@ -173,29 +148,28 @@ def visualise_deformations():
         os.makedirs(figsPath, exist_ok=True)
 
         # Create a prefix for the figure filenames
-        prefix = start_year + start_month + start_day + '_' + str(duration) + '.png'
+        prefix = '/' + start_year + start_month + start_day + '_' + str(duration) 
         
         # Create the figure filenames
-        tot_path = figsPath + '/tot_' + prefix
-        div_path = figsPath + '/div_'+ prefix
-        shear_path = figsPath + '/shear_' + prefix
-        rot_path = figsPath + '/rot_' + prefix
+        tot_path   = figsPath + prefix + '_tot.png'
+        div_path   = figsPath + prefix + '_div.png'
+        shear_path = figsPath + prefix + '_shear.png'
+        rot_path   = figsPath + prefix + '_rot.png'
 
-        # Check if the files already exist. If they do, delete them.
-        for fig_path in [tot_path, div_path, shear_path, rot_path]:
+        
+        for fig, fig_path in zip([fig_tot, fig_I, fig_II, fig_rot], [tot_path, div_path, shear_path, rot_path]):
+            
+            # Check if the figures already exist. If they do, delete them.
             if os.path.isfile(fig_path):
                 os.remove(fig_path)
 
-        # Save all figures
-        fig_tot.savefig(tot_path , bbox_inches='tight')
-        fig_I.savefig( div_path, bbox_inches='tight')
-        fig_II.savefig( shear_path, bbox_inches='tight')
-        fig_rot.savefig( rot_path, bbox_inches='tight')
+            # Save the new figures
+            fig.savefig(fig_path, bbox_inches='tight')
 
         plt.show()
 
     else:
-        print('')
+        print('No figures have been created.')
 
 if __name__ == '__main__':
     visualise_deformations()
