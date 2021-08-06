@@ -13,13 +13,13 @@ each stage of data processing given an initial raw file path.
 import os
 
 def get_raw_csv_name_dir_parentfolder(raw_path):
-    ''' (string) -> tuple(string, string, string)
+    ''' (str) -> tuple(str, str, str)
 
     Takes as input a raw file's absolute path and returns the 
     name of the file, its directory and its parent folder name 
     (raw_filename, raw_directory, parent_folder).
 
-    Keyword arguments:
+    Keyword arguments: \\
     raw_path -- raw file absolute path
 
     >>> raw_csv_path = '/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301002108_20200313002108_1.csv'
@@ -41,7 +41,7 @@ def get_raw_csv_name_dir_parentfolder(raw_path):
 
 
 def get_processed_csv_path(raw_path):
-    ''' (string) -> string
+    ''' (str) -> str
 
     From a raw file's absolute path, this function produces a processing 
     stage data .csv file absolute path. The processed file is to be stored under the
@@ -52,7 +52,7 @@ def get_processed_csv_path(raw_path):
 
     Returns the processed file's path.
 
-    Keyword arguments:
+    Keyword arguments: \\
     raw_path -- raw file absolute path
 
     >>> raw_csv_path = '/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301002108_20200313002108_1.csv'
@@ -74,7 +74,7 @@ def get_processed_csv_path(raw_path):
 
 
 def get_converted_csv_path(raw_path):
-    ''' (string) -> string
+    ''' (str) -> str
 
     From a raw file's absolute path, this function produces a conversion 
     stage data .csv file absolute path. The converted file is to be stored under the
@@ -85,7 +85,7 @@ def get_converted_csv_path(raw_path):
 
     Returns the converted file's path.
 
-    Keyword arguments:
+    Keyword arguments: \\
     raw_path -- raw file absolute path
 
     >>> raw_csv_path = '/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301002108_20200313002108_1.csv'
@@ -107,7 +107,7 @@ def get_converted_csv_path(raw_path):
 
 
 def get_calculations_csv_path(raw_path):
-    ''' (string) -> string
+    ''' (str) -> str
 
     From a raw file's absolute path, this function produces a calculations 
     stage data .csv file absolute path. The calculated file is to be stored under the
@@ -118,7 +118,7 @@ def get_calculations_csv_path(raw_path):
 
     Returns the calculations file's path.
 
-    Keyword arguments:
+    Keyword arguments: \\
     raw_path -- raw file absolute path
 
     >>> raw_csv_path = '/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301002108_20200313002108_1.csv'
@@ -140,7 +140,7 @@ def get_calculations_csv_path(raw_path):
 
 
 def get_output_nc_path(raw_path, start_year, start_month, start_day):
-    ''' (string, string, string, string) -> string
+    ''' (str, str, str, str) -> str
 
     From a raw file's absolute path and a start time, this function 
     produces an output netcdf file absolute path. The output file is to 
@@ -151,15 +151,15 @@ def get_output_nc_path(raw_path, start_year, start_month, start_day):
     directory as well).
 
     The output netcdf file combines the deformation results from all datasets 
-    that have been processed simultaneously and that are listed in a txt file. 
+    that have been processed simultaneously (listed in config). 
 
     Returns the ouptut netcdf file's path.
 
-    Keyword arguments:
-    raw_path -- one of the raw file absolute paths
-    start_year   -- Common starting year of all datasets that have been processed
-    start_month  -- Common starting month of all datasets that have been processed
-    start_day    -- Common starting day of all datasets that have been processed
+    Keyword arguments: \\
+    raw_path    -- one of the raw file absolute paths \\
+    start_year  -- Common starting year of all datasets that have been processed \\
+    start_month -- Common starting month of all datasets that have been processed \\
+    start_day   -- Common starting day of all datasets that have been processed
 
     >>> raw_csv_path = '/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1/pairs_20200301002108_20200313002108_1.csv'
     >>> print( get_output_nc_path(raw_csv_path, '2020', '03', '01') )

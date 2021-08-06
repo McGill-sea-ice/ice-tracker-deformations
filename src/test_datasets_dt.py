@@ -2,9 +2,10 @@
 Author: Beatrice Duval (bdu002)
 
 -----------------------------------------------------------------
-Code that creates a histogram of delta times for all S1 datasets.
+Test - Delta time
 -----------------------------------------------------------------
 
+Code that creates a histogram of delta times for all S1 datasets.
 '''
 
 import os
@@ -13,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import PercentFormatter
 
+import config
 import utils_datetime
 import utils_load_data as load_data
 
@@ -24,12 +26,13 @@ CREATE A DELTA TIMES LIST
 # Initialize a delta times list
 dt_list = []
 
-# Iterate through all files in the folder specified below
-folder = '/home/bdu002/2021_SeaIceDeformation/data/01_raw/2020_MarApr_S1'
+# Iterate through all files in the raw data folder specified in namelist.ini
+folder = config.config['IO']['raw_data_folder']
+
 for filename in os.listdir(folder):
 
     # Add the delta time list only if the current file would be processed in the main script 
-    # (i.e. is a .csv or .dat file and has more than 3 data points)
+    # (i.e. is a .dat file and has more than 3 data points)
     try:
         load_data.load_raw(folder + '/' + filename)
         
@@ -42,7 +45,6 @@ for filename in os.listdir(folder):
     except load_data.DataFileError as dfe:
             continue
 
-print(len(dt_list))
 
 '''
 _________________________________________________________________________________________
@@ -64,10 +66,10 @@ PLOT THE HISTOGRAM
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
-ax.set_title('Time Intervals of all RCM Data Sets for March and April 2020')
+ax.set_title('Time Intervals of all Data Sets Stored in ' + os.path.basename(folder))
 ax.hist(dt_list, bins=bins, weights=np.ones(len(dt_list)) / len(dt_list), edgecolor='k')
 plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
-
+print('Time Intervals of all Data Sets Stored in ' + os.path.basename(folder))
 plt.show()
 
 

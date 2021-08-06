@@ -13,7 +13,7 @@ import time
 
 import config
 
-# Retrieve the selected processing method
+# Retrieve the selected processing method (in namelist.ini)
 method = config.config['Processing_options']['method'] 
 
 if method == 'M00':

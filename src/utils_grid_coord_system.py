@@ -20,12 +20,12 @@ def find_aeqdTriCenter(x1_aeqd, x2_aeqd, x3_aeqd, y1_aeqd, y2_aeqd, y3_aeqd):
     (aeqd) transform coordinates. 
     Returns the aqed (x, y) coordinates of the center.
 
-    Keyword arguments:
-    x1_aeqd -- x coordinate of 1st triangle vertex in the aeqd transform
-    x2_aeqd -- x coordinate of 2nd triangle vertex in the aeqd transform 
-    x3_aeqd -- x coordinate of 3rd triangle vertex in the aeqd transform 
-    y1_aeqd -- y coordinate of 1st triangle vertex in the aeqd transform
-    y2_aeqd -- y coordinate of 2nd triangle vertex in the aeqd transform
+    Keyword arguments: \\
+    x1_aeqd -- x coordinate of 1st triangle vertex in the aeqd transform \\
+    x2_aeqd -- x coordinate of 2nd triangle vertex in the aeqd transform \\
+    x3_aeqd -- x coordinate of 3rd triangle vertex in the aeqd transform \\
+    y1_aeqd -- y coordinate of 1st triangle vertex in the aeqd transform \\
+    y2_aeqd -- y coordinate of 2nd triangle vertex in the aeqd transform \\
     y3_aeqd -- y coordinate of 3rd triangle vertex in the aeqd transform 
     '''
 
@@ -43,9 +43,9 @@ def find_nearestGridTracerPt(gridX_aeqd, gridY_aeqd, xy_aeqd):
     
     Note: all (x,y) points follow the Azimuthal Equidistant (aeqd) transform.
     
-    Keyword arguments:
-    gridX_aeqd -- x coordinates for a grid matrix of tracer points (jxi)
-    gridY_aeqd -- y coordinates for a grid matrix of tracer points (jxi)
+    Keyword arguments: \\
+    gridX_aeqd -- x coordinates for a grid matrix of tracer points (jxi) \\
+    gridY_aeqd -- y coordinates for a grid matrix of tracer points (jxi) \\
     xy_aeqd    -- x,y coordinates for the input point
     
     source: https://kbkb-wx-python.blogspot.com/2016/08/find-nearest-latitude-and-longitude.html
@@ -82,9 +82,9 @@ def define_gridCS(fLAT, fLON, ji):
     
     Returns the (lat, lon) coords of B/C/D and the value of b and d.
 
-    Keyword arguments:
-    fLAT -- latitudes for a grid matrix of 'points vitesse' (jxi)
-    fLON -- longitudes for a grid matrix of 'points vitesse' (jxi)
+    Keyword arguments: \\
+    fLAT -- latitudes for a grid matrix of 'points vitesse' (jxi) \\
+    fLON -- longitudes for a grid matrix of 'points vitesse' (jxi) \\
     ji   -- (j, i) tuple of the matrix index at which the reference 
             grid tracer point is located
     
@@ -110,8 +110,8 @@ def get_xy_gridCS(gridCS, latlonPt ):
     Returns the x,y coordinates of a lat,lon point in the local 
     grid CS defined by the return value of the define_gridCS function.
     
-    Keyword arguments:
-    gridCS   -- return value of define_gridCS function
+    Keyword arguments: \\
+    gridCS   -- return value of define_gridCS function \\
     latlonPt -- (lat, lon) tuple  
     '''
 
@@ -139,7 +139,7 @@ def get_tri_angles( xy1, xy2, xy3):
 
     Returns the triangle's angle at each vertex in radians.
     
-    Keyword arguments:
+    Keyword arguments: \\
     xy1, xy2, xy3  -- (x, y) cartesian coordinates for the 1st, 2nd and 3rd triangle vertices
     '''
 

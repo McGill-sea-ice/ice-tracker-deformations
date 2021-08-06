@@ -5,20 +5,20 @@ Author: Beatrice Duval (bdu002)
 Utils - Datetime
 ------------------------------------------------------------------------------
 
-Tool for finding starting and ending times of a dataset given its file path.
+Tool for finding starting and ending times of a dataset given its name.
 
 '''
 
 import datetime
 
 def dataDatetimes(p):
-    ''' (str) -> datetime, datetime
+    ''' (str) -> (datetime, datetime)
     
-    Takes as input RCM or S1 data file path and returns 
+    Takes as input RCM or S1 data file path or name and returns 
     start and end times as datetime objects using the file name.
     
-    Keyword arguments:
-    p -- csv data file path
+    Keyword arguments: \\
+    p -- data file path or name
 
     >>> start, end = dataDatetimes('2020_MarApr_S1/pairs_20200301033644_20200303032021_1.csv')
     >>> print(start.strftime("%b %d %Y %H:%M:%S"))
@@ -28,7 +28,7 @@ def dataDatetimes(p):
     '''
 
     # Create datetime objects for data starting and ending times
-    # using the times specified in the csv file names
+    # using the times specified in the file names
     start = datetime.datetime(int(p[-35:-31]), # Year
                               int(p[-31:-29]), # Month
                               int(p[-29:-27]), # Day
@@ -47,13 +47,13 @@ def dataDatetimes(p):
 
 
 def dT(se):
-    ''' tuple(datetime) -> float
+    ''' tuple(datetime, datetime) -> float
     
     Takes as input start and end times as datetime objects
     and returns delta time (seconds)
 
-    Keyword arguments:
-    se -- start, end time (datetime objects)
+    Keyword arguments: \\
+    se -- (start, end) time as datetime objects
 
     >>> start, end = dataDatetimes('2020_MarApr_S1/pairs_20200301033644_20200303032021_1.csv')
     >>> print(dT( (start, end) ))

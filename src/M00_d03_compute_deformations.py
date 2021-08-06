@@ -2,11 +2,12 @@
 Author: Beatrice Duval (bdu002)
 
 ------------------------------------------
-M00 - Sea-ice deformations calculations
+M00 - Sea-ice deformation calculations
 ------------------------------------------
 
-Code that computes triangle cells' sea-ice deformations using a converted csv file. 
-The results are then stored in a calculations csv file.
+Code that computes triangle cells' sea-ice deformations (days^-1) 
+using a converted csv file. The results are then stored in a 
+calculations csv file.
 
 1. Output csv file
 
@@ -27,7 +28,6 @@ import os
 from math import sqrt
 
 import numpy as np
-from numpy.core.fromnumeric import mean
 
 import config
 import utils_datetime
@@ -37,12 +37,12 @@ import utils_load_data as load_data
 
 def compute_deformations():
 
-    # Iterate through all raw, processed and converted .csv files listed in config.py
+    # Iterate through converted and calculations data files listed in config
     for converted_path, calculations_path in zip(config.data_paths['converted'], config.data_paths['calculations']):
         
-        # If the calculations file already exists and overwrite (in config.py) is set to false,
+        # If the calculations file already exists and overwrite (in namelist.ini) is set to 'no',
         # go to the next iteration.
-        # ELse, process the converted file and write/overwrite the calculations file.
+        # ELse, process the converted data and write/overwrite the calculations file.
         if os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite'):
             continue
         
@@ -61,11 +61,11 @@ def compute_deformations():
         sY2         = converted_data['sY2']
         sY3         = converted_data['sY3']
 
-        eX1         = converted_data['eX1']             # Starting x coordinates in a local grid CS
+        eX1         = converted_data['eX1']             # Ending x coordinates in a local grid CS
         eX2         = converted_data['eX2']
         eX3         = converted_data['eX3']
 
-        eY1         = converted_data['eY1']             # Starting y coordinates in a local grid CS
+        eY1         = converted_data['eY1']             # Ending y coordinates in a local grid CS
         eY2         = converted_data['eY2']
         eY3         = converted_data['eY3']
 
@@ -109,7 +109,7 @@ def compute_deformations():
         # Create a directory to store the calculations csv path if it does not exist already
         os.makedirs(os.path.dirname(calculations_path), exist_ok=True)
 
-        # Write the results in the calculations_csv_path file path
+        # Write the results in the calculations file path
         with open(calculations_path, 'w', encoding='UTF8', newline='') as f:
             writer = csv.writer(f)
 

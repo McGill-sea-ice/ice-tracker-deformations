@@ -11,7 +11,6 @@ points and stores the results in a csv file.
 1. Output csv file
 
     Format:
-
         no. | sX1_aeqd | sX2_aeqd | sX3_aeqd | sY1_aeqd | sY2_aeqd | sY3_aeqd | vertice_idx1 | vertice_idx2 | vertice_idx3
 
     Variables:
@@ -38,13 +37,13 @@ def delaunay_triangulation():
 
     # Iterate through all raw and triangulated .csv file paths listed in config
     for raw_path, triangulated_path in zip(config.data_paths['raw'], config.data_paths['triangulated']):
-        # If the processed file already exists and overwrite (in config) is set to false,
+        # If the processed file already exists and overwrite (in namelist.ini) is set to false,
         # go to the next iteration.
-        # ELse, process the raw file and write/overwrite the processed file.
+        # ELse, process the raw file and write the triangulated file.
         if os.path.exists(triangulated_path) and not config.config['Processing_options'].getboolean('overwrite'):
             continue
 
-        # Load the raw data set. If an error is encountered (no or not enough data points), 
+        # Load the raw data set. If an DataFileError is encountered (no or not enough data points), 
         # print the error message and go to the next dataset.
         try:
             raw_data = load_data.load_raw( raw_path )
@@ -78,7 +77,7 @@ def delaunay_triangulation():
             vertice_idx2 = tri.simplices[n][1]
             vertice_idx3 = tri.simplices[n][2]
 
-            # Retrieve the starting X and Y coordinates in the aeqd transform
+            # Retrieve the starting X and Y coordinates in the aeqd transform for the current triangle
             sX1_aeqd = sX_aeqd[vertice_idx1]   # Starting latitudes
             sX2_aeqd = sX_aeqd[vertice_idx2]
             sX3_aeqd = sX_aeqd[vertice_idx3]

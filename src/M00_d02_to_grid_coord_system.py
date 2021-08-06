@@ -13,8 +13,7 @@ These results are then stored in a converted csv file.
 1. Output csv file
 
     Format:
-    
-    no. | sX1 | sX2 | sX3 | sY1 | sY2 | sY3 | eX1 | eX2 | eX3 | eY1 | eY2 | eY3 | tracer_j | tracer_i
+        no. | sX1 | sX2 | sX3 | sY1 | sY2 | sY3 | eX1 | eX2 | eX3 | eY1 | eY2 | eY3 | tracer_j | tracer_i
 
     Variables:
     - no.: triangle number
@@ -40,7 +39,7 @@ def to_grid_coord_syst():
     # Iterate through all raw, triangulated and converted .csv files listed in config.py
     for raw_path, triangulated_path, converted_path in zip(config.data_paths['raw'], config.data_paths['triangulated'], config.data_paths['converted']):
 
-        # If the converted file already exists and overwrite (in config.py) is set to false,
+        # If the converted file already exists and overwrite (in config.py) is set to 'no',
         # go to the next iteration.
         # ELse, process the raw and triangulated files and write/overwrite the converted file.
         if os.path.exists(converted_path) and not config.config['Processing_options'].getboolean('overwrite'):

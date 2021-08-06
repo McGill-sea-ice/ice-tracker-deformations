@@ -8,7 +8,7 @@ M01 - Sea-ice deformations calculations
 Code that computes triangle cells' sea-ice deformations using a triangulated csv file. 
 
 The results are then stored in a calculations csv file for each dataset, and in a 
-single output netcdf4 file that combines all datasets. 
+single output netcdf4 file that combines all processed datasets. 
 
 1. Calculations csv file:
 
@@ -29,7 +29,7 @@ single output netcdf4 file that combines all datasets.
 
 2. Output netcdf4 file:
 
-    Description: The deformation results of all datasets to process are stored
+    Description: The deformation results of all processed datasets are stored
                  in a single output netcdf file. Each data row corresponds to 
                  a triangle.
 
@@ -54,10 +54,10 @@ single output netcdf4 file that combines all datasets.
 '''
 
 import csv
+import datetime
 import os
 from math import sqrt
 
-import datetime
 import numpy as np
 from netCDF4 import Dataset
 
@@ -82,7 +82,7 @@ def compute_deformations():
         div, shear \
         = ([] for i in range(16))
     
-    # Retrieve the starting date common to all processed datasets
+    # Retrieve the starting date common to all processed datasets (from namelist.ini)
     Date_options = config.config['Date_options']
     YYYY = Date_options['start_year'] 
     MM = Date_options['start_month'] 
@@ -94,7 +94,7 @@ def compute_deformations():
                        int(DD),   # Day
                        0, 0, 0)   # Hour, minute, second
 
-    # Iterate through all raw and triangulated data files listed in config
+    # Iterate through all raw, triangulated and calculations data files listed in config
     for raw_path, triangulated_path, calculations_path in zip(config.data_paths['raw'], config.data_paths['triangulated'], config.data_paths['calculations']):
         
         '''
@@ -102,7 +102,7 @@ def compute_deformations():
         LOAD DATA
         '''
 
-        # If the calculations file already exists and overwrite (in args config) is set to false,
+        # If the calculations file already exists and overwrite (in namelist.ini) is set to 'no',
         # go to the next iteration.
         # ELse, process the triangulated file and write/overwrite the calculations file.
         if os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite'):
@@ -126,12 +126,12 @@ def compute_deformations():
             eLon    = raw_data['eLon']    # Ending longitudes
 
         except load_data.DataFileError as dfe:
-            # The error has already been printed in the delaunay triangulation stage            
+            # The error has already been printed in the triangulation stage            
             continue
         
         # Load the triangulated dataset
         triangulated_data = load_data.load_triangulated( triangulated_path )
-        vertice_idx1 = triangulated_data['vertice_idx1'] # Vertex indices in raw csv file
+        vertice_idx1 = triangulated_data['vertice_idx1'] # Vertex indices in raw data file
         vertice_idx2 = triangulated_data['vertice_idx2']
         vertice_idx3 = triangulated_data['vertice_idx3']
 
@@ -168,7 +168,7 @@ def compute_deformations():
         COMPUTE DEFORMATIONS FOR EACH TRIANGLE
         '''
 
-        # Iterate through every triangle in the converted csv file 
+        # Iterate through every triangle in the triangulated csv file 
         for n in range(num_tri):
   
             # Create lists of triangular cell vertices' positions
@@ -340,8 +340,6 @@ def compute_deformations():
 
     d[:]          = div
     s[:]          = shear
-
-    print(output_ds)
 
     # Close dataset
     output_ds.close()

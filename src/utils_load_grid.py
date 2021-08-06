@@ -13,11 +13,12 @@ import os
 
 from netCDF4 import Dataset
 
+import config
+
 def load_grid():
 
-    # Find absolute path in which the RIOPS grid is stored
-    projPath = os.path.dirname(os.path.realpath(__file__))
-    gridPath = projPath + '/../data/00_grid/cropped_grid.nc'
+    # Retrieve absolute path in which the cropped RIOPS grid is stored
+    gridPath = config.config['IO']['cropped_grid']
 
     # Load RIOPS grid dataset
     ds = Dataset(gridPath)

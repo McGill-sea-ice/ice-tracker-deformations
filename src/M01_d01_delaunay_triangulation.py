@@ -24,21 +24,28 @@ import os
 from scipy.spatial import Delaunay
 
 import config
-import utils_load_data as load_data
 import utils_grid_coord_system as grid_coord_system
+import utils_load_data as load_data
+
 
 def delaunay_triangulation():
 
-    # Iterate through all raw data file paths listed in config
+    # Iterate through all raw and triangulated data file paths listed in config
     for raw_path, triangulated_path in zip(config.data_paths['raw'], config.data_paths['triangulated']):
-        # If the triangulated file already exists and overwrite (in config) is set to false,
+        
+        '''
+        _________________________________________________________________________________________
+        LOAD DATA
+        '''
+        
+        # If the triangulated file already exists and overwrite (in config) is set to 'no',
         # go to the next iteration.
-        # ELse, process the raw file and write/overwrite the triangulated file.
+        # Else, process the raw file and write the triangulated file.
         if os.path.exists(triangulated_path) and not config.config['Processing_options'].getboolean('overwrite'):
             continue
 
         # Load the raw data set. If an error is encountered (no or not enough data points), 
-        # print the error message and go to the next raw .csv file.
+        # print the error message and go to the next raw file.
         try:
             raw_data = load_data.load_raw( raw_path )
             startX = raw_data['startX']
@@ -48,9 +55,19 @@ def delaunay_triangulation():
             print(str(dfe) + 'It will not be processed.')
             continue
 
+        '''
+        _________________________________________________________________________________________
+        PERFORM DELAUNAY TRIANGULATION
+        '''
+
         # Generate a Delaunay triangulation
         startXY = list(zip(startX, startY))
         tri = Delaunay(startXY)
+
+        '''
+        _________________________________________________________________________________________
+        INITIALIZE AND POPULATE LIST OF DATA ROWS FOR CSV FILE
+        '''
 
         # Create a header and a list of data rows that will be used to create the output csv file
         header = ['no.', 'vertice_idx1', 'vertice_idx2',  'vertice_idx3']
@@ -81,19 +98,33 @@ def delaunay_triangulation():
                 # Add the data row corresponding to the current triangle to the list of data rows
                 row_list.append([ n, vertice_idx1, vertice_idx2,  vertice_idx3] )
 
+        '''
+        _________________________________________________________________________________________
+        WRITE RESULTS
+        '''
 
-        #--------------------Write the results to a csv file---------------------------------
+        # Check if we have results to write
+        if len(row_list) > 1:
 
-        # Create a directory to store the triangulated csv path if it does not exist already
-        os.makedirs(os.path.dirname(triangulated_path), exist_ok=True)
+            # Create a directory to store the triangulated csv path if it does not exist already
+            os.makedirs(os.path.dirname(triangulated_path), exist_ok=True)
 
-        # Write the results in the triangulated file path
-        with open(triangulated_path, 'w', encoding='UTF8', newline='') as f:
-            writer = csv.writer(f)
+            # Write the results in the triangulated file path
+            with open(triangulated_path, 'w', encoding='UTF8', newline='') as f:
+                writer = csv.writer(f)
 
-            # Write the data rows to the csv file
-            writer.writerows(row_list)
+                # Write the data rows to the csv file
+                writer.writerows(row_list)
 
+        # Else, and if we are overwriting, delete the existing triangulation file
+        elif config.config['Processing_options'].getboolean('overwrite'):
+
+            try:
+                os.remove(triangulated_path)
+            except OSError:
+                pass    
+
+        
 
 if __name__ == "__main__":
     delaunay_triangulation()

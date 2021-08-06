@@ -5,25 +5,28 @@ Author: Beatrice Duval (bdu002)
 Crop grid
 --------------------------------------------------------------------
 
-Code for creation of a netcdf grid, adapted from original RIOPS grid.
+Code for creation of a grid (netcdf format), adapted from original RIOPS grid.
 
     - Crops the RIOPS grid to region of interest
-    - Creates a new netcdf cropped grid containing tracer points (lat,lon and x,y coordinates in the aeqd transform), speed points (lat,lon), distance between tracer points and land, and a sea-land mask
+    - Creates a new netcdf cropped grid containing tracer points (lat,lon and 
+      x,y coordinates in the aeqd transform), speed points (lat,lon), distance 
+      between tracer points and land, and a sea-land mask
+    - Prints the % of the work done when creating the distance to coastline matrix
 '''
 
-import os
+from math import nan
 
 import numpy as np
 from haversine import haversine
 from netCDF4 import Dataset
 from pyproj import Proj
-from math import nan
+
+import config
 from utils_grid_coord_system import find_nearestGridTracerPt
 
 ################################### MAIN PROGRAM #################################
 
-# Set values at which the grid is to be cropped, i.e. range of interest
-
+# Set indices at which the grid is to be cropped, i.e. set the range of interest
 y1 = 1075
 y2 = 1750
 x1 = 375
@@ -32,33 +35,32 @@ x2 = 1200
 
 #-------------------------Load RIOPS grid-----------------------------------------
 
-# Load netcdf NEMO dataset
-gridPath = '/home/socn000/env_ubuntu-18.04-skylake-64/eccc-ppp4/datafiles/constants/oce/repository/master/CONCEPTS/creg012pe/grid/coordinates_CREG12_ext.nc'
+# Load netcdf RIOPS grid and create a dataset
+gridPath = config.config['IO']['riops_grid']
 grid_ds = Dataset(gridPath)
 
-# Create a matrix for grid latitudes 
-# and longitudes
-LAT = grid_ds['nav_lat'][:, :] # 'Point traceur' t
+# Create a matrix for grid latitudes and longitudes
+LAT = grid_ds['nav_lat'][:, :] # Tracer point t
 LON = grid_ds['nav_lon'][:, :]
 
-fLAT =grid_ds['gphif'][:, :]   # 'Point vitesse f'
+fLAT =grid_ds['gphif'][:, :]   # Speed point f
 fLON = grid_ds['glamf'][:, :]
 
-#-------------Create 'points traceurs' matrix in x,y coordinates-----------------
+
+#-------------Create a tracer point matrix in x,y coordinates-----------------
 
 # Convert grid points from lat/lon to x,y coordinates following 
-# the Azimuthal Equidistant transform
+# the Azimuthal Equidistant projection
 p = Proj(proj='aeqd', ellps='WGS84', preserve_units=False)
 X, Y = p(LON, LAT)
 
 #---------------------Create land-sea mask -------------------------------------
 
 # Load bathymetry dataset
-bathyPath = '/home/socn000/env_ubuntu-18.04-skylake-64/eccc-ppp4/datafiles/constants/oce/repository/master/CONCEPTS/creg012pe/grid/bathy_creg12_ext_mask.nc'
+bathyPath = config.config['IO']['bathymetry']
 bathy_ds = Dataset(bathyPath)
 
-# Create a matrix from bathymetry 
-# of same size as LAT and LON
+# Create a matrix from bathymetry
 MASK = bathy_ds['Bathymetry'][:, :]
 
 # Set all land values (>0) to 0 and ocean values (=0)
@@ -85,8 +87,11 @@ maskedX = maskedX[1000:1795, 300:1300]
 maskedY = maskedY[1000:1795, 300:1300]
 
 # Find number of data points to process and set number of processed data points to 0
+# This will be used to print the % of the job done
 num = (y2-y1) * (x2-x1)
 count = 0
+
+print('--- Populating a distance to coastline matrix ---')
 
 # Iterate through the grid points of interest (from y1 to y2, and x1 to x2)
 for y in range(y1, y2):
@@ -110,10 +115,12 @@ for y in range(y1, y2):
             DIST[y,x] = haversine( (LAT[y,x], LON[y,x]), (LAT[j,i], LON[j,i]) )
 
 
+print('--- Distance to coastline matrix is complete ---')
+
+
 #-------------------------Trim RIOPS grid-----------------------------------------
 
-
-# Crop all grid matrices using the delimiters defined at the beginning of the script
+# Crop all grid matrices using the range of interest defined at the beginning of the module
 LAT  = LAT[y1:y2, x1:x2]
 LON  = LON[y1:y2, x1:x2]
 Y    = Y[y1:y2, x1:x2]
@@ -129,8 +136,7 @@ ydim, xdim = LAT.shape
 #---------------------Create new netcdf grid-------------------------------------
 
 # Find absolute path in which cropped_grid.nc is to be stored
-projPath = os.path.dirname(os.path.realpath(__file__))
-cropGridPath = projPath + '/../../data/00_grid/cropped_grid.nc'
+cropGridPath = config.config['IO']['cropped_grid']
 
 # Create cropped_grid.nc netcdf file and associated crop_ds dataset
 crop_ds = Dataset(cropGridPath, 'w', format = 'NETCDF4')

@@ -12,15 +12,15 @@ def calculate_uv_lists( sx_list, ex_list, sy_list, ey_list, dT):
     ''' (list, list, float) -> float(list, list)
 
     Function that calculates u and v velocity components of 
-    each cell vertices and returns them as a list each. 
+    each cell vertices and returns them as a list. 
 
     Returns a tuple (u_list, v_list) of the lists of velocity components.
 
-    Keyword arguments:
-    sx_list -- list of starting x positions of each cell vertices
-    ex_list -- list of ending x positions of each cell vertices
-    sy_list -- list of starting x positions of each cell vertices
-    ey_list -- list of ending x positions of each cell vertices
+    Keyword arguments: \\
+    sx_list -- list of starting x positions of each cell vertices \\
+    ex_list -- list of ending x positions of each cell vertices \\
+    sy_list -- list of starting x positions of each cell vertices \\
+    ey_list -- list of ending x positions of each cell vertices \\
     dT      -- time interval
     '''
 
@@ -32,15 +32,15 @@ def calculate_uv_lists( sx_list, ex_list, sy_list, ey_list, dT):
 
 
 def calculate_strainRates( u_list, v_list, sx_list, sy_list ):
-    ''' (float, list, list) float
+    ''' (list, list, list, list) -> tuple(float, float, float, float)
 
     Computes the strain rates (or velocity derivatives).
 
-    Keyword arguments:
-    u_list -- list of u component velocities for each cell vertices
-    v_list -- list of v component velocities for each cell vertices
-    sx_list -- list of starting x positions for each cell vertices
-    sy_list -- list of starting y positions for each cell vertices
+    Keyword arguments: \\
+    u_list -- list of u component velocities for each cell vertices \\
+    v_list -- list of v component velocities for each cell vertices \\
+    sx_list -- list of starting x positions for each cell vertices \\
+    sy_list -- list of starting y positions for each cell vertices \\
     '''
 
     # Find the number of cell vertices
