@@ -1,4 +1,6 @@
+backports.entry-points-selectable==1.1.0
 basemap @ git+https://github.com/matplotlib/basemap.git@a516e5b1de2f26d9adfcced1215bee7285c61d22
+build==0.6.0.post1
 Cartopy==0.19.0.post1
 certifi==2020.12.5
 cftime==1.4.1
@@ -7,11 +9,14 @@ click==8.0.1
 cycler==0.10.0
 dataclasses==0.8
 DateTime==4.3
+distlib==0.3.2
+filelock==3.0.12
 Flask==2.0.0
 haversine==2.3.1
 httptools==0.2.0
 idna==2.10
 importlib-metadata==4.0.1
+importlib-resources==5.2.2
 itsdangerous==2.0.1
 Jinja2==3.0.1
 kiwisolver==1.3.1
@@ -20,8 +25,11 @@ MarkupSafe==2.0.1
 matplotlib==3.3.4
 netCDF4==1.5.6
 numpy==1.19.5
+packaging==21.0
 pandas==1.1.5
+pep517==0.11.0
 Pillow==8.2.0
+platformdirs==2.2.0
 pyparsing==2.4.7
 pyproj==3.0.1
 pyshp==2.1.3
@@ -30,10 +38,11 @@ pytz==2021.1
 scipy==1.5.4
 Shapely==1.7.1
 six==1.16.0
+tomli==1.2.1
 typing-extensions==3.10.0.0
 urllib3==1.26.4
 vincenty==0.1.4
--e git+https://gitlab.science.gc.ca/glace-ice/visualisation-tools@33acb60aae161e70631bcce16ede9f871424a330#egg=visualization_tools
+virtualenv==20.7.1
 Werkzeug==2.0.1
 zipp==3.4.1
 zope.interface==5.4.0
