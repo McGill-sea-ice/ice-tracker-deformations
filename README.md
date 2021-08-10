@@ -33,6 +33,7 @@ Create and activate the project virtual environment:
 python3 -m venv .venv --without-pip
 curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 source .venv/bin/activate
+python get-pip.py
 ```
 
 Install the python dependencies on the virtual environment:
