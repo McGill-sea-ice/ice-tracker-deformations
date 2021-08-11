@@ -5,7 +5,7 @@ Author: Beatrice Duval (bdu002)
 M01 - Sea-ice deformations calculations
 ---------------------------------------
 
-Code that computes triangle cells' sea-ice deformations using a triangulated csv file. 
+Module that computes triangle cells' sea-ice deformations using a triangulated csv file. 
 
 The results are then stored in a calculations csv file for each dataset, and in a 
 single output netcdf4 file that combines all processed datasets. 
@@ -130,7 +130,7 @@ def compute_deformations():
             continue
         
         # Load the triangulated dataset
-        triangulated_data = load_data.load_triangulated( triangulated_path )
+        triangulated_data = load_data.load_triangulated( triangulated_path, config.config['Processing_options']['method'] )
         vertice_idx1 = triangulated_data['vertice_idx1'] # Vertex indices in raw data file
         vertice_idx2 = triangulated_data['vertice_idx2']
         vertice_idx3 = triangulated_data['vertice_idx3']

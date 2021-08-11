@@ -5,7 +5,7 @@ Author: Beatrice Duval (bdu002)
 M00 - Sea-ice deformation calculations
 ------------------------------------------
 
-Code that computes triangle cells' sea-ice deformations (days^-1) 
+Module that computes triangle cells' sea-ice deformations (days^-1) 
 using a converted csv file. The results are then stored in a 
 calculations csv file.
 

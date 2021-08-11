@@ -5,7 +5,7 @@ Author: Beatrice Duval (bdu002)
 M00 - Lat/Lon to grid X/Y coordinate system conversion
 ----------------------------------------------------------------------------
 
-Code that converts the triangles' lat/lon coordinates from the triangulated 
+Module that converts the triangles' lat/lon coordinates from the triangulated 
 csv file to x,y coordinates in a local cartesian grid coordinate system (CS). 
 
 These results are then stored in a converted csv file.
@@ -63,7 +63,7 @@ def to_grid_coord_syst():
             continue
 
         # Load the triangulated data set
-        triangulated_data = load_data.load_triangulated( triangulated_path )
+        triangulated_data = load_data.load_triangulated( triangulated_path, config.config['Processing_options']['method'] )
 
         sX1_aeqd     = triangulated_data['sX1_aeqd']     # Starting X coordinates in the aeqd transform
         sX2_aeqd     = triangulated_data['sX2_aeqd']
@@ -78,7 +78,7 @@ def to_grid_coord_syst():
         vertice_idx3 = triangulated_data['vertice_idx3']
 
         # Load the RIOPS grid
-        grid = load_grid.load_grid()
+        grid = load_grid.load_grid(config.config['IO']['cropped_grid'])
 
         # Create a header and a list of data rows that will be used to create the output csv file
         header = ['no.', 'sX1', 'sX2', 'sX3',             

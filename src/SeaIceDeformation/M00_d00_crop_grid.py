@@ -5,7 +5,7 @@ Author: Beatrice Duval (bdu002)
 Crop grid
 --------------------------------------------------------------------
 
-Code for creation of a grid (netcdf format), adapted from original RIOPS grid.
+Module for creation of a grid (netcdf format), adapted from original RIOPS grid.
 
     - Crops the RIOPS grid to region of interest
     - Creates a new netcdf cropped grid containing tracer points (lat,lon and 

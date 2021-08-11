@@ -5,7 +5,9 @@ Author: Beatrice Duval (bdu002)
 Utils - Datetime
 ------------------------------------------------------------------------------
 
-Tool for finding starting and ending times of a dataset given its name.
+Module that provides tools for finding starting and ending times as Datetime 
+objects of a dataset given its filename, and for finding the time lapse in 
+seconds between two Datetime objects.
 
 '''
 

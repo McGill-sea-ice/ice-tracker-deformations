@@ -5,7 +5,7 @@ Author: Beatrice Duval (bdu002)
 M01 - Delaunay triangulation
 ----------------------
 
-Code that performs a Delaunay triangulation on a set of X/Y data points and stores the results in a csv file.
+Module that performs a Delaunay triangulation on a set of X/Y data points and stores the results in a csv file.
 
 1. Output csv file
     

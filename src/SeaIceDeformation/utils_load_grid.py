@@ -9,19 +9,21 @@ Code that provides a function that loads the project RIOPS grid.
 
 '''
 
-import os
 
 from netCDF4 import Dataset
 
-import config
 
-def load_grid():
+def load_grid(cropped_grid):
+    ''' (str) -> dict[str, array]
 
-    # Retrieve absolute path in which the cropped RIOPS grid is stored
-    gridPath = config.config['IO']['cropped_grid']
+    Function that loads the project RIOPS grid.
+
+    Keyword arguments:
+    cropped_grid -- absolute path of the netcdf file that stores the cropped RIOPS grid
+    '''
 
     # Load RIOPS grid dataset
-    ds = Dataset(gridPath)
+    ds = Dataset(cropped_grid)
 
     # Retrieve grid matrices
     LAT    = ds['nav_lat'][:,:]    # Tracer points (latitudes)

@@ -11,7 +11,6 @@ Helper code for loading files from all stages of data processing.
 import os
 
 import pandas as pd
-import config
 
 # Create a class of errors for csv loading and two subclasses
 class DataFileError(Exception):
@@ -79,7 +78,7 @@ def load_raw( path_raw ):
 
 
 
-def load_triangulated( path_triangulated ):
+def load_triangulated( path_triangulated, method ):
     ''' (str) -> dict[str, list]
 
     Loads data from a triangulated .csv file. 
@@ -96,6 +95,7 @@ def load_triangulated( path_triangulated ):
 
     Keyword arguments: \\
     path_triangulated -- absolute path to processed .csv file
+    method -- method currently used to process data
     '''
     # Create a data frame
     df = pd.read_csv(path_triangulated)
@@ -103,9 +103,6 @@ def load_triangulated( path_triangulated ):
     # Retrieve data
     no           = df['no.']          # Triangle number
     
-    # Retrieve the selected processing method
-    method = config.config['Processing_options']['method']
-
     # Create a return dictionnary of triangulated data for method M00 and M01
     if method == 'M00':
 
