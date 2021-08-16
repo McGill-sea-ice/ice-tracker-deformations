@@ -44,7 +44,7 @@ python -m pip install -r requirements.txt
 
 ## Usage
 
-This section is currently empty.
+In order to launch a data processing experience, the main module must be executed. The user can configure the experience by modifying the definitions of the parameters in namelist.ini.  
 
 ## Documentation
 

@@ -109,15 +109,18 @@ def visualise_deformations():
     except NameError: 
         cb_tot = None
     
-    # Retrieve the namelist arguments that define the dataset 
+    # Retrieve namelist arguments that define the dataset 
     # that has been selected for processing
-    data_folder  = os.path.basename(config.config['IO']['raw_data_folder'])
     Date_options = config.config['Date_options']
     start_year   = Date_options['start_year']
     start_month  = Date_options['start_month']
     start_day    = Date_options['start_day']
     duration     = Date_options['duration']
-
+    
+    IO           = config.config['IO']
+    output_path  = IO['output_path']
+    exp          = IO['exp']
+    
     # All figures have been plotted
     if cb_tot is not None:
 
@@ -139,10 +142,14 @@ def visualise_deformations():
             # Hide deformations over land
             ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
 
-        # Set a directory to store figures
-        currPath = os.path.dirname(os.path.realpath(__file__))
-        figsPath = currPath + '/../figs/' + data_folder
+        '''
+        _________________________________________________________________________________________
+        SAVE PLOTS
+        '''
 
+        # Set a directory to store figures for the current experiment
+        figsPath =  output_path + '/' + exp 
+        
         # Create the directory if it does not exist already
         os.makedirs(figsPath, exist_ok=True)
 

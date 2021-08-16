@@ -78,7 +78,7 @@ def to_grid_coord_syst():
         vertice_idx3 = triangulated_data['vertice_idx3']
 
         # Load the RIOPS grid
-        grid = load_grid.load_grid(config.config['IO']['cropped_grid'])
+        grid = load_grid.load_grid(config.config['Grid']['cropped_grid'])
 
         # Create a header and a list of data rows that will be used to create the output csv file
         header = ['no.', 'sX1', 'sX2', 'sX3',             

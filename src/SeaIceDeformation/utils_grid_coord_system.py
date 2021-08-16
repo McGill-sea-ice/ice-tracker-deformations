@@ -14,8 +14,8 @@ from haversine import haversine
 from math import sqrt, acos
 
 def find_aeqdTriCenter(x1_aeqd, x2_aeqd, x3_aeqd, y1_aeqd, y2_aeqd, y3_aeqd):
-    ''' (float, float, float, float, float, float) ->  tuple
-
+    ''' (float, float, float, float, float, float) -> tuple
+    
     Finds the center of a triangle in Azimuthal Equidistant 
     (aeqd) transform coordinates. 
     Returns the aqed (x, y) coordinates of the center.

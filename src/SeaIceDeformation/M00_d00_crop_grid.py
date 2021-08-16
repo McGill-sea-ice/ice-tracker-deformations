@@ -36,7 +36,7 @@ x2 = 1200
 #-------------------------Load RIOPS grid-----------------------------------------
 
 # Load netcdf RIOPS grid and create a dataset
-gridPath = config.config['IO']['riops_grid']
+gridPath = config.config['Grid']['riops_grid']
 grid_ds = Dataset(gridPath)
 
 # Create a matrix for grid latitudes and longitudes
@@ -57,7 +57,7 @@ X, Y = p(LON, LAT)
 #---------------------Create land-sea mask -------------------------------------
 
 # Load bathymetry dataset
-bathyPath = config.config['IO']['bathymetry']
+bathyPath = config.config['Grid']['bathymetry']
 bathy_ds = Dataset(bathyPath)
 
 # Create a matrix from bathymetry
@@ -136,7 +136,7 @@ ydim, xdim = LAT.shape
 #---------------------Create new netcdf grid-------------------------------------
 
 # Find absolute path in which cropped_grid.nc is to be stored
-cropGridPath = config.config['IO']['cropped_grid']
+cropGridPath = config.config['Grid']['cropped_grid']
 
 # Create cropped_grid.nc netcdf file and associated crop_ds dataset
 crop_ds = Dataset(cropGridPath, 'w', format = 'NETCDF4')
