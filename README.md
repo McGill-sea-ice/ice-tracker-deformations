@@ -44,7 +44,13 @@ python -m pip install -r requirements.txt
 
 ## Usage
 
-In order to launch a data processing experience, the main module must be executed. The user can configure the experience by modifying the definitions of the parameters in namelist.ini.  
+In order to launch a data processing experience, the main module must be executed. Assuming we are in the project folder, we can execute the main module as so:
+
+```
+python src/SeaIceDeformation/main.py
+```
+
+The user can configure the experience by modifying the definitions of the parameters in namelist.ini.  
 
 ## Documentation
 
@@ -61,3 +67,11 @@ make SeaIceDeformation_Methods.pdf
 ```
 
 *SeaIceDeformation_Methods.pdf* will be stored in the current directory.
+
+## Input Data Location
+
+The March and April 2020 Sentinel-1 and RCM ice tracker data stored in `RCM_dats_2020_MarApr.tar.gz` and `S1_dats_2020_MarApr.tar.gz` is located under the directory that follows:
+
+```
+/space/hall4/sitestore/eccc/crd/ccrp/mib001/jf_icetracker_data
+```
