@@ -39,7 +39,6 @@ single output netcdf4 file that combines all processed datasets.
     - iceTracker: RCM or S1 ice tracker
     - referenceTime: Reference time (time units are in seconds since the reference time)
     - trackingError: Ice tracker error (or resolution)
-    - version: version of the output netcdf file
 
     Variables:
 
@@ -102,11 +101,7 @@ def compute_deformations():
         LOAD DATA
         '''
 
-        # If the calculations file already exists and overwrite (in namelist.ini) is set to 'no',
-        # go to the next iteration.
-        # ELse, process the triangulated file and write/overwrite the calculations file.
-        if os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite'):
-            continue
+        
         
         # Check if the triangulated data set exists. If it does not, go to the next iteration
         if not( os.path.exists(triangulated_path) ):
@@ -243,16 +238,18 @@ def compute_deformations():
         _________________________________________________________________________________________
         WRITE THE CURRENT DATASET'S RESULTS TO A CSV FILE
         '''
+        # If the calculations file already exists and overwrite (in namelist.ini) is set to 'no',
+        # do not write the calculations csv file
+        if not ( os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite')):            
+            # Create a directory to store the calculations csv path if it does not exist already
+            os.makedirs(os.path.dirname(calculations_path), exist_ok=True)
 
-        # Create a directory to store the calculations csv path if it does not exist already
-        os.makedirs(os.path.dirname(calculations_path), exist_ok=True)
+            # Write the results in the calculations_csv_path file path
+            with open(calculations_path, 'w', encoding='UTF8', newline='') as f:
+                writer = csv.writer(f)
 
-        # Write the results in the calculations_csv_path file path
-        with open(calculations_path, 'w', encoding='UTF8', newline='') as f:
-            writer = csv.writer(f)
-
-            # Write the data rows to the csv file
-            writer.writerows(row_list)
+                # Write the data rows to the csv file
+                writer.writerows(row_list)
 
 
     '''
@@ -273,7 +270,6 @@ def compute_deformations():
     output_ds.iceTracker = Metadata['ice_tracker']
     output_ds.referenceTime = YYYY + '-' + MM + '-' + DD + ' 00:00:00' 
     output_ds.trackingError = Metadata['tracking_error'] + ' m'
-    output_ds.version = Metadata['version']
 
     # Create x array to store output data
     x = output_ds.createDimension('x', len(sTime))

@@ -117,9 +117,9 @@ def visualise_deformations():
     start_day    = Date_options['start_day']
     duration     = Date_options['duration']
     
-    IO           = config.config['IO']
-    output_path  = IO['output_path']
-    exp          = IO['exp']
+    IO            = config.config['IO']
+    output_folder = IO['output_folder']
+    exp           = IO['exp']
     
     # All figures have been plotted
     if cb_tot is not None:
@@ -148,13 +148,13 @@ def visualise_deformations():
         '''
 
         # Set a directory to store figures for the current experiment
-        figsPath =  output_path + '/' + exp 
+        figsPath =  output_folder + '/' + exp + '/figs/'
         
         # Create the directory if it does not exist already
         os.makedirs(figsPath, exist_ok=True)
 
         # Create a prefix for the figure filenames
-        prefix = '/' + start_year + start_month + start_day + '_' + str(duration) 
+        prefix = start_year + start_month + start_day + '_' + str(duration) 
         
         # Create the figure filenames
         tot_path   = figsPath + prefix + '_tot.png'

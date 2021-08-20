@@ -1,5 +1,5 @@
 PROJECT = '2021_SeaIceDeformation'
-MAIN = SeaIceDeformation_Methods
+MAIN = SeaIceDeformation_doc
 TEX_SOURCES = Makefile \
               $(MAIN).tex
 

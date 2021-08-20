@@ -57,13 +57,13 @@ The user can configure the experience by modifying the definitions of the parame
 To generate PDF documentation for this project, start by accessing the `docs/SeaIceDeformation_Methods` folder (assuming we are already in the project folder):
 
 ```
-cd docs/SeaIceDeformation_Methods
+cd docs
 ```
 
 Finally, write the following command:
 
 ```
-make SeaIceDeformation_Methods.pdf
+make SeaIceDeformation_doc.pdf
 ```
 
 *SeaIceDeformation_Methods.pdf* will be stored in the current directory.

@@ -30,8 +30,11 @@ import utils_load_data as load_data
 
 def delaunay_triangulation():
 
+    # Retrieve data_paths from config arguments
+    dp = config.data_paths
+
     # Iterate through all raw and triangulated data file paths listed in config
-    for raw_path, triangulated_path in zip(config.data_paths['raw'], config.data_paths['triangulated']):
+    for raw_path, triangulated_path, calculations_path in zip(dp['raw'], dp['triangulated'], dp['calculations']):
         
         '''
         _________________________________________________________________________________________
@@ -116,14 +119,18 @@ def delaunay_triangulation():
                 # Write the data rows to the csv file
                 writer.writerows(row_list)
 
-        # Else, and if we are overwriting, delete the existing triangulation file
+        # Else, and if we are overwriting, delete the existing triangulation file and subsequent calculations file
         elif config.config['Processing_options'].getboolean('overwrite'):
 
             try:
                 os.remove(triangulated_path)
             except OSError:
-                pass    
+                pass
 
+            try:
+                os.remove(calculations_path)
+            except OSError:
+                pass
         
 
 if __name__ == "__main__":

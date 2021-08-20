@@ -73,9 +73,11 @@ compute_deformations.compute_deformations()
 4) Visualise Deformations
 '''
 
-print('--- Creating sea-ice deformations figures ---')
+if config.config['Processing_options'].getboolean('visualise'):
+    
+    print('--- Creating sea-ice deformations figures ---')
 
-visualise_deformation.visualise_deformations()
+    visualise_deformation.visualise_deformations()
 
 
 # Display the run time
