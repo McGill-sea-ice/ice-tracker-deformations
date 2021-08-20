@@ -54,7 +54,7 @@ The user can configure the experience by modifying the definitions of the parame
 
 ## Documentation
 
-To generate PDF documentation for this project, start by accessing the `docs/SeaIceDeformation_Methods` folder (assuming we are already in the project folder):
+To generate PDF documentation for this project, start by accessing the `docs` folder (assuming we are already in the project folder):
 
 ```
 cd docs
