@@ -1,5 +1,4 @@
 backports.entry-points-selectable==1.1.0
-basemap @ git+https://github.com/matplotlib/basemap.git@a516e5b1de2f26d9adfcced1215bee7285c61d22
 build==0.6.0.post1
 Cartopy==0.19.0.post1
 certifi==2020.12.5
