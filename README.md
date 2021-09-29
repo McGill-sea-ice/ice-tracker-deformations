@@ -45,6 +45,14 @@ Install the python dependencies in the virtual environment:
 python -m pip install -r requirements.txt
 ```
 
+Install the Cartopy shapefiles (this would be done automatically by Cartopy, but the URL hardcoded in the Cartopy version we use is [out of service][1] and Cartopy version 0.20 which corrects the URL dropped support for Python 3.6):
+~~~bash
+wget -q https://raw.githubusercontent.com/SciTools/cartopy/master/tools/cartopy_feature_download.py -O .venv/bin/cartopy_feature_download.py
+python .venv/bin/cartopy_feature_download.py physical
+~~~
+
+
+[1]: https://github.com/SciTools/cartopy/pull/1833
 ## Usage
 
 In order to launch a data processing experience, the main module must be executed. Assuming we are in the project folder, we can execute the main module using the command that follows:
