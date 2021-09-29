@@ -29,16 +29,17 @@ This project uses a **virtual environment**. Start by accessing the project fold
 cd 2021_SeaIceDeformation
 ```
 
-Create and activate the project virtual environment:
+Create and activate the project's virtual environment (`--without-pip` is required on Ubuntu if the `python3-venv` system package is not installed, like on the PPPs):
 
 ```bash
 python3 -m venv .venv --without-pip
 curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 source .venv/bin/activate
 python get-pip.py
+rm get-pip.py
 ```
 
-Install the python dependencies on the virtual environment:
+Install the python dependencies in the virtual environment:
 
 ```bash
 python -m pip install -r requirements.txt
