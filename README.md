@@ -16,20 +16,20 @@ In the second method, data points with X/Y coordinates are processed. After perf
 
 Start by cloning the repository:
 
-```
+```bash
 ssh -T git@gitlab.science.gc.ca
 git clone git@gitlab.science.gc.ca:bdu002/2021_SeaIceDeformation.git
 ```
 
 This project uses a **virtual environment**. Start by accessing the project folder:
 
-```
+```bash
 cd 2021_SeaIceDeformation
 ```
 
 Create and activate the project virtual environment:
 
-```
+```bash
 python3 -m venv .venv --without-pip
 curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 source .venv/bin/activate
@@ -38,7 +38,7 @@ python get-pip.py
 
 Install the python dependencies on the virtual environment:
 
-```
+```bash
 python -m pip install -r requirements.txt
 ```
 
@@ -46,7 +46,7 @@ python -m pip install -r requirements.txt
 
 In order to launch a data processing experience, the main module must be executed. Assuming we are in the project folder, we can execute the main module using the command that follows:
 
-```
+```bash
 python src/SeaIceDeformation/main.py
 ```
 
@@ -56,13 +56,13 @@ The user can configure the experience by modifying the definitions of the parame
 
 To generate PDF documentation for this project, start by accessing the `docs` folder (assuming we are already in the project folder):
 
-```
+```bash
 cd docs
 ```
 
 Finally, write the following command:
 
-```
+```bash
 make SeaIceDeformation_doc.pdf
 ```
 
