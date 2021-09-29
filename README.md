@@ -17,7 +17,9 @@ In the second method, data points with X/Y coordinates are processed. After perf
 Start by cloning the repository:
 
 ```bash
+# Check if your SSH key is configured on GitLab
 ssh -T git@gitlab.science.gc.ca
+# Clone the project
 git clone git@gitlab.science.gc.ca:bdu002/2021_SeaIceDeformation.git
 ```
 
