@@ -58,7 +58,7 @@ python src/SeaIceDeformation/main.py
 deactivate
 ```
 
-The user can configure the experience by modifying the definitions of the parameters in namelist.ini.  
+The user can configure the experience by modifying the definitions of the parameters in the configuration file `src/SeaIceDeformation/namelist.ini`. In particular, the `output_folder` in the `IO` section should be modified to point to a filesystem location where one has write permissions.  
 
 ## Documentation
 
