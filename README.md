@@ -50,7 +50,12 @@ python -m pip install -r requirements.txt
 In order to launch a data processing experience, the main module must be executed. Assuming we are in the project folder, we can execute the main module using the command that follows:
 
 ```bash
+# Activate the virtual environment
+source .venv/bin/activate
+# Launch the code
 python src/SeaIceDeformation/main.py
+# Deactivate the environment when you are done
+deactivate
 ```
 
 The user can configure the experience by modifying the definitions of the parameters in namelist.ini.  
