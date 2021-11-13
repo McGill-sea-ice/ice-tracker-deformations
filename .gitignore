@@ -24,3 +24,5 @@
 # Ignore .txt files, except for requirements.txt
 *.txt
 !requirements.txt
+
+SIDD/
