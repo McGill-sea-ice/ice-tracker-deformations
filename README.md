@@ -17,16 +17,16 @@ In the second method, data points with X/Y coordinates are processed. After perf
 Start by cloning the repository:
 
 ```bash
-# Check if your SSH key is configured on GitLab
-ssh -T git@gitlab.science.gc.ca
+# Check if your SSH key is configured on GitHub
+ssh -T git@github.com
 # Clone the project
-git clone git@gitlab.science.gc.ca:bdu002/2021_SeaIceDeformation.git
+git clone git@github.com:McGill-sea-ice/ice-tracker-deformations.git
 ```
 
 This project uses a **virtual environment**. Start by accessing the project folder:
 
 ```bash
-cd 2021_SeaIceDeformation
+cd ice-tracker-deformations
 ```
 
 Create and activate the project's virtual environment (`--without-pip` is required on Ubuntu if the `python3-venv` system package is not installed, like on the PPPs):
