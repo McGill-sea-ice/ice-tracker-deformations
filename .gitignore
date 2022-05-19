@@ -15,9 +15,6 @@
 *.blg
 *.log
 
-# Ignore figures
-*.png
-
 # Ignore bytecodes
 *.pyc
 
