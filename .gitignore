@@ -15,12 +15,8 @@
 *.blg
 *.log
 
-# Ignore figures
-*.png
-
 # Ignore bytecodes
 *.pyc
 
-# Ignore .txt files, except for requirements.txt
+# Ignore .txt files
 *.txt
-!requirements.txt

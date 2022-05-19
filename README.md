@@ -17,38 +17,32 @@ In the second method, data points with X/Y coordinates are processed. After perf
 Start by cloning the repository:
 
 ```bash
-# Check if your SSH key is configured on GitLab
-ssh -T git@gitlab.science.gc.ca
+# Check if your SSH key is configured on GitHub
+ssh -T git@github.com
 # Clone the project
-git clone git@gitlab.science.gc.ca:bdu002/2021_SeaIceDeformation.git
+git clone git@github.com:McGill-sea-ice/ice-tracker-deformations.git
 ```
 
-This project uses a **virtual environment**. Start by accessing the project folder:
+This project uses a [**conda environment**][conda]. Start by accessing the project folder:
+
+[conda]: https://docs.conda.io/en/latest/miniconda.html
 
 ```bash
-cd 2021_SeaIceDeformation
+cd ice-tracker-deformations
 ```
 
-Create and activate the project's virtual environment (`--without-pip` is required on Ubuntu if the `python3-venv` system package is not installed, like on the PPPs):
+Create and activate the project's environment (this installs the dependencies):
 
 ```bash
-python3 -m venv .venv --without-pip
-curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-source .venv/bin/activate
-python get-pip.py
-rm get-pip.py
+conda env create -f environment.yaml
+conda activate icetrackdefs
 ```
 
-Install the python dependencies in the virtual environment:
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-Install the Cartopy shapefiles (this would be done automatically by Cartopy, but the URL hardcoded in the Cartopy version we use is [out of service][1] and Cartopy version 0.20 which corrects the URL dropped support for Python 3.6):
+Install the Cartopy shapefiles (this would be done automatically by Cartopy, but the URL hardcoded in the Cartopy version we used to require is [out of service][1]):
 ~~~bash
-wget -q https://raw.githubusercontent.com/SciTools/cartopy/master/tools/cartopy_feature_download.py -O .venv/bin/cartopy_feature_download.py
-python .venv/bin/cartopy_feature_download.py physical
+conda activate icetrackdefs
+wget -q https://raw.githubusercontent.com/SciTools/cartopy/master/tools/cartopy_feature_download.py -O $CONDA_PREFIX/bin/cartopy_feature_download.py
+python cartopy_feature_download.py physical
 ~~~
 
 
@@ -59,11 +53,11 @@ In order to launch a data processing experience, the main module must be execute
 
 ```bash
 # Activate the virtual environment
-source .venv/bin/activate
+conda activate icetrackdefs
 # Launch the code
 python src/SeaIceDeformation/main.py
 # Deactivate the environment when you are done
-deactivate
+conda deactivate
 ```
 
 The user can configure the experience by modifying the definitions of the parameters in the configuration file `src/SeaIceDeformation/namelist.ini`. In particular, the `output_folder` in the `IO` section should be modified to point to a filesystem location where one has write permissions.  
