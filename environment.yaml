@@ -10,3 +10,4 @@ dependencies:
   - pandas
   - cartopy
   - pyproj
+  - haversine
