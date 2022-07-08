@@ -50,7 +50,7 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
     data_path -- Path to directory containing data files {str}
 
     OUTPUTS:
-    raw_paths -- List of paths to filtered data files {list}
+    dictionary object -- raw_paths: List of file paths, max_date: Highest date in file list, min_date: Lowest date in file list
     """
 
     # Concatenate start and end dates
@@ -61,8 +61,11 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
     upper_delta_t = timedelta(hours=(int(delta_t) + int(tolerance)))
     lower_delta_t = timedelta(hours=(int(delta_t) - int(tolerance)))
 
-    # Initializing empty list to store desired file names
+    # Initializing file list and date count variables
     raw_paths = []
+    min_date = datetime(3000, 12, 25)
+    max_date = datetime(1000, 12, 25)
+
     # Filtering data files by date
     for filename in os.listdir(data_path):
         
@@ -75,27 +78,22 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
             # Filtering by date range and delta t and appending to the file list
             if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_delta_t <= (fDate-iDate) <= upper_delta_t: 
                 raw_paths.append(data_path + '/' + filename)
+
+                # Updating date tracker
+                if iDate < min_date:
+                    min_date = iDate
+                if fDate > max_date:
+                    max_date = fDate    
         
         elif delta_t == '0':
             # Filtering by date range only
             if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date(): 
-                raw_paths.append(data_path + '/' + filename)            
+                raw_paths.append(data_path + '/' + filename)
+                
+                # Updating date tracker
+                if iDate < min_date:
+                    min_date = iDate
+                if fDate > max_date:
+                    max_date = fDate                
 
-    return raw_paths
-
-
-
-data_path = IO['data_folder']
-
-sYear = options['start_year']
-sMonth = options['start_month']
-sDay = options['start_day']
-
-eYear = options['end_year']
-eMonth = options['end_month']
-eDay = options['end_day']
-
-delta_t = options['delta_t']
-tolerance = options['tolerance']
-
-print(len(filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, data_path)))
+    return {'raw_paths': raw_paths, 'max_date': max_date, 'min_date': min_date}
