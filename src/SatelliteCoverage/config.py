@@ -23,13 +23,6 @@ def read_config():
     # Return a ConfigParser object
     return config
 
-# Reading options
-config = read_config()
-
-# Initializing more specific ConfigParser objects
-IO = config['IO']
-options = config['options']
-
 def divide_intervals(raw_paths, max_date, min_date, interval):
     """
     Divides delta-t filtered data into chunks (intervals) of *interval* hours for
@@ -77,10 +70,10 @@ def divide_intervals(raw_paths, max_date, min_date, interval):
 
         # Checking if date range of file overlaps with interval (if true, append)
         for filepath in raw_paths:
-            iDate = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
-            fDate = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')            
+            initial_date = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
+            final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')            
 
-            if (iDate <= pair[1]) and (fDate >= pair[0]):
+            if (initial_date <= pair[1]) and (final_date >= pair[0]):
                 temp_list.append(filepath)
 
         # Appending list of interval-contained files        
@@ -88,7 +81,7 @@ def divide_intervals(raw_paths, max_date, min_date, interval):
 
     return {'interval_list': interval_list, 'date_pairs': date_pairs}
 
-def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, data_path):
+def filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path):
     """
     Filters through the data files located in 'data_path' using the user 
     options in 'options.ini'. Outputs a list of paths to data files which
@@ -100,15 +93,15 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
     the user will be notified (Line 164)
 
     INPUTS:
-    sYear -- Starting year YYYY {str}
-    sMonth -- Starting month MM {str}
-    sDay -- Starting day DD {str}
+    start_year -- Starting year YYYY {str}
+    start_month -- Starting month MM {str}
+    start_day -- Starting day DD {str}
 
-    eYear -- Ending year YYYY {str}
-    eMonth -- Ending month MM {str}
-    eDay -- Ending day DD {str} 
+    end_year -- Ending year YYYY {str}
+    end_month -- Ending month MM {str}
+    end_day -- Ending day DD {str} 
 
-    delta_t -- Desired timestep in hours {str}
+    timestep -- Desired timestep in hours {str}
     tolerance -- Number of hours around timestep that will be filtered through {str}
 
     data_path -- Path to directory containing data files {str}
@@ -119,12 +112,12 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
     """
 
     # Concatenate start and end dates
-    sDate = datetime.strptime(sYear + sMonth + sDay, '%Y%m%d')
-    eDate = datetime.strptime(eYear + eMonth + eDay, '%Y%m%d')
+    start_date = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
+    end_date = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
 
     # Set delta t tolerance 
-    upper_delta_t = timedelta(hours=(int(delta_t) + int(tolerance)))
-    lower_delta_t = timedelta(hours=(int(delta_t) - int(tolerance)))
+    upper_timestep = timedelta(hours=(int(timestep) + int(tolerance)))
+    lower_timestep = timedelta(hours=(int(timestep) - int(tolerance)))
 
     # Initializing file list and date count variables
     raw_paths = []
@@ -135,34 +128,34 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
     for filename in os.listdir(data_path):
         
         # Extracting initial and final dates from data file names
-        iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
-        fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
+        initial_date = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
+        final_date = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
 
-        # Checking if all files from iDate to fDate will be loaded (delta_t == '0')
-        if delta_t != '0':
+        # Checking if all files from initial_date to final_date will be loaded (timestep == '0')
+        if timestep != '0':
             # Filtering by date range and delta t and appending to the file list
-            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_delta_t <= (fDate-iDate) <= upper_delta_t: 
+            if start_date.date() <= initial_date.date() <= end_date.date() and start_date.date() <= final_date.date() <= end_date.date() and lower_timestep <= (final_date-initial_date) <= upper_timestep: 
                 raw_paths.append(data_path + '/' + filename)
 
                 # Updating date tracker
-                if iDate < min_date:
-                    min_date = iDate
-                if fDate > max_date:
-                    max_date = fDate    
+                if initial_date < min_date:
+                    min_date = initial_date
+                if final_date > max_date:
+                    max_date = final_date    
         
-        elif delta_t == '0':
+        elif timestep == '0':
             # Filtering by date range only
-            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date(): 
+            if start_date.date() <= initial_date.date() <= end_date.date() and start_date.date() <= final_date.date() <= end_date.date(): 
                 raw_paths.append(data_path + '/' + filename)
                 
                 # Updating date tracker
-                if iDate < min_date:
-                    min_date = iDate
-                if fDate > max_date:
-                    max_date = fDate
+                if initial_date < min_date:
+                    min_date = initial_date
+                if final_date > max_date:
+                    max_date = final_date
 
     # Notifying user of date range change
-    if sDate != min_date or eDate != max_date:
-        print(f"Start and end dates of data updated to {min_date} and {max_date}")
+    if start_date != min_date or end_date != max_date:
+        print(f'Start and end dates of data updated to {min_date} and {max_date}')
             
     return {'raw_paths': raw_paths, 'max_date': max_date, 'min_date': min_date}

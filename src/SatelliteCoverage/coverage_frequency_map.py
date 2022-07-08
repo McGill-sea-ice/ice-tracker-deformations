@@ -51,7 +51,7 @@ def compile_data(raw_paths):
 
     return df
 
-def visualise_coverage_histogram2d(xy, max_date, min_date, delta_t):
+def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
     print('Plotting heat map')
     """
     Preamble
@@ -63,7 +63,7 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, delta_t):
     options = config['options']
     meta = config['meta']
 
-    delta_t = options['delta_t']
+    timestep = options['timestep']
     tolerance = options['tolerance']
     resolution = float(options['resolution'])
     strres = options['resolution']
@@ -78,7 +78,7 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, delta_t):
     # Timestep calculation
     date_delta = max_date - min_date
     delta_hours = date_delta.total_seconds() // 3600
-    length = delta_hours // int(delta_t)
+    length = delta_hours // int(timestep)
 
     """
     Terrain
@@ -128,14 +128,14 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, delta_t):
     min_date = min_date.strftime("%x")
 
     # if/elif for title creation, for grammatical correctness
-    if delta_t != '0':
-        ax.set_title(f'{tracker}, {min_date} to {max_date}, {delta_t} \u00B1 {tolerance} hours, {resolution} km resolution')
+    if timestep != '0':
+        ax.set_title(f'{tracker}, {min_date} to {max_date}, {timestep} \u00B1 {tolerance} hours, {resolution} km resolution')
     
-    elif delta_t == '0':
+    elif timestep == '0':
         ax.set_title(f'{tracker}, {min_date} to {max_date} encompassing all time intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
-    prefix = min_date_str + '_' + max_date_str + '_' + delta_t + '_' + tolerance + '_' + 'res' + str(int(resolution)) + '_' + tracker
+    prefix = min_date_str + '_' + max_date_str + '_' + timestep + '_' + tolerance + '_' + 'res' + str(int(resolution)) + '_' + tracker
     plt.savefig(output + '/' + prefix + '_' + 'freq.png')
 
     print(f'Saved as {prefix}_freq.png')
@@ -379,14 +379,14 @@ def interval_frequency_histogram2d(interval_list):
   
 
     # if/elif for title creation, for grammatical correctness
-    if delta_t != '0':
-        ax.set_title(f'{tracker}, {min_date_title} to {max_date_title}, {delta_t} \u00B1 {tolerance} hrs, {resolution} km, {interval} hr intervals')
+    if timestep != '0':
+        ax.set_title(f'{tracker}, {min_date_title} to {max_date_title}, {timestep} \u00B1 {tolerance} hrs, {resolution} km, {interval} hr intervals')
     
-    elif delta_t == '0':
+    elif timestep == '0':
         ax.set_title(f'{tracker}, {min_date} to {max_date}, all timesteps, {resolution} km, {interval} hr intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
-    prefix = min_date_str + '_' + max_date_str + '_' + delta_t + '_' + tolerance + '_' + 'res' + resolution + '_' + tracker + '_' + interval
+    prefix = min_date_str + '_' + max_date_str + '_' + timestep + '_' + tolerance + '_' + 'res' + resolution + '_' + tracker + '_' + interval
     plt.savefig(output + '/' + prefix + '_' + 'intervalfreq.png')
 
     print(f'Saved as {prefix}_freq.png')
@@ -404,15 +404,15 @@ data_path = IO['data_folder']
 output = IO['output_folder']
 tracker = meta['ice_tracker']
 
-sYear = options['start_year']
-sMonth = options['start_month']
-sDay = options['start_day']
+start_year = options['start_year']
+start_month = options['start_month']
+start_day = options['start_day']
 
-eYear = options['end_year']
-eMonth = options['end_month']
-eDay = options['end_day']
+end_year = options['end_year']
+end_month = options['end_month']
+end_day = options['end_day']
 
-delta_t = options['delta_t']
+timestep = options['timestep']
 tolerance = options['tolerance']
 
 resolution = options['resolution']
@@ -420,9 +420,9 @@ resolution = options['resolution']
 interval = options['interval']
 
 # Fetching filter information
-raw_list = filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, data_path)['raw_paths']
-max_date = filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, data_path)['max_date']
-min_date = filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, data_path)['min_date']
+raw_list = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['raw_paths']
+max_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['max_date']
+min_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['min_date']
 
 interval_list = divide_intervals(raw_list, max_date, min_date, interval)['interval_list']
 date_pairs = divide_intervals(raw_list, max_date, min_date, interval)['date_pairs']
@@ -434,7 +434,7 @@ df = compile_data(raw_list)
 xy = convert_to_grid(df['lon'], df['lat'])
 
 # Plotting heat map
-xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date, delta_t)
+xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date, timestep)
 
 #xbins = np.delete(xbins, len(xbins)-3)
 #ybins = np.delete(ybins, len(ybins)-3)
