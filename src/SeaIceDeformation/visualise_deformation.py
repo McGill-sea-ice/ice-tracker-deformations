@@ -115,7 +115,7 @@ def visualise_deformations():
     start_year   = Date_options['start_year']
     start_month  = Date_options['start_month']
     start_day    = Date_options['start_day']
-    duration     = Date_options['duration']
+    duration     = Date_options['timestep']
     
     IO            = config.config['IO']
     output_folder = IO['output_folder']
