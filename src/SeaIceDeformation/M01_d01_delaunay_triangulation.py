@@ -62,10 +62,15 @@ def delaunay_triangulation():
         _________________________________________________________________________________________
         PERFORM DELAUNAY TRIANGULATION
         '''
-
+        
         # Generate a Delaunay triangulation
         startXY = list(zip(startX, startY))
-        tri = Delaunay(startXY)
+        try:
+            tri = Delaunay(startXY)
+        
+        except Exception as e:
+            print(e)
+            continue
 
         '''
         _________________________________________________________________________________________
