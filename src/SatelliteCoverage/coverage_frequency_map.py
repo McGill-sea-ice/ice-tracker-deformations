@@ -1,7 +1,9 @@
 import os
+from time import strftime
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -50,7 +52,7 @@ def compile_data(raw_paths):
 
     return df
 
-def visualise_coverage_histogram2d(xy, max_date, min_date):
+def visualise_coverage_histogram2d(xy, max_date, min_date, delta_t):
     print('Plotting heat map')
     """
     Preamble
@@ -73,6 +75,11 @@ def visualise_coverage_histogram2d(xy, max_date, min_date):
 
     fig = plt.figure(figsize=(6.5, 5.5), )
     ax = fig.add_subplot(projection = proj, frameon=False)
+
+    # Timestep calculation
+    date_delta = max_date - min_date
+    delta_hours = date_delta.total_seconds() // 3600
+    length = delta_hours // int(delta_t)
 
     """
     Terrain
@@ -101,13 +108,16 @@ def visualise_coverage_histogram2d(xy, max_date, min_date):
 
     # Extracting x and y coordinates of datapoints (Numpy arrays)
     xi, yj = xy
-
+    
     # Plotting histogram (cmin=1 to make values = 0 transparent)
-    hh = ax.hist2d(xi, yj, bins=(xscale, yscale), cmap='plasma', cmin=1)
+    norm = plt.Normalize(0, int(length))
+    hh = ax.hist2d(xi, yj, bins=(xscale, yscale), cmap='plasma', cmin=1, norm=norm)
 
     # Adding colourbar (hh[3] normalizes the colourbar)
     cbar = fig.colorbar(hh[3], ax=ax)
-    cbar.set_label('Data points within tile')
+    cbar.set_label(f'% of total period tile has data')
+    cbar.set_ticklabels(np.arange(0, 110, 10))
+    cbar.set_ticks(np.linspace(0, int(length), num=11))
 
     """
     Extraneous
@@ -126,14 +136,14 @@ def visualise_coverage_histogram2d(xy, max_date, min_date):
         ax.set_title(f'{tracker}, {min_date} to {max_date} encompassing all time intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
-    prefix = min_date_str + '_' + max_date_str + '_' + delta_t + '_' + tolerance + '_' + 'res' + strres + '_' + tracker
-    plt.savefig(prefix + '_' + 'freq.png')
+    prefix = min_date_str + '_' + max_date_str + '_' + delta_t + '_' + tolerance + '_' + 'res' + str(int(resolution)) + '_' + tracker
+    plt.savefig(output + '/' + prefix + '_' + 'freq.png')
 
     print(f'Saved as {prefix}_freq.png')
 
     return hh[1], hh[2]
 
-def coverage_histogram2d(xy):
+def coverage_histogram2d(xy, xbins, ybins):
     """
     Returns a 2D numpy array representing grid cells with or without data
     (1 or 0).
@@ -183,7 +193,7 @@ def coverage_histogram2d(xy):
     xi, yj = xy
 
     # Plotting histogram (H) and converting bin values to 0 or 1 range=[[lxextent,uxextent], [lyextent,uyextent]]
-    H, xbins, ybins = np.histogram2d(xi, yj, bins=(xscale, yscale))
+    H, xbins, ybins = np.histogram2d(xi, yj, bins=(xbins, ybins))
     H[H>1] = 1
 
     return H
@@ -252,7 +262,7 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
             continue
 
         # Generates histogram (2d np array)
-        histogram = coverage_histogram2d(xy)
+        histogram = coverage_histogram2d(xy, xbins, ybins)
 
         # Computing area of arctic ocean covered
         covered_area = len((np.flatnonzero(histogram)))
@@ -267,7 +277,7 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
 
     df.plot(x='start_date', y='percentage', kind='line')
 
-    plt.savefig('coverage_areatest24hrs.png')
+    plt.savefig('coverage_areaRSCMS1202011102021060172hrs.png')
 
     print(df.sort_values(by=['percentage']))
 
@@ -289,10 +299,11 @@ def interval_frequency_histogram2d(interval_list):
         try:
             xy = convert_to_grid(interval_df['lon'], interval_df['lat'])
         except KeyError:
+            xy = (0,0)
             continue
 
         # Generates histogram (2D numpy array)
-        histogram = coverage_histogram2d(xy)
+        histogram = coverage_histogram2d(xy, xbins, ybins)
 
         # Changing size of total histogram (only on first run)
         if i == 0:
@@ -303,7 +314,6 @@ def interval_frequency_histogram2d(interval_list):
 
     # Transposing histogram for plotting
     H = H.T
-
 
     """
     Land and projection
@@ -327,7 +337,7 @@ def interval_frequency_histogram2d(interval_list):
     ax.gridlines(draw_labels=True)
 
     # Hide datapoints over land
-    ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k', alpha=0.3)
+    ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
     
     """
     Data
@@ -339,12 +349,40 @@ def interval_frequency_histogram2d(interval_list):
     xscale = math.floor(xscale / (1000 * int(resolution)))
     yscale = math.floor(yscale / (1000 * int(resolution)))
 
-    # Plotting histogram using axis.contourf function
-    h = ax.contourf(xbins, ybins, H)
+    length = len(interval_list)
 
+    # Plotting histogram using axis.contourf function
+    norm = plt.Normalize(0, length) # Normalizing colours (values)
+    levels = np.linspace(1, length, 11) # Dividing contours into 10 levels (10%, 20% etc)
+    h = ax.contourf(np.delete(xbins, len(xbins) - 1), np.delete(ybins, len(ybins) - 1), H, cmap='plasma', norm=norm, levels=levels)
+
+    # Colourbar
+    cbar = fig.colorbar(h, ax=ax)
+    cbar.set_label(f'% of total period tile has data')
+    cbar.set_ticklabels(np.arange(0, 110, 10))
+
+    # Saving the file
     plt.axis('scaled')
-    #ax.colorbar()
-    plt.savefig('TESTING1234.png')
+
+    max_date_title = str(max_date.strftime('%Y')) + '-' + str(max_date.strftime('%m')) + '-' + str(max_date.strftime('%d'))
+    min_date_title = str(min_date.strftime('%Y')) + '-' + str(min_date.strftime('%m')) + '-' + str(min_date.strftime('%d'))
+    max_date_str = max_date.strftime("%Y%m%d")
+    min_date_str = min_date.strftime("%Y%m%d") 
+  
+
+    # if/elif for title creation, for grammatical correctness
+    if delta_t != '0':
+        ax.set_title(f'{tracker}, {min_date_title} to {max_date_title}, {delta_t} \u00B1 {tolerance} hrs, {resolution} km, {interval} hr intervals')
+    
+    elif delta_t == '0':
+        ax.set_title(f'{tracker}, {min_date} to {max_date}, all timesteps, {resolution} km, {interval} hr intervals')
+
+    # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
+    prefix = min_date_str + '_' + max_date_str + '_' + delta_t + '_' + tolerance + '_' + 'res' + resolution + '_' + tracker + '_' + interval
+    plt.savefig(output + '/' + prefix + '_' + 'intervalfreq.png')
+
+    print(f'Saved as {prefix}_freq.png')
+    
     return h
 
 config = read_config()
@@ -352,8 +390,11 @@ config = read_config()
 # Initializing more specific ConfigParser objects
 IO = config['IO']
 options = config['options']
+meta = config['meta']
 
 data_path = IO['data_folder']
+output = IO['output_folder']
+tracker = meta['ice_tracker']
 
 sYear = options['start_year']
 sMonth = options['start_month']
@@ -385,10 +426,10 @@ df = compile_data(raw_list)
 xy = convert_to_grid(df['lon'], df['lat'])
 
 # Plotting heat map
-xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date)
+xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date, delta_t)
 
-xbins = np.delete(xbins, len(xbins)-1)
-ybins = np.delete(ybins, len(ybins)-1)
+#xbins = np.delete(xbins, len(xbins)-3)
+#ybins = np.delete(ybins, len(ybins)-3)
 
 # Plotting time series
 #coverage_timeseries(interval_list, resolution, date_pairs)

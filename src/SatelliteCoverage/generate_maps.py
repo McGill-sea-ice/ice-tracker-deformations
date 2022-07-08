@@ -31,12 +31,15 @@ def plotting_histogram(ds):
     REQUIRES INPUT OF filenameDf['deltaT'] from list_dates()
     """
     upper_lim = 100
-    plt.hist(ds, bins=np.arange(0, upper_lim, 1))
-    plt.xticks(np.arange(0, upper_lim, 6))
-    plt.yticks(np.arange(0, 5000, 300))
-    plt.savefig('deltaT_96hrs_6hrbins.png')
+    plt.hist(ds['deltaT'], bins=np.arange(0, upper_lim, 1))
+    #plt.xticks(np.arange(0, upper_lim, 5)) # For S1
+    #plt.yticks(np.arange(0, 5500, 400))
+    plt.xticks(np.arange(0, upper_lim, 5)) # For RCM
+    plt.yticks(np.arange(0, 2000, 150))
+    plt.title('RCM (2020-2021) delta T distribution')
+    plt.savefig('RCM2020-2021_deltaT.png')
 
-#plotting_histogram(list_dates())
+plotting_histogram(list_dates('./data/02_coverage/RCM/combined'))
 
 def filter_df(df, duration):
     filtered_df = df.loc[(df['deltaT'] < duration + 3) & (df['deltaT'] > duration - 3)]
