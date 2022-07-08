@@ -98,6 +98,9 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
     min_date = datetime(3000, 12, 25)
     max_date = datetime(1000, 12, 25)
 
+    # List of summer months (Won't include data from these months)
+    summer_months = [6, 7, 8, 9, 10]
+
     # Filtering data files by date
     for filename in os.listdir(data_path):
         
@@ -108,7 +111,7 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
         # Checking if all files from iDate to fDate will be loaded (delta_t == '0')
         if delta_t != '0':
             # Filtering by date range and delta t and appending to the file list
-            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_delta_t <= (fDate-iDate) <= upper_delta_t: 
+            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_delta_t <= (fDate-iDate) <= upper_delta_t and iDate.month not in summer_months: 
                 raw_paths.append(data_path + '/' + filename)
 
                 # Updating date tracker
@@ -119,7 +122,7 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
         
         elif delta_t == '0':
             # Filtering by date range only
-            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date(): 
+            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and iDate.month not in summer_months: 
                 raw_paths.append(data_path + '/' + filename)
                 
                 # Updating date tracker
