@@ -12,6 +12,7 @@ import math
 from config import *
 
 def compile_data(raw_paths):
+
     """ 
     Compiles all data points in the list of data files (raw_paths) into a dataframe (df)
 
@@ -21,8 +22,7 @@ def compile_data(raw_paths):
     raw_paths -- List of paths to data files {List}
 
     OUTPUTS: 
-    
-    df -- Pandas dataframe with the following columns: Index  sLat  sLon {Dataframe}
+    df -- Pandas dataframe with the following columns: Index  lat  lon {Dataframe}
     """
 
     df = pd.DataFrame()
@@ -40,6 +40,8 @@ def compile_data(raw_paths):
         # Reading datapoints into temporary dataframe
         temp_df = pd.read_csv(filepath, sep='\s\s+', engine='python', usecols = ['sLat','sLon'])
 
+        temp_df.rename(columns = {'sLat':'lat', 'sLon':'lon'}, inplace = True)
+
         df = df.append(temp_df)
 
         # Updating counter
@@ -47,63 +49,6 @@ def compile_data(raw_paths):
         print(f'{i} / {num_files}')
 
     return df
-
-def count_duplicates(df):
-    """
-    Takes dataframe with sLat and sLon values and counts duplicates, returns dataframe
-    with coordinates and frequency count.
-
-    INPUT:
-    df -- Pandas dataframe with sLat and sLong in two respective columns, representing data points
-
-    OUTPUT:
-    df -- Input dataframe with frequency column added
-    
-    """
-
-    # Pivot df onto its side to count duplicate Lat & Lon entires
-    df = df.pivot_table(columns=['sLat', 'sLon'], aggfunc='size')
-
-    # Add size Multi index as column named 'frequency'
-    df = df.reset_index()  
-    
-    df.rename(columns = {0:'frequency'}, inplace = True)
-
-    return df
-
-def visualise_coverage_old(df):
-
-    print("Plotting frequency map")
-
-    # Set the matplotlib projection and transform
-    #proj = ccrs.AzimuthalEquidistant(central_longitude=0,central_latitude=90)
-    proj=ccrs.NorthPolarStereo(central_longitude=0)
-    trans = ccrs.Geodetic()
-
-    # Initialize figure
-    fig = plt.figure()
-
-    # Add projection
-    ax = fig.add_subplot(111, projection = proj)
-    #ax.set_extent((-3000000, 4000000, 8500000, 11500000), ccrs.AzimuthalEquidistant())
-    ax.set_extent((-3100000, 2500000, -1900000, 2500000), ccrs.NorthPolarStereo())
-    
-    # Setting coordinates
-    ax.scatter(x=df['sLon'], y=df['sLat'], transform= trans, s=0.1)
-
-    # Set grid
-    #ax.gridlines()
-
-    # Hide datapoints over land
-    ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
-
-    # Set title
-    ax.set_title('Heatmap of datapoint frequency over the 2019-2020 Winter (S1)')
-    
-    # Save figure
-    plt.savefig('TEST_ALL2.png')
-
-    return
 
 def visualise_coverage_histogram2d(xy, max_date, min_date):
     print('Plotting heat map')
@@ -117,12 +62,6 @@ def visualise_coverage_histogram2d(xy, max_date, min_date):
     options = config['options']
     meta = config['meta']
 
-    sYear = options['start_year']
-    sMonth = options['start_month']
-    sDay = options['start_day']
-    eYear = options['end_year']
-    eMonth = options['end_month']
-    eDay = options['end_day']
     delta_t = options['delta_t']
     tolerance = options['tolerance']
     resolution = float(options['resolution'])
@@ -130,7 +69,7 @@ def visualise_coverage_histogram2d(xy, max_date, min_date):
     output_path = IO['output_folder']
     tracker = meta['ice_tracker']
 
-    proj=ccrs.NorthPolarStereo(central_longitude=0)
+    proj = ccrs.NorthPolarStereo(central_longitude=0)
 
     fig = plt.figure(figsize=(6.5, 5.5), )
     ax = fig.add_subplot(projection = proj, frameon=False)
@@ -138,13 +77,13 @@ def visualise_coverage_histogram2d(xy, max_date, min_date):
     """
     Terrain
     """
-    # Left, right (x) and up, down (y) extents of figure (metres)
+    # Upper (u) and lower (l) extents of x, y (metres)
     lxextent = -3100000
-    rxextent = 2500000
+    uxextent = 2500000
     uyextent = 2500000
-    dyextent = -1900000
+    lyextent = -1900000
     
-    # Set grid
+    # Show lat/lon grid
     ax.gridlines(draw_labels=True)
 
     # Hide datapoints over land
@@ -153,21 +92,22 @@ def visualise_coverage_histogram2d(xy, max_date, min_date):
     """
     Data
     """
-    # Resolution calculations
-    xscale = rxextent - lxextent
-    yscale = uyextent - dyextent
+    # Grid resolution calculations
+    xscale = uxextent - lxextent
+    yscale = uyextent - lyextent
 
     xscale = math.floor(xscale / (1000 * resolution))
     yscale = math.floor(yscale / (1000 * resolution))
 
-    # Extracting x and y coordinates (Numpy arrays)
+    # Extracting x and y coordinates of datapoints (Numpy arrays)
     xi, yj = xy
 
     # Plotting histogram (cmin=1 to make values = 0 transparent)
     hh = ax.hist2d(xi, yj, bins=(xscale, yscale), cmap='plasma', cmin=1)
 
     # Adding colourbar (hh[3] normalizes the colourbar)
-    fig.colorbar(hh[3], ax=ax)
+    cbar = fig.colorbar(hh[3], ax=ax)
+    cbar.set_label('Data points within tile')
 
     """
     Extraneous
@@ -180,14 +120,73 @@ def visualise_coverage_histogram2d(xy, max_date, min_date):
 
     # if/elif for title creation, for grammatical correctness
     if delta_t != '0':
-        ax.set_title(f'{min_date} to {max_date}, {delta_t} \u00B1 {tolerance} hours, {resolution} km resolution')
+        ax.set_title(f'{tracker}, {min_date} to {max_date}, {delta_t} \u00B1 {tolerance} hours, {resolution} km resolution')
     
     elif delta_t == '0':
-        ax.set_title(f'{min_date} to {max_date} encompassing all time intervals')
+        ax.set_title(f'{tracker}, {min_date} to {max_date} encompassing all time intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
     prefix = min_date_str + '_' + max_date_str + '_' + delta_t + '_' + tolerance + '_' + 'res' + strres + '_' + tracker
     plt.savefig(prefix + '_' + 'freq.png')
+
+    print(f'Saved as {prefix}_freq.png')
+
+    return hh[1], hh[2]
+
+def coverage_histogram2d(xy):
+    """
+    Returns a 2D numpy array representing grid cells with or without data
+    (1 or 0).
+
+    INPUTS:
+    xy -- Array of tuples containing x and y coordinates of data {numpy array}
+
+    OUTPUTS:
+    H -- 2D numpy array representing polar stereographic grid with 1s and 0s,
+         representing the presence of lack of data. {numpy array}
+    """
+
+    """
+    Preamble
+    """
+    # Reading config & preamble
+    config = read_config()
+
+    IO = config['IO']
+    options = config['options']
+    meta = config['meta']
+
+    resolution = float(options['resolution'])
+
+    proj = ccrs.NorthPolarStereo(central_longitude=0)
+
+    fig = plt.figure(figsize=(6.5, 5.5), )
+    ax = fig.add_subplot(projection = proj, frameon=False)
+
+    """
+    Data
+    """
+    # Upper (u) and lower (l) extents of histogram grid (metres)
+    lxextent = -3100000
+    uxextent = 2500000
+    uyextent = 2500000
+    lyextent = -1900000
+ 
+    # Grid resolution calculations (x,yscale final values in *resolution* km)
+    xscale = uxextent - lxextent
+    yscale = uyextent - lyextent
+
+    xscale = math.floor(xscale / (1000 * resolution))
+    yscale = math.floor(yscale / (1000 * resolution))
+
+    # Extracting x and y coordinates of datapoints (numpy arrays)
+    xi, yj = xy
+
+    # Plotting histogram (H) and converting bin values to 0 or 1
+    H, xbins, ybins = np.histogram2d(xi, yj, bins=(xscale, yscale), range=[[lxextent,uxextent], [lyextent,uyextent]])
+    H[H>1] = 1
+
+    return H
 
 def convert_to_grid(lon, lat):
     """
@@ -203,8 +202,8 @@ def convert_to_grid(lon, lat):
 
     OUTPUTS:
     x, y -- Float values representing the transformed point in EPSG 3413
-    
     """
+
     # Input projection (lat/lon)
     in_proj = pyproj.Proj(init='epsg:4326')
 
@@ -215,10 +214,138 @@ def convert_to_grid(lon, lat):
     x, y = np.array(pyproj.transform(in_proj, out_proj, lon, lat))
     return x, y
 
+def coverage_timeseries(interval_list, resolution, date_pairs):
+    """
+    Plots a time series of the area coverage (in % of the Arctic ocean) for a given list of lists containing
+    data file paths [interval_list], where each list of files defines a user-set interval (i.e. interval of 72hrs)
+
+    INPUTS:
+    interval_list -- List of lists, each sublist containing data file paths and each sublist (index n) representing 
+                     the data files which share temporal overlap with the n th interval. {list}
+
+    resolution -- Resolution of grid to be used, in km. Read from config. {str}
+
+    date_pairs -- List of tuples containing the start and end dates of the n th interval, whose data contents can be
+                  found at the same index in *interval_list* {list}
+
+    OUTPUTS:
+    Plot of % of area covered as a function of time.
+
+    """
+
+    # Setting constants (Adjusting ocean area to units of histogram grid)
+    arctic_ocean_area = 15558000 # Square kilometres
+    arctic_ocean_area = arctic_ocean_area / int(resolution) ** 2
+
+    # Initialising dataframe to store interval data
+    df = pd.DataFrame(columns=['percentage', 'start_date', 'end_date'])
+
+    # Iterating over each interval
+    for i in range(len(interval_list)):
+        # Loads data and converts to x/y for each interval
+        interval_df = compile_data(interval_list[i])
+
+            # Skips empty lists
+        try:
+            xy = convert_to_grid(interval_df['lon'], interval_df['lat'])
+        except KeyError:
+            continue
+
+        # Generates histogram (2d np array)
+        histogram = coverage_histogram2d(xy)
+
+        # Computing area of arctic ocean covered
+        covered_area = len((np.flatnonzero(histogram)))
+        covered_percentage = (covered_area / arctic_ocean_area) * 100
+
+        # Extracting dates
+        start_date = date_pairs[i][0]
+        end_date = date_pairs[i][1]
+
+        # Appending to main dataframe
+        df.loc[len(df.index)] = [covered_percentage, start_date, end_date]
+
+    df.plot(x='start_date', y='percentage', kind='line')
+
+    plt.savefig('coverage_areatest24hrs.png')
+
+    print(df.sort_values(by=['percentage']))
+
+    return 
+
+def interval_frequency_histogram2d(interval_list):
+    """
+    
+    """
+    # Initializing empty numpy array (2D histogram)
+    H = np.array([])
+
+    # Iterating over each interval
+    for i in range(len(interval_list)):
+        # Loads data and converts to x/y for each interval
+        interval_df = compile_data(interval_list[i])
+
+            # Skips empty lists
+        try:
+            xy = convert_to_grid(interval_df['lon'], interval_df['lat'])
+        except KeyError:
+            continue
+
+        # Generates histogram (2D numpy array)
+        histogram = coverage_histogram2d(xy)
+
+        # Changing size of total histogram (only on first run)
+        if i == 0:
+            H.resize(histogram.shape)
+
+        # Adding interval-specific histogram to total histogram
+        H = H + histogram
+
+    # Transposing histogram for plotting
+    H = H.T
 
 
+    """
+    Land and projection
+    """
 
+    proj = ccrs.NorthPolarStereo(central_longitude=0)
 
+    fig = plt.figure(figsize=(6.5, 5.5), )
+    ax = fig.add_subplot(projection = proj, frameon=False)
+
+    """
+    Terrain
+    """
+    # Upper (u) and lower (l) extents of x, y (metres)
+    lxextent = -3100000
+    uxextent = 2500000
+    uyextent = 2500000
+    lyextent = -1900000
+    
+    # Show lat/lon grid
+    ax.gridlines(draw_labels=True)
+
+    # Hide datapoints over land
+    ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
+    
+    """
+    Data
+    """
+    # Grid resolution calculations
+    xscale = uxextent - lxextent
+    yscale = uyextent - lyextent
+
+    xscale = math.floor(xscale / (1000 * int(resolution)))
+    yscale = math.floor(yscale / (1000 * int(resolution)))
+
+    # Plotting histogram using axis.contourf function
+    h = ax.contourf(xbins, ybins, H, origin='upper')
+
+    plt.axis('scaled')
+    #ax.colorbar()
+    plt.savefig('TESTING1234.png')
+    return h
 
 config = read_config()
 
@@ -241,17 +368,30 @@ tolerance = options['tolerance']
 
 resolution = options['resolution']
 
+interval = options['interval']
+
 # Fetching filter information
 raw_list = filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, data_path)['raw_paths']
 max_date = filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, data_path)['max_date']
 min_date = filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, data_path)['min_date']
 
+interval_list = divide_intervals(raw_list, max_date, min_date, interval)['interval_list']
+date_pairs = divide_intervals(raw_list, max_date, min_date, interval)['date_pairs']
+
 # Compiling master dataframe
 df = compile_data(raw_list)
 
 # Converting points from lat/lon to EPSG 3413
-xy = convert_to_grid(df['sLon'], df['sLat'])
+xy = convert_to_grid(df['lon'], df['lat'])
 
 # Plotting heat map
-visualise_coverage_histogram2d(xy, max_date, min_date)
+xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date)
 
+xbins = np.delete(xbins, len(xbins)-1)
+ybins = np.delete(ybins, len(ybins)-1)
+
+# Plotting time series
+#coverage_timeseries(interval_list, resolution, date_pairs)
+
+# Plotting interval heat map
+print(interval_frequency_histogram2d(interval_list))
