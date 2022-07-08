@@ -135,7 +135,7 @@ def compute_deformations():
         dt = utils_datetime.dT( (start, end) ) / 86400
 
         # Create a header and a list of data rows that will be used to create the output csv file
-        header = ['no.', 'dudx', 'dudy', 'dvdx', 'dvdy', 'eps_I', 'eps_II', 'eps_III', 'eps_tot']
+        header = ['no.', 'dudx', 'dudy', 'dvdx', 'dvdy', 'eps_I', 'eps_II', 'rot', 'eps_tot']
         row_list = [header]
 
         # Get the number of triangles in the current dataset
@@ -185,7 +185,7 @@ def compute_deformations():
             eps_II = sqrt(  (dudx - dvdy)**2 + (dudy + dvdx)**2  )
 
             # Compute the vorticity
-            eps_III = dvdx - dudy
+            rot = dvdx - dudy
 
             # Compute the total sea-ice deformation rate
             eps_tot = sqrt( eps_I**2 + eps_II**2 )
@@ -197,7 +197,7 @@ def compute_deformations():
             '''
 
             # Add the data row corresponding to the current triangle to the list of data rows
-            row_list.append( [n, dudx, dudy, dvdx, dvdy, eps_I, eps_II, eps_III, eps_tot] )
+            row_list.append( [n, dudx, dudy, dvdx, dvdy, eps_I, eps_II, rot, eps_tot] )
             
 
             '''
@@ -208,7 +208,7 @@ def compute_deformations():
             # Add the divergence and the shear strain rates to the netcdf lists
             div.append(eps_I)
             shear.append(eps_II)
-            rot.append(eps_III)
+            rot.append(rot)
 
         # Add the starting and ending times (in seconds since the reference time) 
         # to the times list
