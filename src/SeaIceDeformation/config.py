@@ -56,7 +56,7 @@ def get_config_args():
     return config
 
 
-def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, data_path):
+def filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path):
     """
     Filters through the data files located in 'data_path' using the user 
     options in 'options.ini'. Outputs a list of paths to data files which
@@ -68,15 +68,15 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
     the user will be notified (Line 
 
     INPUTS:
-    sYear -- Starting year YYYY {str}
-    sMonth -- Starting month MM {str}
-    sDay -- Starting day DD {str}
+    start_year -- Starting year YYYY {str}
+    start_month -- Starting month MM {str}
+    start_day -- Starting day DD {str}
 
-    eYear -- Ending year YYYY {str}
-    eMonth -- Ending month MM {str}
-    eDay -- Ending day DD {str} 
+    end_year -- Ending year YYYY {str}
+    end_month -- Ending month MM {str}
+    end_day -- Ending day DD {str} 
 
-    delta_t -- Desired timestep in hours {str}
+    timestep -- Desired timestep in hours {str}
     tolerance -- Number of hours around timestep that will be filtered through {str}
 
     data_path -- Path to directory containing data files {str}
@@ -86,12 +86,12 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
     """
 
     # Concatenate start and end dates
-    sDate = datetime.strptime(sYear + sMonth + sDay, '%Y%m%d')
-    eDate = datetime.strptime(eYear + eMonth + eDay, '%Y%m%d')
+    sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
+    eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
 
     # Set delta t tolerance 
-    upper_delta_t = timedelta(hours=(int(delta_t) + int(tolerance)))
-    lower_delta_t = timedelta(hours=(int(delta_t) - int(tolerance)))
+    upper_timestep = timedelta(hours=(int(timestep) + int(tolerance)))
+    lower_timestep = timedelta(hours=(int(timestep) - int(tolerance)))
 
     # Initializing file list and date count variables
     raw_paths = []
@@ -108,10 +108,10 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
         iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
         fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
 
-        # Checking if all files from iDate to fDate will be loaded (delta_t == '0')
-        if delta_t != '0':
+        # Checking if all files from iDate to fDate will be loaded (timestep == '0')
+        if timestep != '0':
             # Filtering by date range and delta t and appending to the file list
-            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_delta_t <= (fDate-iDate) <= upper_delta_t and iDate.month not in summer_months: 
+            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months: 
                 raw_paths.append(data_path + '/' + filename)
 
                 # Updating date tracker
@@ -120,7 +120,7 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
                 if fDate > max_date:
                     max_date = fDate
         
-        elif delta_t == '0':
+        elif timestep == '0':
             # Filtering by date range only
             if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and iDate.month not in summer_months: 
                 raw_paths.append(data_path + '/' + filename)
@@ -251,7 +251,7 @@ raw_paths = filter_data(    Date_options['start_year'],
                             Date_options['end_year'], 
                             Date_options['end_month'], 
                             Date_options['end_day'],
-                            Date_options['delta_t'],
+                            Date_options['timestep'],
                             Date_options['tolerance'],
                             IO['data_folder']           )
 
