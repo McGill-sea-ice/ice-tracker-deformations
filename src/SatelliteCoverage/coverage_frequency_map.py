@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyproj
-import utils_load_grid as grid
 import math
 
 from config import *
@@ -285,6 +284,15 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
 
 def interval_frequency_histogram2d(interval_list):
     """
+    Plots a heatmap showing data availaibility (in % of time intervals covered) in a specified range of times.
+
+    INPUTS:
+    interval_list -- List of lists, with each sub-list (n-th) containing the paths to data files contained within
+                     the n-th interval.
+
+    OUTPUTS:
+    Heatmap image (.png) in user-set output folder, with file name 'TRACKER_STARTDATE_to_ENDDATE_DELTAt+-TOLERANCE_
+    hrs_RESOLUTION_km_INTERVAL_hrs"
     
     """
     # Initializing empty numpy array (2D histogram)

@@ -94,6 +94,11 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
     options in 'options.ini'. Outputs a list of paths to data files which
     satisfy the user's criteria.
 
+    Automatically changes date range to match data availability. i.e. if the user specifies
+    a date range between 01-11-2020 and 01-06-2021, but data is only available from 
+    05-11-2020 and 24-05-2021, dates to be processed will be set to the latter, and
+    the user will be notified (Line 164)
+
     INPUTS:
     sYear -- Starting year YYYY {str}
     sMonth -- Starting month MM {str}
@@ -109,7 +114,8 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
     data_path -- Path to directory containing data files {str}
 
     OUTPUTS:
-    dictionary object -- raw_paths: List of file paths, max_date: Highest date in file list, min_date: Lowest date in file list
+    dictionary object -- raw_paths: List of file paths, max_date: Latest date in file list, 
+                         min_date: Earliest date in file list
     """
 
     # Concatenate start and end dates
@@ -155,4 +161,8 @@ def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, da
                 if fDate > max_date:
                     max_date = fDate
 
+    # Notifying user of date range change
+    if sDate != min_date or eDate != max_date:
+        print(f"Start and end dates of data updated to {min_date} and {max_date}")
+            
     return {'raw_paths': raw_paths, 'max_date': max_date, 'min_date': min_date}

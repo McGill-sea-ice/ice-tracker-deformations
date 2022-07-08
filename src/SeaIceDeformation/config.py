@@ -14,6 +14,7 @@ Configuration script for data processing
 import configparser
 import os
 import re
+from datetime import datetime, timedelta
 
 import utils_datetime
 import utils_get_data_paths as get_data_paths
@@ -55,56 +56,83 @@ def get_config_args():
     return config
 
 
+def filter_data(sYear, sMonth, sDay, eYear, eMonth, eDay, delta_t, tolerance, data_path):
+    """
+    Filters through the data files located in 'data_path' using the user 
+    options in 'options.ini'. Outputs a list of paths to data files which
+    satisfy the user's criteria.
 
-def select_ds(data_folder, start_year, start_month, start_day, duration):
-    '''
-    
-    Function that selects the raw datasets to process. 
-    
-    The selected raw datasets are all under *data_folder*, start at 
-    *start_year*-*start_month*-*start_day*, and span over a period of 
-    *duration* days, +/- 6 hours.
+    Automatically changes date range to match data availability. i.e. if the user specifies
+    a date range between 01-11-2020 and 01-06-2021, but data is only available from 
+    05-11-2020 and 24-05-2021, dates to be processed will be set to the latter, and
+    the user will be notified (Line 
 
-    Keyword arguments: \\
-    data_folder -- absolute path of the data_folder that contains the raw
-                  data files over which the selection process will 
-                  be performed  \\
-    start_year  -- starting year of the raw datasets to select for data processing \\
-    start_month -- starting month of the raw datasets to select for data processing \\
-    start_day   -- starting day of the raw datasets to select for data processing \\
-    duration    -- time span of the raw datasets to select for data processing
+    INPUTS:
+    sYear -- Starting year YYYY {str}
+    sMonth -- Starting month MM {str}
+    sDay -- Starting day DD {str}
 
-    '''
-    # Initialize a string of raw data paths to select for processing
+    eYear -- Ending year YYYY {str}
+    eMonth -- Ending month MM {str}
+    eDay -- Ending day DD {str} 
+
+    delta_t -- Desired timestep in hours {str}
+    tolerance -- Number of hours around timestep that will be filtered through {str}
+
+    data_path -- Path to directory containing data files {str}
+
+    OUTPUTS:
+    raw_paths -- List of file paths {list}
+    """
+
+    # Concatenate start and end dates
+    sDate = datetime.strptime(sYear + sMonth + sDay, '%Y%m%d')
+    eDate = datetime.strptime(eYear + eMonth + eDay, '%Y%m%d')
+
+    # Set delta t tolerance 
+    upper_delta_t = timedelta(hours=(int(delta_t) + int(tolerance)))
+    lower_delta_t = timedelta(hours=(int(delta_t) - int(tolerance)))
+
+    # Initializing file list and date count variables
     raw_paths = []
-    
-    # Create constants for the beginning and the end of the regex for raw data file names
-    BEG = '^pairs_'
-    END = '[0-2][0-9][0-6][0-9][0-6][0-9]_[1-2][0-9][0-9][0-9][0-1][0-9][0-3][0-9][0-2][0-9][0-6][0-9][0-6][0-9]_[0-9].dat$'
-    
-    # Create a regex sequence for raw data file names using the input start time
-    regex = re.compile('{0}{1}{2}{3}{4}'.format(BEG, start_year, start_month, start_day, END))
+    min_date = datetime(3000, 12, 25)
+    max_date = datetime(1000, 12, 25)
 
-    # Iterate through all files in the input folder to find matches
-    for filename in os.listdir(data_folder):
+    # Filtering data files by date
+    for filename in os.listdir(data_path):
         
-        # Check if the current file matches the regex
-        if regex.match(filename):
-            
-            # Compute the time over which the dataset spans (days)
-            dt = utils_datetime.dT( utils_datetime.dataDatetimes(filename) ) / 86400
-            
-            # Check if the current file spans over a time that is approx. 
-            # equal to the input duration (+/- 6 hours, or +/- 0.25 days). 
-            if duration-0.25 < dt < duration+0.25:
+        # Extracting initial and final dates from data file names
+        iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
+        fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
 
-                # The current raw file starts at the input date and spans over 
-                # the input duration +/- 6 hours.
-                # Append the raw data path to the raw_paths list
-                raw_paths.append(data_folder + '/' + filename) 
+        # Checking if all files from iDate to fDate will be loaded (delta_t == '0')
+        if delta_t != '0':
+            # Filtering by date range and delta t and appending to the file list
+            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_delta_t <= (fDate-iDate) <= upper_delta_t: 
+                raw_paths.append(data_path + '/' + filename)
 
+                # Updating date tracker
+                if iDate < min_date:
+                    min_date = iDate
+                if fDate > max_date:
+                    max_date = fDate
+        
+        elif delta_t == '0':
+            # Filtering by date range only
+            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date(): 
+                raw_paths.append(data_path + '/' + filename)
+                
+                # Updating date tracker
+                if iDate < min_date:
+                    min_date = iDate
+                if fDate > max_date:
+                    max_date = fDate
+
+    # Notifying user of date range change
+    if sDate != min_date or eDate != max_date:
+        print(f"Start and end dates of data updated to {min_date} and {max_date}")
+            
     return raw_paths
-
 
 def get_datapaths(raw_paths, output_path, exp, start_year, start_month, start_day, method):
     ''' (str, str, str, str) -> dict[str, Any]
@@ -214,12 +242,15 @@ config = get_config_args()
 IO = config['IO']
 Date_options = config['Date_options']
 
-# Select the raw files to be processed using config arguments
-raw_paths = select_ds(  IO['data_folder'], 
-                        Date_options['start_year'], 
-                        Date_options['start_month'], 
-                        Date_options['start_day'], 
-                        float(Date_options['duration']) )
+raw_paths = filter_data(    Date_options['start_year'], 
+                            Date_options['start_month'], 
+                            Date_options['start_day'],
+                            Date_options['end_year'], 
+                            Date_options['end_month'], 
+                            Date_options['end_day'],
+                            Date_options['delta_t'],
+                            Date_options['tolerance'],
+                            IO['data_folder']           )
 
 # Get the paths to which data files of all stages of data processing will be stored
 data_paths = get_datapaths( raw_paths, 
