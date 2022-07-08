@@ -182,8 +182,8 @@ def coverage_histogram2d(xy):
     # Extracting x and y coordinates of datapoints (numpy arrays)
     xi, yj = xy
 
-    # Plotting histogram (H) and converting bin values to 0 or 1
-    H, xbins, ybins = np.histogram2d(xi, yj, bins=(xscale, yscale), range=[[lxextent,uxextent], [lyextent,uyextent]])
+    # Plotting histogram (H) and converting bin values to 0 or 1 range=[[lxextent,uxextent], [lyextent,uyextent]]
+    H, xbins, ybins = np.histogram2d(xi, yj, bins=(xscale, yscale))
     H[H>1] = 1
 
     return H
@@ -327,7 +327,7 @@ def interval_frequency_histogram2d(interval_list):
     ax.gridlines(draw_labels=True)
 
     # Hide datapoints over land
-    ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
+    ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k', alpha=0.3)
     
     """
     Data
@@ -340,7 +340,7 @@ def interval_frequency_histogram2d(interval_list):
     yscale = math.floor(yscale / (1000 * int(resolution)))
 
     # Plotting histogram using axis.contourf function
-    h = ax.contourf(xbins, ybins, H, origin='upper')
+    h = ax.contourf(xbins, ybins, H)
 
     plt.axis('scaled')
     #ax.colorbar()
