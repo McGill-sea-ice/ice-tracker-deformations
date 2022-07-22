@@ -80,8 +80,8 @@ def compute_deformations():
     sTime, eTime, \
         sLat1, sLat2, sLat3, sLon1, sLon2, sLon3, \
         eLat1, eLat2, eLat3, eLon1, eLon2, eLon3, \
-        div, shear, vrt \
-        = ([] for i in range(17))
+        div, shear, vrt, idx1, idx2, idx3, no \
+        = ([] for i in range(21))
     
     # Retrieve the starting date common to all processed datasets (from namelist.ini)
     Date_options = config.config['Date_options']
@@ -94,6 +94,9 @@ def compute_deformations():
                        int(MM),   # Month
                        int(DD),   # Day
                        0, 0, 0)   # Hour, minute, second
+    
+    # Counter of current file being processed
+    file_num = 0
 
     # Iterate through all raw, triangulated and calculations data files listed in config
     for raw_path, triangulated_path, calculations_path in zip(config.data_paths['raw'], config.data_paths['triangulated'], config.data_paths['calculations']):
@@ -131,6 +134,7 @@ def compute_deformations():
         vertice_idx1 = triangulated_data['vertice_idx1'] # Vertex indices in raw data file
         vertice_idx2 = triangulated_data['vertice_idx2']
         vertice_idx3 = triangulated_data['vertice_idx3']
+        file_num += 1
 
         # Retrieve the starting and ending times and compute the time interval (days)
         start, end = utils_datetime.dataDatetimes(raw_path)
@@ -173,6 +177,12 @@ def compute_deformations():
             sy_list = np.array([sY1[n], sY2[n], sY3[n]])  # Starting y positions
             ex_list = np.array([eX1[n], eX2[n], eX3[n]] ) # Ending x positions
             ey_list = np.array([eY1[n], eY2[n], eY3[n]])  # Ending y positions
+
+            # Write the vertices' IDs and triangle ID to lists
+            idx1.append(vertice_idx1[n])
+            idx2.append(vertice_idx2[n])
+            idx3.append(vertice_idx3[n])
+            no.append(file_num)
             
             # Create a list of velocity components for each triangle vertex
             u_list, v_list = deformation_comp.calculate_uv_lists( sx_list, ex_list, sy_list, ey_list, dt)
@@ -301,6 +311,11 @@ def compute_deformations():
     d          = output_ds.createVariable('div', 'f8', 'x')       # Divergence and shear strain and vorticity rates
     s          = output_ds.createVariable('shear', 'f8', 'x')
     v          = output_ds.createVariable('vrt', 'f8', 'x')
+
+    id1       = output_ds.createVariable('idx1', 'u4', 'x')
+    id2       = output_ds.createVariable('idx2', 'u4', 'x')
+    id3       = output_ds.createVariable('idx3', 'u4', 'x')
+    idtri     = output_ds.createVariable('no', 'u4', 'x')
     
     # Specify units for each variable
     start_time.units = 'seconds since the reference time'
@@ -345,6 +360,11 @@ def compute_deformations():
     d[:]          = div
     s[:]          = shear
     v[:]          = vrt
+
+    id1[:]        = idx1
+    id2[:]        = idx2
+    id3[:]        = idx3
+    idtri[:]      = no
 
     # Close dataset
     output_ds.close()
