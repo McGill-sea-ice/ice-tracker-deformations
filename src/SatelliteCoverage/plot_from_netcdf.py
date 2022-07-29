@@ -4,9 +4,6 @@ from time import strftime
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib
-from matplotlib.colors import Normalize
-from matplotlib.patches import Polygon
-from matplotlib.collections import PathCollection
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -15,8 +12,11 @@ import math
 from netCDF4 import Dataset
 from config import *
 from coverage_frequency_map import convert_to_grid
-import heapq
-import xarray
+from shapely.ops import transform
+import os
+
+import warnings
+warnings.filterwarnings("ignore")
 
 def seconds_to_date(path:str):
 
@@ -91,12 +91,16 @@ def load_netcdf(path:str):
     idx3 = (ds.variables['idx3'][:])[time_indices]
     no = (ds.variables['no'][:])[time_indices]
 
+    id_start_lat1 = (ds.variables['id_start_lat1'][:])[time_indices]
+    id_start_lat2 = (ds.variables['id_start_lat2'][:])[time_indices]
+    id_start_lat3 = (ds.variables['id_start_lat3'][:])[time_indices]
+
     reftime = ds.getncattr('referenceTime')
 
     # Closing dataset
     ds.close()
 
-    return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons, 'div': div, 'shear': shear, 'vrt': vrt, 'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices, 'reftime': reftime, 'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no}
+    return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons, 'div': div, 'shear': shear, 'vrt': vrt, 'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices, 'reftime': reftime, 'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no, 'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3}
 
 def plot_start_end_points(path:str):
 
@@ -154,67 +158,94 @@ def plot_start_end_points(path:str):
     # Saving figure
     plt.savefig('20202021_tripoints_month_72.png')
 
-def plot_deformations_polygons(path:str):
+def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_lon2, start_lon3, start_id1, start_id2, start_id3):
+    """
+    This function takes in a list of start lats/lons and corresponding start lat/lon IDs (triangle vertices)
+    and outputs corresponding, larger lists of start lats/lons (with 0s in some indices) that reflect the 
+    coordinates' placement in the original data files for use with ax.tripcolor
 
-    # Loading data from netcdf as a dictionary
-    data = load_netcdf(path)
+    INPUTS:
+    start_lat1,2,3 -- Arrays of starting latitudes {np.array, list}
+    start_lons1,2,3 -- Arrays of starting longitudes {np.array, list}
+    start_id1,2,3 -- Array of starting IDs corresponding to start_lats1,2,3 and start_lons1,2,3 {np.array, list}
 
-    # Initializing patches list
-    patches = []
+    OUTPUTS:
+    new_lat -- Array of latitude values at the positions they were orignally in, in the data file
+    new_lon -- Array of longitude values at the positions they were originally in, in the data file
 
-    # Initializing colormaps
-    cmap_div = matplotlib.cm.get_cmap('coolwarm')
-    cmap_shr = matplotlib.cm.get_cmap('plasma')
-    cmap_rot = matplotlib.cm.get_cmap('coolwarm')
-
-    # Initializing vertices list
-    vertices = []
-
-    for i in range(len(data['div'])):
-
-        # Initializing temporary vertices list
-        temp_vertices = []
-
-        # Iterating over all vertices in triangle
-        for j in range(3):
-            temp_vertices.append((data['start_lats'][j][i], data['start_lons'][j][i]))
-
-        # Appending triangle vertices to main list
-        vertices.append(temp_vertices)
+    """
     
-    polygon = Polygon(vertices[0])
-    
-    norm_div = matplotlib.colors.Normalize(vmin=-0.04, vmax=0.04)
+    # Loading start lats/lons
+    # start_lat1 = list(start_lat1)
+    # start_lat2 = list(start_lat2)
+    # start_lat3 = list(start_lat3)
 
+    # start_lon1 = list(start_lon1)
+    # start_lon2 = list(start_lon2)
+    # start_lon3 = list(start_lon3)
+
+    # Combined list of start IDs
+    start_ids = np.hstack((start_id1, start_id2, start_id3))
+
+    # Skipping blank data files
+    if len(start_ids) == 0:
+        return 0, 0
+    
+    # Initializing new lists of coordinates
+    new_lon, new_lat = ([np.nan] * (max(start_ids) + 1) for i in range(2))
+
+    for i in range(len(start_lat1)):
+        new_lat[start_id1[i]] = (start_lat1[i])
+        new_lat[start_id2[i]] = (start_lat2[i])
+        new_lat[start_id3[i]] = (start_lat3[i])
+    
+    for i in range(len(start_lon1)):
+        new_lon[start_id1[i]] = start_lon1[i]
+        new_lon[start_id2[i]] = start_lon2[i]
+        new_lon[start_id3[i]] = start_lon3[i]
+        
+    return new_lat, new_lon
+    
 def plot_deformations(path:str):
+    """
+    This function plots deformations from a netCDF file using matplotlib's ax.tripcolor. 
+    The function assumes that the netCDF was generated from src/SeaIceDeformation's M01_d03_compute_deformations.py.
+
+    INUPTS:
+    path -- Path to netCDF {str}
+
+    OUTPUTS:
+    none
+    Saves divergence, shear, and vorticity plots.
+    """
+
     # Loading data from netcdf as a dictionary
     data = load_netcdf(path)
-
-
 
     """
     Preamble
     """
     # Set the matplotlib projection and transform
     proj = ccrs.NorthPolarStereo(central_longitude=0)
+    trans = ccrs.Geodetic()
 
     # Initialize figures for total deformation (tot), divergence (I) and shear (II)
     fig_div = plt.figure()
     fig_shr = plt.figure()
-    fig_rot = plt.figure()
+    fig_vrt = plt.figure()
 
     # Initialize subplots
     ax_div = fig_div.add_subplot(111, projection=proj)
     ax_shr = fig_shr.add_subplot(111, projection=proj)
-    ax_rot = fig_rot.add_subplot(111, projection=proj)
+    ax_vrt = fig_vrt.add_subplot(111, projection=proj)
 
     # Create a list of axes to be iterated over
-    ax_list = [ax_div, ax_shr, ax_rot]
+    ax_list = [ax_div, ax_shr, ax_vrt]
 
     for ax in ax_list:
         # Set the map extent in order to see the entire region of interest
         ax.set_extent((-4400000, 2500000, 3500000, -2500000), ccrs.NorthPolarStereo())
-    
+
     """
     Plotting
     """
@@ -222,13 +253,13 @@ def plot_deformations(path:str):
     # Obtaining start index of data
     min_no = np.nanmin(data['no']) # Minimum (smallest) ID number
     min_index = np.nanmin(np.where(data['no'] == min_no)) # This value will be updated for each triangle
-
+    
     # Iterating over all files (Unique triangulations)
     for i in range(len(set(data['no']))):
-        # Here i + 1 is the ID number of the file
+        # Here the file ID is zero-indexed, so file 1 has the ID 0
 
         # Obtaining number of rows to iterate over
-        file_length = np.count_nonzero(data['no'] == (min_no + i))
+        file_length = np.count_nonzero(data['no'] == (i))
 
         # Setting maximum index
         max_index = min_index + file_length
@@ -236,97 +267,82 @@ def plot_deformations(path:str):
         # Arranging triangle vertices in array for use in ax.tripcolor
         triangles = np.stack((data['idx1'][min_index:max_index], data['idx2'][min_index:max_index], 
                     data['idx3'][min_index:max_index]), axis=-1)
+
+        # Filtering data range to that of the current "file"
+
+        start_lat1_temp, start_lat2_temp, start_lat3_temp = data['start_lats'][0][min_index:max_index], \
+            data['start_lats'][1][min_index:max_index], data['start_lats'][2][min_index:max_index]
         
-        # Initializing start lat/lon lists
-        start_lats = []
-        start_lons = []
+        start_lon1_temp, start_lon2_temp, start_lon3_temp = data['start_lons'][0][min_index:max_index], \
+            data['start_lons'][1][min_index:max_index], data['start_lons'][2][min_index:max_index]
 
-        # Extracting lat/lons associated with the i-th triangulation
-        for j in range(3):
-            start_lats.append(data['start_lats'][j][min_index:max_index])
-            start_lons.append(data['start_lons'][j][min_index:max_index])
+        start_lat, start_lon = recreate_coordinates(start_lat1_temp, start_lat2_temp, start_lat3_temp, 
+                                                        start_lon1_temp, start_lon2_temp, start_lon3_temp, 
+                                                        data['start_id1'][min_index:max_index],
+                                                        data['start_id2'][min_index:max_index], 
+                                                        data['start_id3'][min_index:max_index])
 
-        # Stacking vertices
-        start_lats = np.stack((start_lats[0], start_lats[1], start_lats[2]), axis=-1)
-        start_lons = np.stack((start_lons[0], start_lons[1], start_lons[2]), axis=-1)
+        # Extracting deformation data
+        div_colours = data['div'][min_index:max_index]
+        shr_colours = data['shear'][min_index:max_index]
+        vrt_colours = data['vrt'][min_index:max_index]
 
-        # Flattening lists
-        start_lats = [item for sublist in start_lats for item in sublist]
-        start_lons = [item for sublist in start_lons for item in sublist]
-
-        # Converting to polar stereographic coordinates
-        start_x, start_y = convert_to_grid(start_lons, start_lats)
-
-        # Extracting div data
-        colours = data['div'][min_index:max_index]
-
-        # Printing debugging info
-        print(f'Indices: {min_index} ~ {max_index}')
-        print(f'Triangles: {len(triangles)}')
-        print(f'Colours: {len(colours)}')
-        print(triangles)
-
+        if len(triangles) != 0:
         # Plotting
-        cb_div = ax_div.tripcolor(start_x, start_y, triangles, facecolor=colours, cmap='coolwarm', vmin=-0.04, vmax=0.04)
+            cb_div = ax_div.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=div_colours, cmap='coolwarm', vmin=-0.04, vmax=0.04)
+            cb_shr = ax_shr.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=shr_colours, cmap='plasma', vmin=0, vmax=0.1)
+            cb_vrt = ax_vrt.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=vrt_colours, cmap='coolwarm', vmin=-0.1, vmax=0.1)
 
         # Updating minimum index
         min_index = max_index
-    
-    for fig in [fig_div, fig_shr, fig_rot]:
-        plt.savefig(f"{fig}PLOTDEFORMATOINTEST.png")
 
-def test_function(path:str):
+    # Create a list of colorbars and titles to be iterated over
+    cb_list = [cb_div, cb_shr, cb_vrt]
+    title_list = ['Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Rotation Rate $(Days^{-1})$']
 
-    # Loading data
-    data = load_netcdf(path)
+    # Iterate through all axes
+    for ax, title, cb in zip(ax_list, title_list, cb_list):
+        # Add a colorbar
+        plt.colorbar(cb, ax=ax)
 
-    cmap_div = matplotlib.cm.get_cmap('coolwarm')
-    cmap_shr = matplotlib.cm.get_cmap('plasma')
-    cmap_rot = matplotlib.cm.get_cmap('coolwarm')
+        # Add a title
+        ax.set_title(title + '\n' + start_year + '-' + start_month + '-' + start_day + ' to ' + 
+                        end_year + '-' + end_month + '-' + end_day + ', ' + timestep + 'hr')
 
-def tri_area(n):
-    # Iterating over every triangle
-    for i in n:
+        # Add gridlines
+        ax.gridlines()
+
+        # Hide deformations over land
+        ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
+
+        '''
+        _________________________________________________________________________________________
+        SAVE PLOTS
+        '''
+
+    # Set a directory to store figures for the current experiment
+    figsPath =  output_folder + '/' + '/figs/'
         
-        #Initializing list of cartesian vertices
-        vertices_xy = []
+        # Create the directory if it does not exist already
+    os.makedirs(figsPath, exist_ok=True)
 
-        # Iterating over each vertex
-        for j in [0, 1, 2]:
-            x, y = convert_to_grid(vertices[j][0][i], vertices[j][1][i])
-
-            # Appending cartesian coordinates to list
-            vertices_xy.append(x) 
-            vertices_xy.append(y)
-
-        # Now, vertices_xy = [x1, y1, x2, y2, x3, y3]  
-        x1 = vertices_xy[0]
-        y1 = vertices_xy[1]
-        x2 = vertices_xy[2]
-        y2 = vertices_xy[3]
-        x3 = vertices_xy[4]
-        y3 = vertices_xy[5]
-
-        # Calculating area
-        area = 0.5 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
-
-        print(f"{i} / {len(start_lat1) // 1000}")
-
-        # Appending to main list
-        areas.append(area)
-
-        if i == (len(start_lat1) // 1000 - 1):
+        # Create a prefix for the figure filenames
+    prefix = start_year + start_month + start_day + '_' + str(timestep) 
         
-            max_areas = heapq.nlargest(10, areas)
+        # Create the figure filenames
+    div_path   = figsPath + prefix + '_div.png'
+    shear_path = figsPath + prefix + '_shear.png'
+    rot_path   = figsPath + prefix + '_rot.png'
 
-            print(max_areas)
+        
+    for fig, fig_path in zip([fig_div, fig_shr, fig_vrt], [div_path, shear_path, rot_path]):
+            
+        # Check if the figures already exist. If they do, delete them.
+        if os.path.isfile(fig_path):
+            os.remove(fig_path)
 
-    """
-    At this point the list tri_xy should look like this:
-    [[(startx1, starty1), (startx2, starty2), (startx3, starty3)], [(startx1, starty1), (startx2, starty2), (startx3, starty3)],  ... ] where each list (element n in the list) contains tuples of the cartesian coordinates of each vertex
-    in the triangle. e.g. tri_xy[n] = [(startx1, starty1), (startx2, starty2), (startx3, starty3)]
-    """
-
+        # Save the new figures
+        fig.savefig(fig_path, bbox_inches='tight', dpi=300)
 
 if __name__ == '__main__':
     # Reading config
@@ -337,6 +353,7 @@ if __name__ == '__main__':
     options = config['options']
 
     path = IO['netcdf_folder']
+    output_folder = IO['output_folder']
 
     start_year = options['start_year']
     start_month = options['start_month']
@@ -346,51 +363,7 @@ if __name__ == '__main__':
     end_month = options['end_month']
     end_day = options['end_day']
 
+    timestep = options['timestep']
+
     #plot_start_end_points(path)
-    #test_function(path)
-    #plot_deformations(path)
-    #tri_area(path)[0]
-    #seconds_to_date(path)
     plot_deformations(path)
-
-    """
-    Loading Data
-    ------------------------------------------------------------------------------------------
-    """
-
-    # # Load netCDF as Dataset from *path*
-    # ds = Dataset(path, mode='r')
-
-    # # Extracting start/end points
-    # start_lat1 = ds.variables['start_lat1'][:]
-    # start_lat2 = ds.variables['start_lat2'][:]
-    # start_lat3 = ds.variables['start_lat3'][:]
-
-    # start_lon1 = ds.variables['start_lon1'][:]
-    # start_lon2 = ds.variables['start_lon2'][:]
-    # start_lon3 = ds.variables['start_lon3'][:]
-
-    # # Closing Dataset
-    # ds.close()
-
-    # # Listing vertices
-    # vertices = [(start_lon1, start_lat1), (start_lon2, start_lat2), (start_lon3, start_lat3)]
-
-    # # Initialising area list
-    # areas = []
-
-    # # Multiprocessing process
-    # process1 = multiprocessing.Process(target=tri_area, args=(range(len(start_lat1) // 1000), ))
-
-    # process1.start()
-
-    # process1.join()
-
-    # print(f"AREA CALCULATIONS DONE, SORTING...")
-
-    # print(max(areas))
-    # max_areas = heapq.nlargest(10, areas)
-
-    # print(max_areas)
-
-    

@@ -393,54 +393,56 @@ def interval_frequency_histogram2d(interval_list):
     
     return h
 
-config = read_config()
 
-# Initializing more specific ConfigParser objects
-IO = config['IO']
-options = config['options']
-meta = config['meta']
+if __name__ == '__main__':
+    config = read_config()
 
-data_path = IO['data_folder']
-output = IO['output_folder']
-tracker = meta['ice_tracker']
+    # Initializing more specific ConfigParser objects
+    IO = config['IO']
+    options = config['options']
+    meta = config['meta']
 
-start_year = options['start_year']
-start_month = options['start_month']
-start_day = options['start_day']
+    data_path = IO['data_folder']
+    output = IO['output_folder']
+    tracker = meta['ice_tracker']
 
-end_year = options['end_year']
-end_month = options['end_month']
-end_day = options['end_day']
+    start_year = options['start_year']
+    start_month = options['start_month']
+    start_day = options['start_day']
 
-timestep = options['timestep']
-tolerance = options['tolerance']
+    end_year = options['end_year']
+    end_month = options['end_month']
+    end_day = options['end_day']
 
-resolution = options['resolution']
+    timestep = options['timestep']
+    tolerance = options['tolerance']
 
-interval = options['interval']
+    resolution = options['resolution']
 
-# Fetching filter information
-raw_list = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['raw_paths']
-max_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['max_date']
-min_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['min_date']
+    interval = options['interval']
 
-interval_list = divide_intervals(raw_list, max_date, min_date, interval)['interval_list']
-date_pairs = divide_intervals(raw_list, max_date, min_date, interval)['date_pairs']
+    # Fetching filter information
+    raw_list = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['raw_paths']
+    max_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['max_date']
+    min_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['min_date']
 
-# Compiling master dataframe
-df = compile_data(raw_list)
+    interval_list = divide_intervals(raw_list, max_date, min_date, interval)['interval_list']
+    date_pairs = divide_intervals(raw_list, max_date, min_date, interval)['date_pairs']
 
-# Converting points from lat/lon to EPSG 3413
-xy = convert_to_grid(df['lon'], df['lat'])
+    # Compiling master dataframe
+    df = compile_data(raw_list)
 
-# Plotting heat map
-xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date, timestep)
+    # Converting points from lat/lon to EPSG 3413
+    xy = convert_to_grid(df['lon'], df['lat'])
 
-#xbins = np.delete(xbins, len(xbins)-3)
-#ybins = np.delete(ybins, len(ybins)-3)
+    # Plotting heat map
+    xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date, timestep)
 
-# Plotting time series
-#coverage_timeseries(interval_list, resolution, date_pairs)
+    #xbins = np.delete(xbins, len(xbins)-3)
+    #ybins = np.delete(ybins, len(ybins)-3)
 
-# Plotting interval heat map
-print(interval_frequency_histogram2d(interval_list))
+    # Plotting time series
+    coverage_timeseries(interval_list, resolution, date_pairs)
+
+    # Plotting interval heat map
+    #print(interval_frequency_histogram2d(interval_list))

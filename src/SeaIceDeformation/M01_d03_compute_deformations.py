@@ -80,8 +80,8 @@ def compute_deformations():
     sTime, eTime, \
         sLat1, sLat2, sLat3, sLon1, sLon2, sLon3, \
         eLat1, eLat2, eLat3, eLon1, eLon2, eLon3, \
-        div, shear, vrt, idx1, idx2, idx3, no \
-        = ([] for i in range(21))
+        div, shear, vrt, idx1, idx2, idx3, no, idx_sLat1, idx_sLat2, idx_sLat3 \
+        = ([] for i in range(24))
     
     # Retrieve the starting date common to all processed datasets (from namelist.ini)
     Date_options = config.config['Date_options']
@@ -134,7 +134,6 @@ def compute_deformations():
         vertice_idx1 = triangulated_data['vertice_idx1'] # Vertex indices in raw data file
         vertice_idx2 = triangulated_data['vertice_idx2']
         vertice_idx3 = triangulated_data['vertice_idx3']
-        file_num += 1
 
         # Retrieve the starting and ending times and compute the time interval (days)
         start, end = utils_datetime.dataDatetimes(raw_path)
@@ -222,6 +221,9 @@ def compute_deformations():
             shear.append(eps_II)
             vrt.append(rot)
 
+        # Update file counter
+        file_num += 1
+
         # Add the starting and ending times (in seconds since the reference time) 
         # to the times list
         s = utils_datetime.dT((refTime, start))
@@ -249,6 +251,9 @@ def compute_deformations():
         eLon2.extend(np.array(eLon)[vertice_idx2]) 
         eLon3.extend(np.array(eLon)[vertice_idx3]) 
 
+        idx_sLat1.extend(vertice_idx1)
+        idx_sLat2.extend(vertice_idx2)
+        idx_sLat3.extend(vertice_idx3)
 
         '''
         _________________________________________________________________________________________
@@ -316,6 +321,10 @@ def compute_deformations():
     id2       = output_ds.createVariable('idx2', 'u4', 'x')
     id3       = output_ds.createVariable('idx3', 'u4', 'x')
     idtri     = output_ds.createVariable('no', 'u4', 'x')
+
+    id_start_lat1  = output_ds.createVariable('id_start_lat1', 'u4', 'x')
+    id_start_lat2  = output_ds.createVariable('id_start_lat2', 'u4', 'x')
+    id_start_lat3  = output_ds.createVariable('id_start_lat3', 'u4', 'x')
     
     # Specify units for each variable
     start_time.units = 'seconds since the reference time'
@@ -365,6 +374,10 @@ def compute_deformations():
     id2[:]        = idx2
     id3[:]        = idx3
     idtri[:]      = no
+
+    id_start_lat1[:] = idx_sLat1
+    id_start_lat2[:] = idx_sLat2
+    id_start_lat3[:] = idx_sLat3
 
     # Close dataset
     output_ds.close()
