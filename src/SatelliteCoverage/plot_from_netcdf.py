@@ -83,7 +83,7 @@ def load_netcdf(path:str):
     end_lons = np.array([end_lon1, end_lon2, end_lon3])
 
     div = (ds.variables['div'][:])[time_indices]
-    shear = (ds.variables['shear'][:])[time_indices]
+    shr = (ds.variables['shr'][:])[time_indices]
     vrt = (ds.variables['vrt'][:])[time_indices]
 
     idx1 = (ds.variables['idx1'][:])[time_indices]
@@ -100,7 +100,7 @@ def load_netcdf(path:str):
     # Closing dataset
     ds.close()
 
-    return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons, 'div': div, 'shear': shear, 'vrt': vrt, 'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices, 'reftime': reftime, 'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no, 'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3}
+    return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons, 'div': div, 'shr': shr, 'vrt': vrt, 'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices, 'reftime': reftime, 'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no, 'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3}
 
 def plot_start_end_points(path:str):
 
@@ -253,13 +253,13 @@ def plot_deformations(path:str):
     # Obtaining start index of data
     min_no = np.nanmin(data['no']) # Minimum (smallest) ID number
     min_index = np.nanmin(np.where(data['no'] == min_no)) # This value will be updated for each triangle
-    
+
     # Iterating over all files (Unique triangulations)
     for i in range(len(set(data['no']))):
-        # Here the file ID is zero-indexed, so file 1 has the ID 0
+        # Here the file indice is zero-indexed, so the first file has the indice 0, regardless of its ID
 
         # Obtaining number of rows to iterate over
-        file_length = np.count_nonzero(data['no'] == (i))
+        file_length = np.count_nonzero(data['no'] == i + min_no)
 
         # Setting maximum index
         max_index = min_index + file_length
@@ -284,7 +284,7 @@ def plot_deformations(path:str):
 
         # Extracting deformation data
         div_colours = data['div'][min_index:max_index]
-        shr_colours = data['shear'][min_index:max_index]
+        shr_colours = data['shr'][min_index:max_index]
         vrt_colours = data['vrt'][min_index:max_index]
 
         if len(triangles) != 0:
@@ -331,18 +331,18 @@ def plot_deformations(path:str):
         
         # Create the figure filenames
     div_path   = figsPath + prefix + '_div.png'
-    shear_path = figsPath + prefix + '_shear.png'
+    shr_path = figsPath + prefix + '_shr.png'
     rot_path   = figsPath + prefix + '_rot.png'
 
         
-    for fig, fig_path in zip([fig_div, fig_shr, fig_vrt], [div_path, shear_path, rot_path]):
+    for fig, fig_path in zip([fig_div, fig_shr, fig_vrt], [div_path, shr_path, rot_path]):
             
         # Check if the figures already exist. If they do, delete them.
         if os.path.isfile(fig_path):
             os.remove(fig_path)
 
         # Save the new figures
-        fig.savefig(fig_path, bbox_inches='tight', dpi=300)
+        fig.savefig(fig_path, bbox_inches='tight', dpi=600)
 
 if __name__ == '__main__':
     # Reading config

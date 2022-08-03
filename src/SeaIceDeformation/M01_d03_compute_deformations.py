@@ -80,8 +80,8 @@ def compute_deformations():
     sTime, eTime, \
         sLat1, sLat2, sLat3, sLon1, sLon2, sLon3, \
         eLat1, eLat2, eLat3, eLon1, eLon2, eLon3, \
-        div, shear, vrt, idx1, idx2, idx3, no, idx_sLat1, idx_sLat2, idx_sLat3 \
-        = ([] for i in range(24))
+        div, shr, vrt, idx1, idx2, idx3, no, idx_sLat1, idx_sLat2, idx_sLat3, dudx_l, dudy_l, dvdx_l, dvdy_l \
+        = ([] for i in range(28))
     
     # Retrieve the starting date common to all processed datasets (from namelist.ini)
     Date_options = config.config['Date_options']
@@ -218,8 +218,14 @@ def compute_deformations():
 
             # Add the divergence and the shear strain rates to the netcdf lists
             div.append(eps_I)
-            shear.append(eps_II)
+            shr.append(eps_II)
             vrt.append(rot)
+
+            # Add the strain rates to the netcdf lists
+            dudx_l.append(dudx)
+            dudy_l.append(dudy)
+            dvdx_l.append(dvdx)
+            dvdy_l.append(dvdy)
 
         # Update file counter
         file_num += 1
@@ -306,26 +312,31 @@ def compute_deformations():
     start_lon2 = output_ds.createVariable('start_lon2', 'f8', 'x')
     start_lon3 = output_ds.createVariable('start_lon3', 'f8', 'x')
     
-    end_lat1   = output_ds.createVariable('end_lat1', 'f8', 'x')   # Ending Lat/Lon triangle vertices
+    end_lat1   = output_ds.createVariable('end_lat1', 'f8', 'x') # Ending Lat/Lon triangle vertices
     end_lat2   = output_ds.createVariable('end_lat2', 'f8', 'x')
     end_lat3   = output_ds.createVariable('end_lat3', 'f8', 'x')
     end_lon1   = output_ds.createVariable('end_lon1', 'f8', 'x')
     end_lon2   = output_ds.createVariable('end_lon2', 'f8', 'x')
     end_lon3   = output_ds.createVariable('end_lon3', 'f8', 'x')
     
-    d          = output_ds.createVariable('div', 'f8', 'x')       # Divergence and shear strain and vorticity rates
-    s          = output_ds.createVariable('shear', 'f8', 'x')
+    d          = output_ds.createVariable('div', 'f8', 'x') # Divergence and shear strain and vorticity rates
+    s          = output_ds.createVariable('shr', 'f8', 'x')
     v          = output_ds.createVariable('vrt', 'f8', 'x')
 
-    id1       = output_ds.createVariable('idx1', 'u4', 'x')
-    id2       = output_ds.createVariable('idx2', 'u4', 'x')
-    id3       = output_ds.createVariable('idx3', 'u4', 'x')
-    idtri     = output_ds.createVariable('no', 'u4', 'x')
+    id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices 
+    id2        = output_ds.createVariable('idx2', 'u4', 'x')
+    id3        = output_ds.createVariable('idx3', 'u4', 'x')
+    idtri      = output_ds.createVariable('no', 'u4', 'x')
 
-    id_start_lat1  = output_ds.createVariable('id_start_lat1', 'u4', 'x')
+    id_start_lat1  = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
     id_start_lat2  = output_ds.createVariable('id_start_lat2', 'u4', 'x')
     id_start_lat3  = output_ds.createVariable('id_start_lat3', 'u4', 'x')
-    
+
+    dux        = output_ds.createVariable('dudx', 'f8', 'x') # Strain rates
+    duy        = output_ds.createVariable('dudy', 'f8', 'x')
+    dvx        = output_ds.createVariable('dvdx', 'f8', 'x')
+    dvy        = output_ds.createVariable('dvdy', 'f8', 'x')
+
     # Specify units for each variable
     start_time.units = 'seconds since the reference time'
     end_time.units   = 'seconds since the reference time'
@@ -348,6 +359,11 @@ def compute_deformations():
     s.units          = '1/days'
     v.units          = '1/days'
 
+    dux.units       = '1/days'
+    duy.units       = '1/days'
+    dvx.units       = '1/days'
+    dvy.units       = '1/days'
+
     # Attribute data arrays to each variable
     start_time[:] = sTime
     end_time[:]   = eTime
@@ -367,7 +383,7 @@ def compute_deformations():
     end_lon3[:]   = eLon3
 
     d[:]          = div
-    s[:]          = shear
+    s[:]          = shr
     v[:]          = vrt
 
     id1[:]        = idx1
@@ -378,6 +394,11 @@ def compute_deformations():
     id_start_lat1[:] = idx_sLat1
     id_start_lat2[:] = idx_sLat2
     id_start_lat3[:] = idx_sLat3
+
+    dux[:]       = dudx_l
+    duy[:]       = dudy_l
+    dvx[:]       = dvdx_l
+    dvy[:]       = dvdy_l
 
     # Close dataset
     output_ds.close()
