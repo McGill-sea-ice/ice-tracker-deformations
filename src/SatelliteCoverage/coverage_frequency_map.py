@@ -7,69 +7,16 @@ from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pyproj
 import math
 
 from config import *
 
-def compile_data(raw_paths):
-
-    """ 
-    Compiles all data points in the list of data files (raw_paths) into a dataframe (df)
-
-    Returns the dataframe with all datapoints' starting lat and lon in columns.
-
-    INPUTS:
-    raw_paths -- List of paths to data files {List}
-
-    OUTPUTS: 
-    df -- Pandas dataframe with the following columns: Index  lat  lon {Dataframe}
-    """
-
-    df = pd.DataFrame()
-
-    # Initialising progression counters
-    num_files = len(raw_paths)
-    i = 0
-
-    # Appending each file's datapoints to the dataframe
-    for filepath in raw_paths:
-        
-        # Initialize temporary dataframe
-        temp_df = pd.DataFrame()
-
-        # Reading datapoints into temporary dataframe
-        temp_df = pd.read_csv(filepath, sep='\s\s+', engine='python', usecols = ['sLat','sLon'])
-
-        temp_df.rename(columns = {'sLat':'lat', 'sLon':'lon'}, inplace = True)
-
-        df = df.append(temp_df)
-
-        # Updating counter
-        i += 1
-        print(f'{i} / {num_files}')
-
-    return df
-
+# Visualises spatio-temporal coverage on a basemap
 def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
-    print('Plotting heat map')
+    print('--- Plotting heat map ---')
     """
     Preamble
     """
-    # Reading config
-    config = read_config()
-
-    IO = config['IO']
-    options = config['options']
-    meta = config['meta']
-
-    timestep = options['timestep']
-    tolerance = options['tolerance']
-    resolution = float(options['resolution'])
-    strres = options['resolution']
-    output_path = IO['output_folder']
-    tracker = meta['ice_tracker']
-
     proj = ccrs.NorthPolarStereo(central_longitude=0)
 
     fig = plt.figure(figsize=(6.5, 5.5), )
@@ -136,12 +83,13 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
 
     # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
     prefix = min_date_str + '_' + max_date_str + '_' + timestep + '_' + tolerance + '_' + 'res' + str(int(resolution)) + '_' + tracker
-    plt.savefig(output + '/' + prefix + '_' + 'freq.png')
+    plt.savefig(output + prefix + '_' + 'freq.png')
 
     print(f'Saved as {prefix}_freq.png')
 
     return hh[1], hh[2]
 
+# Returns histogram of coverage representing the arctic ocean
 def coverage_histogram2d(xy, xbins, ybins):
     """
     Returns a 2D numpy array representing grid cells with or without data
@@ -197,32 +145,7 @@ def coverage_histogram2d(xy, xbins, ybins):
 
     return H
 
-def convert_to_grid(lon, lat):
-    """
-    WARNING: INPUT IS LON, LAT (X, Y), AND THE OUTPUT IS ALSO X, Y
-
-    Takes in a point in EPSG 4326 (Lat/Lon) and transforms said point to
-    a polar stereographic projection (EPSG 3413).
-
-    lon, lat {float} -> x, y {float}
-
-    INPUTS:
-    lat, lon -- Float values representing a point in WGS 84
-
-    OUTPUTS:
-    x, y -- Float values representing the transformed point in EPSG 3413
-    """
-
-    # Input projection (lat/lon)
-    in_proj = pyproj.Proj(init='epsg:4326')
-
-    # Output projection (EPSG 3413, Polar Stereographic)
-    out_proj = pyproj.Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
-
-    # Transform function
-    x, y = np.array(pyproj.transform(in_proj, out_proj, lon, lat))
-    return x, y
-
+# Plots timeseries of spatial coverage
 def coverage_timeseries(interval_list, resolution, date_pairs):
     """
     Plots a time series of the area coverage (in % of the Arctic ocean) for a given list of lists containing
@@ -241,6 +164,7 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
     Plot of % of area covered as a function of time.
 
     """
+    print('--- Plotting coverage time series ---')
 
     # Setting constants (Adjusting ocean area to units of histogram grid)
     arctic_ocean_area = 15558000 # Square kilometres
@@ -282,6 +206,7 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
 
     return 
 
+# Visualises coverage as a heatmap, split between user-set intervals
 def interval_frequency_histogram2d(interval_list):
     """
     Plots a heatmap showing data availaibility (in % of time intervals covered) in a specified range of times.
@@ -295,6 +220,8 @@ def interval_frequency_histogram2d(interval_list):
     hrs_RESOLUTION_km_INTERVAL_hrs"
     
     """
+    print('--- Plotting interval frequency histogram ---')
+
     # Initializing empty numpy array (2D histogram)
     H = np.array([])
 
@@ -391,9 +318,6 @@ def interval_frequency_histogram2d(interval_list):
 
     print(f'Saved as {prefix}_freq.png')
     
-    return h
-
-
 if __name__ == '__main__':
     config = read_config()
 
@@ -401,6 +325,7 @@ if __name__ == '__main__':
     IO = config['IO']
     options = config['options']
     meta = config['meta']
+    coverage_frequency = config['coverage_frequency']
 
     data_path = IO['data_folder']
     output = IO['output_folder']
@@ -426,8 +351,10 @@ if __name__ == '__main__':
     max_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['max_date']
     min_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['min_date']
 
-    interval_list = divide_intervals(raw_list, max_date, min_date, interval)['interval_list']
-    date_pairs = divide_intervals(raw_list, max_date, min_date, interval)['date_pairs']
+    # Dividing data into intervals if the user desires
+    if coverage_frequency['visualise_timeseries'] == 'True' or coverage_frequency['visualise_interval'] == True:
+        interval_list = divide_intervals(raw_list, max_date, min_date, interval)['interval_list']
+        date_pairs = divide_intervals(raw_list, max_date, min_date, interval)['date_pairs']
 
     # Compiling master dataframe
     df = compile_data(raw_list)
@@ -435,14 +362,15 @@ if __name__ == '__main__':
     # Converting points from lat/lon to EPSG 3413
     xy = convert_to_grid(df['lon'], df['lat'])
 
-    # Plotting heat map
+    # Plotting coverage heat map
     xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date, timestep)
 
-    #xbins = np.delete(xbins, len(xbins)-3)
-    #ybins = np.delete(ybins, len(ybins)-3)
+    if coverage_frequency['visualise_timeseries'] == 'True':
+        
+        # Plotting time series
+        coverage_timeseries(interval_list, resolution, date_pairs)
 
-    # Plotting time series
-    coverage_timeseries(interval_list, resolution, date_pairs)
+    if coverage_frequency['visualise_interval'] == 'True':
 
-    # Plotting interval heat map
-    #print(interval_frequency_histogram2d(interval_list))
+        # Plotting interval heat map
+        interval_frequency_histogram2d(interval_list)

@@ -18,90 +18,6 @@ import os
 import warnings
 warnings.filterwarnings("ignore")
 
-def seconds_to_date(path:str):
-
-    ds = Dataset(path, mode='r')
-
-    reftime = ds.getncattr('referenceTime')
-
-    reftime = reftime[0:10]
-    reftime = datetime.strptime(reftime, '%Y-%m-%d')
-    
-    ds.close()
-
-    start_date = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
-    end_date = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
-
-    start_ref_dt = (start_date - reftime).total_seconds()
-    end_ref_dt = (end_date - reftime).total_seconds()
-
-    return start_ref_dt, end_ref_dt
-
-def load_netcdf(path:str):
-    # Load netCDF as Dataset from *path*
-    ds = Dataset(path, mode='r')
-
-    # Start and end times
-    start_date_str = start_year + start_month + start_day
-    end_date_str = end_year + end_month + end_day
-    start_date = datetime.strptime(start_date_str, '%Y%m%d')
-    end_date = datetime.strptime(end_date_str, '%Y%m%d')
-
-    # Get start / end times from user
-    start_time_s, end_time_s = seconds_to_date(path)
-
-    # Extracting time variables
-    start_time = ds.variables['start_time'][:]
-    end_time = ds.variables['end_time'][:]
-
-    # Indices of data in desired time frame
-    time_indices = np.where( (start_time > start_time_s) & (start_time < end_time_s) )[0]
-
-    # Extracting data
-    start_lat1 = (ds.variables['start_lat1'][:])[time_indices]
-    start_lat2 = (ds.variables['start_lat2'][:])[time_indices]
-    start_lat3 = (ds.variables['start_lat3'][:])[time_indices]
-
-    start_lats = np.array([start_lat1, start_lat2, start_lat3])
-
-    start_lon1 = (ds.variables['start_lon1'][:])[time_indices]
-    start_lon2 = (ds.variables['start_lon2'][:])[time_indices]
-    start_lon3 = (ds.variables['start_lon3'][:])[time_indices]
-
-    start_lons = np.array([start_lon1, start_lon2, start_lon3])
-
-    end_lat1 = (ds.variables['end_lat1'][:])[time_indices]
-    end_lat2 = (ds.variables['end_lat2'][:])[time_indices]
-    end_lat3 = (ds.variables['end_lat3'][:])[time_indices]
-
-    end_lats = np.array([end_lat1, end_lat2, end_lat3])
-
-    end_lon1 = (ds.variables['end_lon1'][:])[time_indices]
-    end_lon2 = (ds.variables['end_lon2'][:])[time_indices]
-    end_lon3 = (ds.variables['end_lon3'][:])[time_indices]
-
-    end_lons = np.array([end_lon1, end_lon2, end_lon3])
-
-    div = (ds.variables['div'][:])[time_indices]
-    shr = (ds.variables['shr'][:])[time_indices]
-    vrt = (ds.variables['vrt'][:])[time_indices]
-
-    idx1 = (ds.variables['idx1'][:])[time_indices]
-    idx2 = (ds.variables['idx2'][:])[time_indices]
-    idx3 = (ds.variables['idx3'][:])[time_indices]
-    no = (ds.variables['no'][:])[time_indices]
-
-    id_start_lat1 = (ds.variables['id_start_lat1'][:])[time_indices]
-    id_start_lat2 = (ds.variables['id_start_lat2'][:])[time_indices]
-    id_start_lat3 = (ds.variables['id_start_lat3'][:])[time_indices]
-
-    reftime = ds.getncattr('referenceTime')
-
-    # Closing dataset
-    ds.close()
-
-    return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons, 'div': div, 'shr': shr, 'vrt': vrt, 'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices, 'reftime': reftime, 'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no, 'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3}
-
 def plot_start_end_points(path:str):
 
     start_lats = load_netcdf(path)['start_lats']
@@ -174,15 +90,6 @@ def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_l
     new_lon -- Array of longitude values at the positions they were originally in, in the data file
 
     """
-    
-    # Loading start lats/lons
-    # start_lat1 = list(start_lat1)
-    # start_lat2 = list(start_lat2)
-    # start_lat3 = list(start_lat3)
-
-    # start_lon1 = list(start_lon1)
-    # start_lon2 = list(start_lon2)
-    # start_lon3 = list(start_lon3)
 
     # Combined list of start IDs
     start_ids = np.hstack((start_id1, start_id2, start_id3))
@@ -296,6 +203,8 @@ def plot_deformations(path:str):
         # Updating minimum index
         min_index = max_index
 
+    print('--- Creating sea-ice deformation figures ---')
+
     # Create a list of colorbars and titles to be iterated over
     cb_list = [cb_div, cb_shr, cb_vrt]
     title_list = ['Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Rotation Rate $(Days^{-1})$']
@@ -344,6 +253,134 @@ def plot_deformations(path:str):
         # Save the new figures
         fig.savefig(fig_path, bbox_inches='tight', dpi=600)
 
+def write_netcdf(path:str, output_folder:str):
+
+    # Load data
+    data = load_netcdf(path)
+
+    '''
+    _________________________________________________________________________________________
+    WRITE ALL RESULTS COMBINED TO A NETCDF FILE
+    '''
+    # Find absolute path in which the output netcdf file is to be stored
+    output_path = output_folder + 'filtered_dx.nc'
+
+    # Create a directory to store the output netcdf file if it does not exist already
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    # Create an output netcdf file and dataset
+    output_ds = Dataset(output_path, 'w', format = 'NETCDF4')
+    
+    # Add metadata
+    output_ds.iceTracker = data['icetracker']
+    output_ds.referenceTime = data['reftime']
+    output_ds.trackingError = data['trackingerror']
+
+    # Create x array to store output data
+    x = output_ds.createDimension('x', len(data['start_time']))
+        
+    # Create variables for netcdf data set
+    start_time = output_ds.createVariable('start_time', 'u4', 'x') # Start and end times
+    end_time   = output_ds.createVariable('end_time', 'u4', 'x')
+    
+    start_lat1 = output_ds.createVariable('start_lat1', 'f8', 'x') # Starting Lat/Lon triangle vertices
+    start_lat2 = output_ds.createVariable('start_lat2', 'f8', 'x')
+    start_lat3 = output_ds.createVariable('start_lat3', 'f8', 'x')
+    start_lon1 = output_ds.createVariable('start_lon1', 'f8', 'x')
+    start_lon2 = output_ds.createVariable('start_lon2', 'f8', 'x')
+    start_lon3 = output_ds.createVariable('start_lon3', 'f8', 'x')
+    
+    end_lat1   = output_ds.createVariable('end_lat1', 'f8', 'x') # Ending Lat/Lon triangle vertices
+    end_lat2   = output_ds.createVariable('end_lat2', 'f8', 'x')
+    end_lat3   = output_ds.createVariable('end_lat3', 'f8', 'x')
+    end_lon1   = output_ds.createVariable('end_lon1', 'f8', 'x')
+    end_lon2   = output_ds.createVariable('end_lon2', 'f8', 'x')
+    end_lon3   = output_ds.createVariable('end_lon3', 'f8', 'x')
+    
+    d          = output_ds.createVariable('div', 'f8', 'x') # Divergence and shear strain and vorticity rates
+    s          = output_ds.createVariable('shr', 'f8', 'x')
+    v          = output_ds.createVariable('vrt', 'f8', 'x')
+
+    id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices 
+    id2        = output_ds.createVariable('idx2', 'u4', 'x')
+    id3        = output_ds.createVariable('idx3', 'u4', 'x')
+    idtri      = output_ds.createVariable('no', 'u4', 'x')
+
+    id_start_lat1  = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
+    id_start_lat2  = output_ds.createVariable('id_start_lat2', 'u4', 'x')
+    id_start_lat3  = output_ds.createVariable('id_start_lat3', 'u4', 'x')
+
+    dux        = output_ds.createVariable('dudx', 'f8', 'x') # Strain rates
+    duy        = output_ds.createVariable('dudy', 'f8', 'x')
+    dvx        = output_ds.createVariable('dvdx', 'f8', 'x')
+    dvy        = output_ds.createVariable('dvdy', 'f8', 'x')
+
+    # Specify units for each variable
+    start_time.units = 'seconds since the reference time'
+    end_time.units   = 'seconds since the reference time'
+    
+    start_lat1.units = 'degrees North'
+    start_lat2.units = 'degrees North'
+    start_lat3.units = 'degrees North'
+    start_lon1.units = 'degrees East'
+    start_lon2.units = 'degrees East'
+    start_lon3.units = 'degrees East'
+    
+    end_lat1.units   = 'degrees North'
+    end_lat2.units   = 'degrees North'
+    end_lat3.units   = 'degrees North'
+    end_lon1.units   = 'degrees East'
+    end_lon2.units   = 'degrees East'
+    end_lon3.units   = 'degrees East'
+
+    d.units          = '1/days'
+    s.units          = '1/days'
+    v.units          = '1/days'
+
+    dux.units       = '1/days'
+    duy.units       = '1/days'
+    dvx.units       = '1/days'
+    dvy.units       = '1/days'
+
+    # Attribute data arrays to each variable
+    start_time[:] = data['start_time']
+    end_time[:]   = data['end_time']
+    
+    start_lat1[:] = data['start_lats'][0]
+    start_lat2[:] = data['start_lats'][1]
+    start_lat3[:] = data['start_lats'][2]
+    start_lon1[:] = data['start_lons'][0]
+    start_lon2[:] = data['start_lons'][1]
+    start_lon3[:] = data['start_lons'][2]
+    
+    end_lat1[:]   = data['end_lats'][0]
+    end_lat2[:]   = data['end_lats'][1]
+    end_lat3[:]   = data['end_lats'][2]
+    end_lon1[:]   = data['end_lons'][0]
+    end_lon2[:]   = data['end_lons'][1]
+    end_lon3[:]   = data['end_lons'][2]
+
+    d[:]          = data['div']
+    s[:]          = data['shr']
+    v[:]          = data['vrt']
+
+    id1[:]        = data['idx1']
+    id2[:]        = data['idx2']
+    id3[:]        = data['idx3']
+    idtri[:]      = data['no']
+
+    id_start_lat1[:] = data['start_id1']
+    id_start_lat2[:] = data['start_id2']
+    id_start_lat3[:] = data['start_id3']
+
+    dux[:]       = data['dudx']
+    duy[:]       = data['dudy']
+    dvx[:]       = data['dvdx']
+    dvy[:]       = data['dvdy']
+
+    # Close dataset
+    output_ds.close()
+
 if __name__ == '__main__':
     # Reading config
     config = read_config()
@@ -351,9 +388,13 @@ if __name__ == '__main__':
     # Initializing more specific ConfigParser objects
     IO = config['IO']
     options = config['options']
+    meta = config['meta']
+    netcdf_tools = config['netcdf_tools']
 
     path = IO['netcdf_folder']
     output_folder = IO['output_folder']
+
+    ice_tracker = meta['ice_tracker']
 
     start_year = options['start_year']
     start_month = options['start_month']
@@ -365,5 +406,16 @@ if __name__ == '__main__':
 
     timestep = options['timestep']
 
-    #plot_start_end_points(path)
-    plot_deformations(path)
+    area_filter = options['area_filter']
+    centre_lat = options['centre_lat']
+    centre_lon = options['centre_lon']
+    radius = options['radius']
+
+    if netcdf_tools['plot_start_end_points'] == 'True':
+        plot_start_end_points(path)
+
+    if netcdf_tools['plot_deformation'] == 'True':
+        plot_deformations(path)
+
+    if netcdf_tools['write_netcdf'] == 'True':
+        write_netcdf(path, output_folder)

@@ -1,8 +1,25 @@
+"""
+Author: Lekima Yakuden 
+GitHub: LekiYak
+
+--------------------------------------------------------------------------------
+Configuration file for data / netCDF analysis tools
+--------------------------------------------------------------------------------
+
+
+
+"""
+
 import configparser
 import os
 from datetime import datetime, timedelta
 import numpy as np
+from netCDF4 import Dataset
+import haversine as hs
+import pandas as pd
+import pyproj
 
+# Loading config file
 def read_config():
     """
     Imports user options from options.ini
@@ -23,6 +40,74 @@ def read_config():
     # Return a ConfigParser object
     return config
 
+# Compiles raw data into pandas dataframe
+def compile_data(raw_paths):
+
+    """ 
+    Compiles all data points in the list of data files (raw_paths) into a dataframe (df)
+
+    Returns the dataframe with all datapoints' starting lat and lon in columns.
+
+    INPUTS:
+    raw_paths -- List of paths to data files {List}
+
+    OUTPUTS: 
+    df -- Pandas dataframe with the following columns: Index  lat  lon {Dataframe}
+    """
+
+    df = pd.DataFrame()
+
+    # Initialising progression counters
+    num_files = len(raw_paths)
+    i = 0
+
+    # Appending each file's datapoints to the dataframe
+    for filepath in raw_paths:
+        
+        # Initialize temporary dataframe
+        temp_df = pd.DataFrame()
+
+        # Reading datapoints into temporary dataframe
+        temp_df = pd.read_csv(filepath, sep='\s\s+', engine='python', usecols = ['sLat','sLon'])
+
+        temp_df.rename(columns = {'sLat':'lat', 'sLon':'lon'}, inplace = True)
+
+        df = df.append(temp_df)
+
+        # Updating counter
+        i += 1
+        print(f'{i} / {num_files}')
+
+    return df
+
+# Converts lat/lon to the north pole stereographic projection (EPSG 3413)
+def convert_to_grid(lon, lat):
+    """
+    WARNING: INPUT IS LON, LAT (X, Y), AND THE OUTPUT IS ALSO X, Y
+
+    Takes in a point in EPSG 4326 (Lat/Lon) and transforms said point to
+    a polar stereographic projection (EPSG 3413).
+
+    lon, lat {float} -> x, y {float}
+
+    INPUTS:
+    lat, lon -- Float values representing a point in WGS 84
+
+    OUTPUTS:
+    x, y -- Float values representing the transformed point in EPSG 3413
+    """
+
+    # Input projection (lat/lon)
+    in_proj = pyproj.Proj(init='epsg:4326')
+
+    # Output projection (EPSG 3413, Polar Stereographic)
+    out_proj = pyproj.Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
+
+    # Transform function
+    x, y = np.array(pyproj.transform(in_proj, out_proj, lon, lat))
+    return x, y
+
+# Divides raw data into intervals specified by the user
 def divide_intervals(raw_paths, max_date, min_date, interval):
     """
     Divides delta-t filtered data into chunks (intervals) of *interval* hours for
@@ -81,6 +166,7 @@ def divide_intervals(raw_paths, max_date, min_date, interval):
 
     return {'interval_list': interval_list, 'date_pairs': date_pairs}
 
+# Filters raw data based on user set parameters
 def filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path):
     """
     Filters through the data files located in 'data_path' using the user 
@@ -159,3 +245,172 @@ def filter_data(start_year, start_month, start_day, end_year, end_month, end_day
         print(f'Start and end dates of data updated to {min_date} and {max_date}')
             
     return {'raw_paths': raw_paths, 'max_date': max_date, 'min_date': min_date}
+
+# Converts desired time range to seconds for netCDF analysis
+def seconds_to_date(path:str, start_year, start_month, start_day, end_year, end_month, end_day):
+
+    ds = Dataset(path, mode='r')
+
+    reftime = ds.getncattr('referenceTime')
+
+    reftime = reftime[0:10]
+    reftime = datetime.strptime(reftime, '%Y-%m-%d')
+    
+    ds.close()
+
+    start_date = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
+    end_date = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
+
+    start_ref_dt = (start_date - reftime).total_seconds()
+    end_ref_dt = (end_date - reftime).total_seconds()
+
+    return start_ref_dt, end_ref_dt
+
+# Filters netCDF data by area
+def filter_area(centre_lat, centre_lon, radius, start_lats, start_lons):
+
+    print('--- Filtering area ---')
+
+    # Turning inputs into floats if they aren't already
+    centre_lat, centre_lon, radius = float(centre_lat), float(centre_lon), float(radius)
+    centre_point = (centre_lat, centre_lon)
+
+    # Loading start lat/lon values
+    start_lat1, start_lat2, start_lat3 = start_lats[0], start_lats[1], start_lats[2]
+    start_lon1, start_lon2, start_lon3 = start_lons[0], start_lons[1], start_lons[2]
+
+    # List of 1s and 0s, 1 if the point is within the radius and 0 else
+    tf_list1, tf_list2, tf_list3 = ([] for i in range(3))
+
+    # Iterating over all lists
+    for coordinate in zip(start_lat1, start_lon1):
+        if hs.haversine(coordinate, centre_point) <= radius: # hs.haversine calculates the 
+            tf_list1.append(1)                               # distance between two lats/lons
+        else:
+            tf_list1.append(0)
+    
+    for coordinate in zip(start_lat2, start_lon2):
+        if hs.haversine(coordinate, centre_point) <= radius:
+            tf_list2.append(1)
+        else:
+            tf_list2.append(0)
+
+    for coordinate in zip(start_lat3, start_lon3):
+        if hs.haversine(coordinate, centre_point) <= radius:
+            tf_list3.append(1)
+        else:
+            tf_list3.append(0)
+
+    # Filtering indices where all three points (entire triangle) is within the radius
+    indices = [i for i in range(len(tf_list1)) if tf_list1[i] == tf_list2[i] == tf_list3[i] == 1]
+
+    return indices
+
+# Loads netCDF data
+def load_netcdf(path:str, area_filter='False', centre_lat=0, centre_lon=0, radius=0):
+
+    print('--- Loading data ---')
+
+    config = read_config()
+    options = config['options']
+
+    start_year, start_month, start_day = options['start_year'], options['start_month'], options['start_day']
+    end_year, end_month, end_day = options['end_year'], options['end_month'], options['end_day']
+
+    # Load netCDF as Dataset from *path*
+    ds = Dataset(path, mode='r')
+
+    # Get start / end times from user
+    start_time_s, end_time_s = seconds_to_date(path, start_year, start_month, start_day, end_year, end_month, end_day)
+
+    # Extracting time variables
+    start_time = ds.variables['start_time'][:]
+    end_time = ds.variables['end_time'][:]
+
+    # Indices of data in desired time frame
+    time_indices = np.where( (start_time > start_time_s) & (start_time < end_time_s) )[0]
+
+    # Extracting data (Filtered by time only)
+    start_lat1 = (ds.variables['start_lat1'][:])[time_indices]
+    start_lat2 = (ds.variables['start_lat2'][:])[time_indices]
+    start_lat3 = (ds.variables['start_lat3'][:])[time_indices]
+
+    start_lats = np.array([start_lat1, start_lat2, start_lat3])
+
+    start_lon1 = (ds.variables['start_lon1'][:])[time_indices]
+    start_lon2 = (ds.variables['start_lon2'][:])[time_indices]
+    start_lon3 = (ds.variables['start_lon3'][:])[time_indices]
+
+    start_lons = np.array([start_lon1, start_lon2, start_lon3])
+
+    end_lat1 = (ds.variables['end_lat1'][:])[time_indices]
+    end_lat2 = (ds.variables['end_lat2'][:])[time_indices]
+    end_lat3 = (ds.variables['end_lat3'][:])[time_indices]
+
+    end_lats = np.array([end_lat1, end_lat2, end_lat3])
+
+    end_lon1 = (ds.variables['end_lon1'][:])[time_indices]
+    end_lon2 = (ds.variables['end_lon2'][:])[time_indices]
+    end_lon3 = (ds.variables['end_lon3'][:])[time_indices]
+
+    end_lons = np.array([end_lon1, end_lon2, end_lon3])
+
+    div = (ds.variables['div'][:])[time_indices]
+    shr = (ds.variables['shr'][:])[time_indices]
+    vrt = (ds.variables['vrt'][:])[time_indices]
+
+    idx1 = (ds.variables['idx1'][:])[time_indices]
+    idx2 = (ds.variables['idx2'][:])[time_indices]
+    idx3 = (ds.variables['idx3'][:])[time_indices]
+    no   = (ds.variables['no'][:])[time_indices]
+
+    id_start_lat1 = (ds.variables['id_start_lat1'][:])[time_indices]
+    id_start_lat2 = (ds.variables['id_start_lat2'][:])[time_indices]
+    id_start_lat3 = (ds.variables['id_start_lat3'][:])[time_indices]
+
+    dudx = (ds.variables['dudx'][:])[time_indices]
+    dudy = (ds.variables['dudy'][:])[time_indices]
+    dvdx = (ds.variables['dvdx'][:])[time_indices]
+    dvdy = (ds.variables['dvdy'][:])[time_indices]
+
+    reftime = ds.getncattr('referenceTime')
+    icetracker = ds.getncattr('iceTracker')
+    trackingerror = ds.getncattr('trackingError')
+
+    if area_filter == 'True':
+        # Filtering by area
+        area_indices = filter_area(centre_lat, centre_lon, radius, start_lats, start_lons)
+
+        start_lats = np.array([start_lat1[area_indices], start_lat2[area_indices], start_lat3[area_indices]])
+        start_lons = np.array([start_lon1[area_indices], start_lon2[area_indices], start_lon3[area_indices]])
+        end_lats = np.array([end_lat1[area_indices], end_lat2[area_indices], end_lat3[area_indices]])
+        end_lons = np.array([end_lon1[area_indices], start_lon2[area_indices], end_lon3[area_indices]])
+
+        div = div[area_indices]
+        shr = shr[area_indices]
+        vrt = vrt[area_indices]
+
+        idx1 = idx1[area_indices]
+        idx2 = idx2[area_indices]
+        idx3 = idx3[area_indices]
+        no   = no[area_indices]
+
+        id_start_lat1 = id_start_lat1[area_indices]
+        id_start_lat2 = id_start_lat2[area_indices]
+        id_start_lat3 = id_start_lat3[area_indices]
+
+        dudx = dudx[area_indices]
+        dudy = dudy[area_indices]
+        dvdx = dvdx[area_indices]
+        dvdy = dvdy[area_indices]
+
+    # Closing dataset
+    ds.close()
+
+    return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons, 
+            'div': div, 'shr': shr, 'vrt': vrt, 
+            'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices, 
+            'reftime': reftime, 'icetracker': icetracker, 'trackingerror': trackingerror, 
+            'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no, 
+            'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3, 
+            'dudx': dudx, 'dudy': dudy, 'dvdx': dvdx, 'dvdy': dvdy}
