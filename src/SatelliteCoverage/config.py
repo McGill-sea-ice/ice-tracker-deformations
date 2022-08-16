@@ -40,6 +40,9 @@ def read_config():
     # Return a ConfigParser object
     return config
 
+"""
+Raw Data 
+"""
 # Compiles raw data into pandas dataframe
 def compile_data(raw_paths):
 
@@ -246,21 +249,49 @@ def filter_data(start_year, start_month, start_day, end_year, end_month, end_day
             
     return {'raw_paths': raw_paths, 'max_date': max_date, 'min_date': min_date}
 
+
+"""
+netCDF Analysis
+"""
 # Converts desired time range to seconds for netCDF analysis
 def seconds_to_date(path:str, start_year, start_month, start_day, end_year, end_month, end_day):
+    """
+    This function takes in a netCDF's reference time and start and end times of each triangle
+    and calculates the seconds ellapsed between the former and latter. This is done to filter
+    the data loaded from the netCDF by time, as the start and end times in the netCDF are stored
+    as "seconds after the reference time".
 
+    INPUTS:
+    path -- String of path to the netCDF file the data will be read from {str}
+
+    start_year -- Start year of the user-specified period (Hereinafter the "period") {str}
+    start_month -- Start month of the period {str}
+    start_day -- Start day of the period {str}
+
+    end_year -- End year of the period {str}
+    end_month -- End month of the period {str}
+    end_day -- End day of the period {str}
+    """
+
+    # Open dataset
     ds = Dataset(path, mode='r')
 
+    # Fetch reference time (start timestamp)
     reftime = ds.getncattr('referenceTime')
 
-    reftime = reftime[0:10]
-    reftime = datetime.strptime(reftime, '%Y-%m-%d')
-    
+    # Closing dataset
     ds.close()
 
+    # Converting reference time from string to datetime object
+    reftime = reftime[0:10]
+    reftime = datetime.strptime(reftime, '%Y-%m-%d')
+
+    # Converting start and end date strings to datetime objects
     start_date = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
     end_date = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
 
+    # Taking the difference between the start and end times of each triangle
+    # and converting it to seconds
     start_ref_dt = (start_date - reftime).total_seconds()
     end_ref_dt = (end_date - reftime).total_seconds()
 
@@ -268,6 +299,24 @@ def seconds_to_date(path:str, start_year, start_month, start_day, end_year, end_
 
 # Filters netCDF data by area
 def filter_area(centre_lat, centre_lon, radius, start_lats, start_lons):
+    """
+    This function filters data read from a netCDF (Stored as NumPy arrays) by area.
+    The user specifies a centre point in WGS 84 (Lat/Lon) and a radius in km, which are then
+    combined to create a mask, leaving only data *radius* kilometres from the centre point.
+    Only triangles with all three vertices within this circle will be loaded.
+
+    INPUTS:
+    centre_lat -- Latitude of the centre point {float}
+    centre_lon -- Longitude of the centre point {float}
+    radius -- Radius of the circle (mask) in kilometres {float}
+    start_lats -- Starting latitudes of the triangles in the format 
+                  [[Latitudes (1)], [Latitudes (2)], [Latitudes (3)]] {NumPy array}
+    start_lons -- Starting latitudes of the triangles in the format 
+                  [[Longitudes (1)], [Longitudes (2)], [Longitudes (3)]] {NumPy array}
+
+    OUTPUTS:
+    indices -- List of indices of triangles located within the area {list}
+    """
 
     print('--- Filtering area ---')
 
@@ -307,15 +356,28 @@ def filter_area(centre_lat, centre_lon, radius, start_lats, start_lons):
     return indices
 
 # Loads netCDF data
-def load_netcdf(path:str, area_filter='False', centre_lat=0, centre_lon=0, radius=0):
+def load_netcdf(path:str):
+    """
+    This function reads and loads data from a netCDF file in the same format as those output by the deformation
+    calculation script in src/SeaIceDeformation. The user is able to filter the data by time and area,
+    allowing for analytical tools to be applied to selected snippets of data.
+    
+    INPUTS:
+    path -- String of path to the netCDF file the data will be read from {str}
+
+    OUTPUTS:
+    dictionary object -- Dictionary storing filtered data as NumPy arrays {dict}
+    """
 
     print('--- Loading data ---')
-
+    # Reading config
     config = read_config()
     options = config['options']
 
+    # Reading user options
     start_year, start_month, start_day = options['start_year'], options['start_month'], options['start_day']
     end_year, end_month, end_day = options['end_year'], options['end_month'], options['end_day']
+    area_filter, centre_lat, centre_lon, radius = options['area_filter'], options['centre_lat'], options['centre_lon'], options['radius']
 
     # Load netCDF as Dataset from *path*
     ds = Dataset(path, mode='r')
@@ -331,29 +393,25 @@ def load_netcdf(path:str, area_filter='False', centre_lat=0, centre_lon=0, radiu
     time_indices = np.where( (start_time > start_time_s) & (start_time < end_time_s) )[0]
 
     # Extracting data (Filtered by time only)
+
+    start_time = start_time[time_indices]
+    end_time = end_time[time_indices]
+
     start_lat1 = (ds.variables['start_lat1'][:])[time_indices]
     start_lat2 = (ds.variables['start_lat2'][:])[time_indices]
     start_lat3 = (ds.variables['start_lat3'][:])[time_indices]
-
-    start_lats = np.array([start_lat1, start_lat2, start_lat3])
 
     start_lon1 = (ds.variables['start_lon1'][:])[time_indices]
     start_lon2 = (ds.variables['start_lon2'][:])[time_indices]
     start_lon3 = (ds.variables['start_lon3'][:])[time_indices]
 
-    start_lons = np.array([start_lon1, start_lon2, start_lon3])
-
     end_lat1 = (ds.variables['end_lat1'][:])[time_indices]
     end_lat2 = (ds.variables['end_lat2'][:])[time_indices]
     end_lat3 = (ds.variables['end_lat3'][:])[time_indices]
 
-    end_lats = np.array([end_lat1, end_lat2, end_lat3])
-
     end_lon1 = (ds.variables['end_lon1'][:])[time_indices]
     end_lon2 = (ds.variables['end_lon2'][:])[time_indices]
     end_lon3 = (ds.variables['end_lon3'][:])[time_indices]
-
-    end_lons = np.array([end_lon1, end_lon2, end_lon3])
 
     div = (ds.variables['div'][:])[time_indices]
     shr = (ds.variables['shr'][:])[time_indices]
@@ -373,13 +431,24 @@ def load_netcdf(path:str, area_filter='False', centre_lat=0, centre_lon=0, radiu
     dvdx = (ds.variables['dvdx'][:])[time_indices]
     dvdy = (ds.variables['dvdy'][:])[time_indices]
 
+    # Compressing coordinates into arrays of arrays
+    start_lats = np.array([start_lat1, start_lat2, start_lat3])
+    start_lons = np.array([start_lon1, start_lon2, start_lon3])
+    end_lats = np.array([end_lat1, end_lat2, end_lat3])
+    end_lons = np.array([end_lon1, end_lon2, end_lon3])
+
     reftime = ds.getncattr('referenceTime')
     icetracker = ds.getncattr('iceTracker')
     trackingerror = ds.getncattr('trackingError')
 
     if area_filter == 'True':
+        print('--- Filtering by area ---')
         # Filtering by area
         area_indices = filter_area(centre_lat, centre_lon, radius, start_lats, start_lons)
+
+        # Applying filter
+        start_time = start_time[area_indices]
+        end_time = end_time[area_indices]
 
         start_lats = np.array([start_lat1[area_indices], start_lat2[area_indices], start_lat3[area_indices]])
         start_lons = np.array([start_lon1[area_indices], start_lon2[area_indices], start_lon3[area_indices]])

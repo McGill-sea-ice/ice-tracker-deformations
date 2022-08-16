@@ -6,7 +6,6 @@ import cartopy.feature as cfeature
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import pyproj
 import math
 from netCDF4 import Dataset
@@ -19,11 +18,26 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def plot_start_end_points(path:str):
+    """
+    Plots the start and end points of the triangle vertices on a map.
+    Start points are blue, end points are red.
 
-    start_lats = load_netcdf(path)['start_lats']
-    start_lons = load_netcdf(path)['start_lons']
-    end_lats = load_netcdf(path)['end_lats']
-    end_lons = load_netcdf(path)['end_lons']
+    INPUTS:
+    path -- Path to netCDF {str}
+
+    OUTPUTS:
+    None -- Saves plot to the output directory
+    
+    """
+    print('--- Plotting start and end points ---')
+
+    # Load data from netCDF file
+    data = load_netcdf(path)
+
+    start_lats = data['start_lats']
+    start_lons = data['start_lons']
+    end_lats = data['end_lats']
+    end_lons = data['end_lons']
 
     """
     Plot Preamble
@@ -69,10 +83,26 @@ def plot_start_end_points(path:str):
         ax.scatter(end_x, end_y, color = 'red', s = 0.01)
 
     # Set title
-    plt.suptitle('Start and end points, 2021-02-01 to 2021-02-28 \nBlue points: Start points. Red points: End points.')
+    ax.set_title(f'Start and End points, {start_year}-{start_month}-{start_day}, {end_year}-{end_month}-{end_day}')
+
+    # Set a directory to store figures
+    figsPath =  output_folder + '/' + '/figs/'
+
+    # Create directory if it doesn't exist
+    os.makedirs(figsPath, exist_ok=True)
+
+    # Set prefix for filename
+    prefix = start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_' + str(timestep) 
+
+    # Full path of figure
+    fig_path = figsPath + prefix + '_start_end_points.png'
+
+    # Check if the path exists and overwriting if it does
+    if os.path.isfile(fig_path):
+            os.remove(fig_path)
 
     # Saving figure
-    plt.savefig('20202021_tripoints_month_72.png')
+    plt.savefig(fig_path, bbox_inches='tight', dpi=600)
 
 def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_lon2, start_lon3, start_id1, start_id2, start_id3):
     """
@@ -122,8 +152,7 @@ def plot_deformations(path:str):
     path -- Path to netCDF {str}
 
     OUTPUTS:
-    none
-    Saves divergence, shear, and vorticity plots.
+    None -- Saves divergence, shear, and vorticity plots to the output directory
     """
 
     # Loading data from netcdf as a dictionary
@@ -160,6 +189,8 @@ def plot_deformations(path:str):
     # Obtaining start index of data
     min_no = np.nanmin(data['no']) # Minimum (smallest) ID number
     min_index = np.nanmin(np.where(data['no'] == min_no)) # This value will be updated for each triangle
+
+    print('--- Creating sea-ice deformation figures ---')
 
     # Iterating over all files (Unique triangulations)
     for i in range(len(set(data['no']))):
@@ -203,8 +234,6 @@ def plot_deformations(path:str):
         # Updating minimum index
         min_index = max_index
 
-    print('--- Creating sea-ice deformation figures ---')
-
     # Create a list of colorbars and titles to be iterated over
     cb_list = [cb_div, cb_shr, cb_vrt]
     title_list = ['Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Rotation Rate $(Days^{-1})$']
@@ -232,13 +261,13 @@ def plot_deformations(path:str):
     # Set a directory to store figures for the current experiment
     figsPath =  output_folder + '/' + '/figs/'
         
-        # Create the directory if it does not exist already
+    # Create the directory if it does not exist already
     os.makedirs(figsPath, exist_ok=True)
 
-        # Create a prefix for the figure filenames
-    prefix = start_year + start_month + start_day + '_' + str(timestep) 
+    # Create a prefix for the figure filenames
+    prefix = start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_' + str(timestep) 
         
-        # Create the figure filenames
+    # Create the figure filenames
     div_path   = figsPath + prefix + '_div.png'
     shr_path = figsPath + prefix + '_shr.png'
     rot_path   = figsPath + prefix + '_rot.png'
@@ -391,7 +420,7 @@ if __name__ == '__main__':
     meta = config['meta']
     netcdf_tools = config['netcdf_tools']
 
-    path = IO['netcdf_folder']
+    path = IO['netcdf_path']
     output_folder = IO['output_folder']
 
     ice_tracker = meta['ice_tracker']
