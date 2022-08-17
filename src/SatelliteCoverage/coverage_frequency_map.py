@@ -49,8 +49,8 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
     xscale = uxextent - lxextent
     yscale = uyextent - lyextent
 
-    xscale = math.floor(xscale / (1000 * resolution))
-    yscale = math.floor(yscale / (1000 * resolution))
+    xscale = math.floor(xscale / (1000 * float(resolution)))
+    yscale = math.floor(yscale / (1000 * float(resolution)))
 
     # Extracting x and y coordinates of datapoints (Numpy arrays)
     xi, yj = xy

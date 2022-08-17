@@ -370,6 +370,7 @@ def load_netcdf(path:str):
     """
 
     print('--- Loading data ---')
+    
     # Reading config
     config = read_config()
     options = config['options']
