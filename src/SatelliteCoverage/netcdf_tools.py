@@ -14,6 +14,7 @@ from coverage_frequency_map import convert_to_grid
 from shapely.ops import transform
 import os
 
+# IGNORING WARNINGS, COMMENT IF YOU WANT TO SEE THEM
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -292,7 +293,7 @@ def write_netcdf(path:str, output_folder:str):
     WRITE ALL RESULTS COMBINED TO A NETCDF FILE
     '''
     # Find absolute path in which the output netcdf file is to be stored
-    output_path = output_folder + 'filtered_dx.nc'
+    output_path = output_folder + '/' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_' + timestep + '_filtered_dx.nc'
 
     # Create a directory to store the output netcdf file if it does not exist already
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -301,7 +302,7 @@ def write_netcdf(path:str, output_folder:str):
     output_ds = Dataset(output_path, 'w', format = 'NETCDF4')
     
     # Add metadata
-    output_ds.iceTracker = data['icetracker']
+    output_ds.iceTracker    = data['icetracker']
     output_ds.referenceTime = data['reftime']
     output_ds.trackingError = data['trackingerror']
 
@@ -335,9 +336,9 @@ def write_netcdf(path:str, output_folder:str):
     id3        = output_ds.createVariable('idx3', 'u4', 'x')
     idtri      = output_ds.createVariable('no', 'u4', 'x')
 
-    id_start_lat1  = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
-    id_start_lat2  = output_ds.createVariable('id_start_lat2', 'u4', 'x')
-    id_start_lat3  = output_ds.createVariable('id_start_lat3', 'u4', 'x')
+    id_start_lat1 = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
+    id_start_lat2 = output_ds.createVariable('id_start_lat2', 'u4', 'x')
+    id_start_lat3 = output_ds.createVariable('id_start_lat3', 'u4', 'x')
 
     dux        = output_ds.createVariable('dudx', 'f8', 'x') # Strain rates
     duy        = output_ds.createVariable('dudy', 'f8', 'x')
@@ -366,10 +367,10 @@ def write_netcdf(path:str, output_folder:str):
     s.units          = '1/days'
     v.units          = '1/days'
 
-    dux.units       = '1/days'
-    duy.units       = '1/days'
-    dvx.units       = '1/days'
-    dvy.units       = '1/days'
+    dux.units        = '1/days'
+    duy.units        = '1/days'
+    dvx.units        = '1/days'
+    dvy.units        = '1/days'
 
     # Attribute data arrays to each variable
     start_time[:] = data['start_time']

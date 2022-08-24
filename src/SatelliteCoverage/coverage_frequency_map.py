@@ -11,6 +11,10 @@ import math
 
 from config import *
 
+# IGNORING WARNINGS, COMMENT IF YOU WANT TO SEE THEM
+import warnings
+warnings.filterwarnings("ignore")
+
 # Visualises spatio-temporal coverage on a basemap
 def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
     print('--- Plotting heat map ---')
@@ -83,7 +87,14 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
 
     # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
     prefix = min_date_str + '_' + max_date_str + '_' + timestep + '_' + tolerance + '_' + 'res' + str(int(resolution)) + '_' + tracker
-    plt.savefig(output + prefix + '_' + 'freq.png')
+
+    # Set a directory to store figures
+    figsPath =  output + '/' + '/figs/'
+
+    # Create directory if it doesn't exist
+    os.makedirs(figsPath, exist_ok=True)
+
+    plt.savefig(figsPath + prefix + '_' + 'freq.png')
 
     print(f'Saved as {prefix}_freq.png')
 
@@ -161,7 +172,7 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
                   found at the same index in *interval_list* {list}
 
     OUTPUTS:
-    Plot of % of area covered as a function of time.
+    None -- Plot of % of area covered as a function of time.
 
     """
     print('--- Plotting coverage time series ---')
@@ -198,13 +209,22 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
         # Appending to main dataframe
         df.loc[len(df.index)] = [covered_percentage, start_date, end_date]
 
+    # Plotting timeseries
     df.plot(x='start_date', y='percentage', kind='line')
 
-    plt.savefig('coverage_areaRSCMS1202011102021060172hrs.png')
+    # Set a directory to store figures
+    figsPath =  output + '/' + '/figs/'
 
-    print(df.sort_values(by=['percentage']))
+    # Create directory if it doesn't exist
+    os.makedirs(figsPath, exist_ok=True)
 
-    return 
+    # Title
+    title = 'coverage_area_timeseries' + tracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '.png'
+
+    # Saving figure
+    plt.savefig(figsPath + title, bbox_inches='tight')
+
+    print('Saved as ' + figsPath)
 
 # Visualises coverage as a heatmap, split between user-set intervals
 def interval_frequency_histogram2d(interval_list):
@@ -299,11 +319,17 @@ def interval_frequency_histogram2d(interval_list):
     # Saving the file
     plt.axis('scaled')
 
+    # Converting dates for title and file name purposes
     max_date_title = str(max_date.strftime('%Y')) + '-' + str(max_date.strftime('%m')) + '-' + str(max_date.strftime('%d'))
     min_date_title = str(min_date.strftime('%Y')) + '-' + str(min_date.strftime('%m')) + '-' + str(min_date.strftime('%d'))
     max_date_str = max_date.strftime("%Y%m%d")
     min_date_str = min_date.strftime("%Y%m%d") 
   
+    # Set a directory to store figures
+    figsPath =  output + '/' + '/figs/'
+
+    # Create directory if it doesn't exist
+    os.makedirs(figsPath, exist_ok=True)
 
     # if/elif for title creation, for grammatical correctness
     if timestep != '0':
@@ -312,11 +338,11 @@ def interval_frequency_histogram2d(interval_list):
     elif timestep == '0':
         ax.set_title(f'{tracker}, {min_date} to {max_date}, all timesteps, {resolution} km, {interval} hr intervals')
 
-    # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
+    # Saving figure as YYYYMMDD_YYYYMMDD_timestep_tolerance_resolution_'res'_tracker_freq.png
     prefix = min_date_str + '_' + max_date_str + '_' + timestep + '_' + tolerance + '_' + 'res' + resolution + '_' + tracker + '_' + interval
-    plt.savefig(output + '/' + prefix + '_' + 'intervalfreq.png')
+    plt.savefig(figsPath + prefix + '_' + 'intervalfreq.png')
 
-    print(f'Saved as {prefix}_freq.png')
+    print(f'Saved as {prefix}_intervalfreq.png')
     
 if __name__ == '__main__':
     config = read_config()
