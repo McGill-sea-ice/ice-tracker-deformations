@@ -1,3 +1,14 @@
+"""
+Author: Lekima Yakuden
+GitHub: LekiYak
+
+--------------------------------------------------------------------------------
+Tools for analysing raw data files
+--------------------------------------------------------------------------------
+
+This file contains functions for analysing raw data files' spatial and temporal coverage.
+"""
+
 import os
 from time import strftime
 

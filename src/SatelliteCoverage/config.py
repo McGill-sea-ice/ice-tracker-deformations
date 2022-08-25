@@ -6,8 +6,7 @@ GitHub: LekiYak
 Configuration file for data / netCDF analysis tools
 --------------------------------------------------------------------------------
 
-
-
+This file contains functions for loading and processing user options, raw data, and netCDF files.
 """
 
 import configparser

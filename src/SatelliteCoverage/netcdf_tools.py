@@ -1,3 +1,15 @@
+"""
+Author: Lekima Yakuden
+GitHub: LekiYak
+
+--------------------------------------------------------------------------------
+Tools for analysing and processing netCDF files
+--------------------------------------------------------------------------------
+
+This file contains functions for analysing and processing netCDF files.
+
+"""
+
 from lib2to3.pytree import convert
 from time import strftime
 
