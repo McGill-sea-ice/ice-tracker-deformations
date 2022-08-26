@@ -78,7 +78,7 @@ python src/SatelliteCoverage/netcdf_tools.py
 conda deactivate
 ```
 
-The user can configure the deformation calculations by modifying the definitions of the parameters in the configuration file `src/SeaIceDeformation/namelist.ini`, and the NETCDF analyses can be configured in `src/SatelliteCoverage`. In particular, the `output_folder` in the `IO` section should be modified to point to a filesystem location where one has write permissions. 
+The user can configure the deformation calculations by modifying the definitions of the parameters in the configuration file `src/SeaIceDeformation/namelist.ini`, and the NetCDF analyses can be configured in `src/SatelliteCoverage`. In particular, the `output_folder` in the `IO` section should be modified to point to a filesystem location where one has write permissions. 
 
 ## Documentation
 

@@ -256,7 +256,7 @@ netCDF Analysis
 def seconds_to_date(path:str, start_year, start_month, start_day, end_year, end_month, end_day):
     """
     This function takes in a netCDF's reference time and start and end times of each triangle
-    and calculates the seconds ellapsed between the former and latter. This is done to filter
+    and calculates the seconds elapsed between the former and latter. This is done to filter
     the data loaded from the netCDF by time, as the start and end times in the netCDF are stored
     as "seconds after the reference time".
 
