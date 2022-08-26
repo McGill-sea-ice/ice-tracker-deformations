@@ -72,7 +72,7 @@ or
 ```bash
 # Activate the virtual environment
 conda activate icetrackdefs
-# Launch the NETCDF tool
+# Launch the NetCDF tool
 python src/SatelliteCoverage/netcdf_tools.py
 # Deactivate the environment when you are done
 conda deactivate
