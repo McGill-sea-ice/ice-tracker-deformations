@@ -1,98 +1,369 @@
-\documentclass[draft]{agujournal2018}
-\usepackage{apacite}
-\usepackage{lineno}
-\usepackage{amsmath}
-\usepackage{xcolor}
-\usepackage{lipsum}
+\documentclass[12pt]{article}
+\usepackage{graphicx, array, gensymb, amsmath, amssymb, enumitem, subcaption, siunitx, float, dirtree, geometry}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\geometry{margin=0.72in}
+
+\graphicspath{{./}}
+
+\newcommand{\ode}[2]{\frac{d #1}{d #2}}
+
 \begin{document}
+
 \title{%
   Deformations from Sea-Ice Tracker Data \\
-  \large Béatrice Duval}
+  \large Lekima Yakuden, Béatrice Duval}
 
-\section{Introduction}
+\section*{Introduction}
 
-As the ocean currents and winds apply a force on arctic sea-ice, the ice moves and deforms, which can create linear kinematic features (LKFs). Understanding LKFs and the statistical properties of sea-ice deformations is of interest from a climatological, physical and logistical point of view \textit{(Bouchat and Tremblay, 2020)}. Currently, simulated deformations are compared to observations from the Radarsat Geophysical Processor System (RGPS), which cover 1997 to 2008 only. There exists however a new promising alternative to obtain SAR images: the combined use of Sentinel-1 and RCM satellites. While they provide the possibility of an operational use of SAR data on a daily basis, they also offer a more frequent and wider area coverage of the Arctic in comparison to the RGPS dataset.
+This documentation focuses on the use of the data-set-generating and data-set-analyzing scripts, as the structure of the entire repository and the theory behind the computations. The document is organised as follows:
 
-This project aims at computing arctic sea-ice deformations from Sentinel-1 and RCM icetracker data through the use of one of the two algorithms provided. These algorithms differ in the type of input they can accept: while the first (method 00) takes as input a list of tracked features with their starting and ending Latitude/Longitude positions, the second (method 01) accepts inputs in a X/Y coordinate system. Because the latter method performs fewer data operations and, contrary to the method 00, takes the curvature of the Earth into consideration, we recommend using the method 01.
+\begin{enumerate}
+    \item Usage
+    \item Structure
+    \item Methodology
+\end{enumerate}
 
-This document is organized as follows. It first describes both algorithms, method 00 and 01, in section 2.1 and 2.2, respectively. Then, in section 3 and 4, a description of the project structure is provided and the project configuration arguments are defined. Finally, in section 5, we present the output NETCDF file produced by the algorithm.
+The Usage section will introduce the user-editable options followed by step-by-step instructions on how to run the scripts. The Structure section will discuss the structure of the repository and includes descriptions of all relevant files. The Methodology section will discuss the equations and methods used to compute the deformations.
 
-\section{Algorithms}
-\subsection{Method 00}
-This algorithm processes the input Latitude/Longitude data in 3 steps. First, a Delaunay triangulation is performed. These results are then converted from Latitude/Longitude to X/Y coordinates in a local Cartesian coordinate system based on a grid presented below. Finally, deformations are computed. 
+\section{Usage}\label{Usage}
 
-\begin{figure}[h]
- \begin{center}
-   \includegraphics[scale=.4]{figures/grid_lines.png}
- \end{center}
- \caption{A cropped RIOPS grid is used to define the region of interest, as well as to define local Cartesian coordinate systems.}
- \label{grid}
-\end{figure}
+The user must first install and activate the MiniConda environment before running any of the functions. The Conda environment (dependencies) can be installed and activated by navigating to the project's home directory (\textbf{ice-tracker-deformations}) and executing the following two lines:
 
-A grid is used throughout the execution of this algorithm. More specifically, we use a cropped version of the RIOPS grid that defines our region of interest (Fig. \ref{grid}). In addition, the grid stores a distance to land matrix, a land-sea mask, and a matrix of X/Y tracer points. 
-
-The following describes the algorithm in more details.
+\begin{verbatim}
+    $ conda env create -f environment.yaml
+    $ conda activate icetrackdefs
+\end{verbatim}
 
 
 
-\subsubsection{Performing a Delaunay Triangulation}
+\subsection{Data-set Generation}
 
-% LIEN VERS LA DOCUMENTATION
-First, a Delaunay triangulation algorithm \textit{scipy.spatial.Delaunay} is used to organize the tracked features into triangular arrays. 
+Only two files, \textbf{namelist.ini} and \textbf{main.py} must be edited or ran by the user to generate deformation data sets. The user-editable parameters in \textbf{namelist.ini} control \textbf{main.py}.
 
-\subsubsection{Conversion to Cartesian Coordinates}
-\begin{figure}[h]
- \begin{center}
-   \includegraphics[scale=.6]{figures/localCS.png}
- \end{center}
- \caption{Given a tracer point at (i, j), the origin is defined at the speed point (i-1, j-1), and the x and y-axes are defined by the local grid cell.}
- \label{axes-locaux}
-\end{figure}
-For every triangle found in the previous step, we want to convert each vertex's starting and ending positions from Latitude/Longitude to X/Y coordinates. In order to avoid conversion errors, we define a local Cartesian coordinate system for each triangle using the RIOPS grid (Fig. \ref{axes-locaux}). That is, for each triangle:
+\subsubsection*{\textbf{namelist.ini}}
+
+The deformation calculation code's settings are editable in \textbf{namelist.ini}. The structure of the file is as follows:
+
+\subsubsection*{[IO]}
 
 \begin{itemize}
-    \item We find the RIOPS grid tracer point nearest to the triangle center (e.g. point T in Fig. \ref{axes-locaux}), and define a ``local cell'' based on the neighbouring speed points (A, B, C and D in Fig. \ref{axes-locaux}).
-    % Region of interest: rejection of points is done here
-    \item The origin is defined at the Southwest node (C in Fig. \ref{axes-locaux}) and the x and y axis are defined from the southern and eastern cell vertices respectively (sea blue arrows in Fig. \ref{axes-locaux}).
-    
-    \item Using haversine, we compute the distance between the origin and the nodes B and D, such that we can express their position in the local Cartesian coordinate system: B $ = (0, b)$ and D $=(d,0)$.
+    \item $data\_folder$: Path to the directory where the raw $.dat$ files are stored. All of the data files must be uncompressed in this directory to be processed.
+    \item $output\_folder$: Path to the desired output directory. All functions which save files will create the path if the target directory does not already exist. Figures and NETCDF4 files will be saved to this directory.
+    \item $exp$: Name of the current experiment. This is the name of the directory that will be stored at $output\_path$ containing all outputs.
 \end{itemize}
 
+\subsubsection*{[Grid]}
 
-\begin{figure}[h]
- \begin{center}
-   \includegraphics[scale=.6]{figures/triangulation.png}
- \end{center}
- \caption{ We convert the triangle vertex positions from Latitude/Longitude to X/Y coordinates in a local Cartesian coordinate system via triangulation.}
- \label{triangulation}
-\end{figure}
+This section is depreciated and will be removed in subsequent versions.
 
-We now find the starting and ending positions of each triangle vertex in the local Cartesian coordinate system via triangulation (Fig. \ref{triangulation}):
+\subsubsection*{[Metadata]}
 
 \begin{itemize}
-    
-    \item Using haversine, we find the distances $a_1, a_2$ and $a_3$ between the vertex P and the nodes B, C and D. 
-    
-    \item We now have 3 circles centered at B, C and D and with $a_1, a_2$ and $a_3$ radii, respectively. The X/Y position of the vertex P corresponds to the intersection of the 3 circles. More specifically,
-    
-\begin{align}
-    x = \frac{a_2^2-a_3^2+d^2}{2d} \;\; \text{and} \;\;
-    y = \frac{a_2^2-a_1^2+b^2}{2b}.
-\end{align}
-  
+    \item $ice\_tracker$: Name of the satellite used to collect the raw data. Used in making titles for files and figures. (e.g. S1 (for Sentinel-1))
+    \item $tracking\_error$: Spatial uncertainty of the $ice\_tracker$ in metres.
 \end{itemize}
 
-\textit{Rejection of Data}
+\subsubsection*{[Processing$\_$options]}
 
-If the distance between a triangle's center point and its nearest grid tracer point is greater than 10 km, we reject that data set since it is not within the region of interest defined by the RIOPS grid (neighboring tracer points are at most 8 km apart). Moreover, we reject a triangle if its tracer point's distance to land is 0, that is if the triangle is located on land. Lastly, once we have the triangle's vertex positions in Cartesian coordinates, we compute its angles and reject it if it has an angle of less than 10 degrees. 
+\begin{itemize}
+    \item $overwrite$: Boolean (yes / no) to overwrite previous results if they exist under the same output path and experiment name.
+    \item $method$: The first of two methods, M00, is being depreciated. It is recommended that method M01 be used (set the variable = M01).
+    \item $visualise$: Boolean (yes / no) that determines whether or not the deformations will be visualised along side the NETCDF4 file being generated.
+\end{itemize}
 
-Otherwise, we proceed to the next step, that is computing deformations.
+\subsubsection*{[Date$\_$options]}
 
+\begin{itemize}
+    \item $start\_year$: Start year of analysis. 
+    \item $start\_month$: Start month of analysis.
+    \item $start\_day$: Start day of analysis.
+    \item $end\_year$: End year of analysis.
+    \item $end\_month$: End month of analysis.
+    \item $end\_day$: End day of analysis.
+    \item $timestep$: Timestep (between images) in hours.
+    \item $tolerance$: The buffer, in hours, the time step is afforded. (e.g. $tolerance = 3$ will result in a time step of $timestep \pm 3$ hours).
+\end{itemize}
 
+\subsubsection*{\textbf{main.py}}
 
-\subsubsection{Computing Deformations}
+\begin{enumerate}
+    \item Set $data\_folder$ and $output\_folder$ to the desired target directories.
+    \item Set $exp$ to the desired experiment name.
+    \item Set $ice\_tracker$ and $tracking\_error$ to the name of the satellite and its tracking error, respectively.
+    \item Set your start and end dates. Zero-pad them according to the ISO format, e.g. 04 instead of 4.
+    \item Set $timestep$ and $tolerance$ as desired.
+    \item Save changes made to \textbf{namelist.ini}.
+\end{enumerate}
+
+Once the options in \textbf{namelist.ini} have been set, all that is left to do is to run \textbf{main.py} by navigating to \textbf{src/SeaIceDeformation} and executing
+
+\begin{verbatim}
+    $ python main.py
+\end{verbatim}
+
+\subsection{Data-set Analysis}
+
+As discussed in \ref{structure} Data-set analysis, there are two files with analysis functions in them. 
+
+\textbf{coverage$\_$frequency$\_$map.py} is designed to analyse \textit{raw data files} (features tracked from pairs of satellite images). \textbf{netcdf$\_$tools.py} is designed to analyze and edit \textit{NETCDF4 files} produced by the deformation computation scripts. These two files can be run in the same manner as all other python files from the terminal:
+
+\begin{verbatim}
+    $ python coverage_frequency_map.py
+\end{verbatim}
+
+or 
+
+\begin{verbatim}
+    $ python netcdf_tools.py
+\end{verbatim}
+
+Both of these files have customizable options, found in \textbf{options.ini}. This one $.ini$ file controls all tools.
+
+\subsubsection*{\textbf{options.ini}}
+This files contains the following editable parameters:
+
+\subsubsection*{[IO]}
+
+\begin{itemize}
+    \item $data\_folder$: Path to the directory containing raw (.dat) data files. All of the data files must be uncompressed in this directory to be processed. Used only in $coverage\_frequency\_map.py$.
+    
+    \item $output\_folder$: Path to the desired output directory. All functions which save files will create the path if the target directory does not already exist. Figures and NETCDF4 files will be saved to this directory.
+    
+    \item $netcdf\_path$: Path to the NETCDF4 file to be staged for reading or editing. Used only in $netcdf\_tools.py$. This is the direct path to the NETCDF4 file, not the directory which contains it. This path should end with $.nc$
+\end{itemize}
+
+\subsubsection*{[meta]}
+
+\begin{itemize}
+    \item $ice\_tracker$: Name of the satellite used to collect the raw data. Used in making titles for files and figures. (e.g. S1 (for Sentinel-1))
+\end{itemize}
+
+\subsubsection*{[options]}
+
+The date options are applied to tools in both $coverage\_frequency\_map.py$ and $netcdf\_tools.py$
+\begin{itemize}
+    \item $start\_year$: Start year of analysis. 
+    \item $start\_month$: Start month of analysis.
+    \item $start\_day$: Start day of analysis.
+    \item $end\_year$: End year of analysis.
+    \item $end\_month$: End month of analysis.
+    \item $end\_day$: End day of analysis.
+    \item $timestep$: Timestep (between images) in hours. Note that when plotting from a NETCDF4 file, this timestep must be set accurately to generate the correct titles.
+    \item $tolerance$: The buffer, in hours, the time step is afforded. (e.g. $tolerance = 3$ will result in a time step of $timestep \pm 3$ hours). This option only affects $coverage\_frequency\_map.py$.
+    \item $interval$: The interval used to imitate model outputs in $coverage\_frequency\_map.py$, in hours. Must be larger or equal to $timestep$, as multiple time steps can be taken within an interval (e.g. three 24 hour time steps in a 72 hour interval).
+    \item $resolution$: Cell size of heat maps generated by $coverage\_frequency\_map.py$ in kilometres.
+    \item $area\_filter$: Boolean to turn the area filtering function in $netcdf\_tools.py$ on or off. If True, the NETCDF4 will be filtered to only include data in a circle set by the next three parameters.
+    \item $centre\_lat$: Latitude of the centre point of the masking circle.
+    \item $centre\_lon$: Longitude of the centre point of the masking circle.
+    \item $radius$: Radius of the masking circle.
+\end{itemize}
+
+Functions are turned on and off by setting the variables corresponding to the functions in \textbf{options.ini} to True and False, respectively.
+
+\subsection*{Tools}
+
+\subsubsection*{\textbf{coverage\_frequency\_map.py}}
+
+\subsubsection*{$visualise\_coverage\_histogram2d$}
+
+This function is on by default when running \textbf{coverage\_frequency\_map.py}. To generate a 2-D histogram of coverage:
+
+\begin{enumerate}
+    \item Set $data\_folder$ and $output\_folder$ to the desired target directories.
+    \item Set $ice\_tracker$ to the name of the satellite(s) used to capture the raw image pairs. Keep it as one string, e.g. RCMS1 or RCM$\_$S1 but not RCM S1.
+    \item Set your start and end dates. Zero-pad them according to the ISO format, e.g. 04 instead of 4.
+    \item Set $timestep$, $tolerance$, and $resolution$ as desired.
+    \item Ensure that $visualise\_timeseries$ and $visualise\_interval$ are set to False.
+    \item Save \textbf{options.ini}
+    \item Run \textbf{coverage\_frequency\_map.py}.
+\end{enumerate}
+
+\subsubsection*{$visualise\_timeseries$}
+
+This function must be turned on in \textbf{options.ini} by setting $visualise\_timeseries$ to True. To plot a timeseries of spatial coverage:
+
+\begin{enumerate}
+    \item Set $data\_folder$ and $output\_folder$ to the desired target directories.
+    \item Set $ice\_tracker$ to the name of the satellite(s) used to capture the raw image pairs. Keep it as one string, e.g. RCMS1 or RCM$\_$S1 but not RCM S1.
+    \item Set your start and end dates. Zero-pad them according to the ISO format, e.g. 04 instead of 4.
+    \item Set $timestep$, $tolerance$, $interval$, and $resolution$ as desired. Note that the $interval$ must be greater than or equal to the $timestep$.
+    \item Set $visualise\_timeseries$ to True.
+    \item Save \textbf{options.ini}
+    \item Run \textbf{coverage\_frequency\_map.py}.
+\end{enumerate}
+
+\subsubsection*{$interval\_frequency\_histogram$}
+
+This function must be turned on in \textbf{options.ini} by setting $interval\_frequency\_histogram$ to True. To plot a heat map representing interval-based coverage:
+
+\begin{enumerate}
+    \item Set $data\_folder$ and $output\_folder$ to the desired target directories.
+    \item Set $ice\_tracker$ to the name of the satellite(s) used to capture the raw image pairs. Keep it as one string, e.g. RCMS1 or RCM$\_$S1 but not RCM S1.
+    \item Set your start and end dates. Zero-pad them according to the ISO format, e.g. 04 instead of 4.
+    \item Set $timestep$, $tolerance$, $interval$, and $resolution$ as desired. Note that the $interval$ must be greater than or equal to the $timestep$.
+    \item Set $visualise\_interval$ to True.
+    \item Save \textbf{options.ini}
+    \item Run \textbf{coverage\_frequency\_map.py}.
+\end{enumerate}
+
+\subsubsection*{\textbf{netcdf\_tools.py}}
+
+Functions in this file, designed to read and edit NETCDF4 files, are mainly controlled by user-editable masks in space and time. All functions must take a date range, set by the user in \textbf{options.ini}, as input. If the dates selected by the user do not correspond to the availability of data in the NETCDF4, an error will be thrown. Optionally, the user can also create a circular area mask by setting $area_filter$ to True and setting the centre point's coordinates (in WGS 84, Lat/Lon) and setting a value for the radius. If $area_filter$ is set to False, all data available in the specified time range will be processed.
+
+\subsubsection*{$plot\_start\_end\_points$}
+
+This function must be turned on in \textbf{options.ini} by setting $plot\_start\_end\_points$ to True. To plot start and end points of the loaded NETCDF4's triangle vertices:
+
+\begin{enumerate}
+    \item Set $output\_folder$ and $netcdf\_path$ to the desired target directory and file path.
+    \item Set your start and end dates. Zero-pad them according to the ISO format, e.g. 04 instead of 4.
+    \item Set $plot\_start\_end\_points$ to True.
+    \item Save \textbf{options.ini}
+    \item Run \textbf{netcdf\_tools.py}.
+\end{enumerate}
+
+\subsubsection*{$plot\_deformations$}
+
+This function must be turned on in \textbf{options.ini} by setting $plot\_deformations$ to True. To plot deformations from the loaded NETCDF4:
+
+\begin{enumerate}
+    \item Set $output\_folder$ and $netcdf\_path$ to the desired target directory and file path.
+    \item Set your start and end dates. Zero-pad them according to the ISO format, e.g. 04 instead of 4.
+    \item Set $timestep$ to the time step of the NETCDF4 file. This must be done to accurately title the plots.
+    \item Set $plot\_deformations$ to True.
+    \item Save \textbf{options.ini}
+    \item Run \textbf{netcdf\_tools.py}.
+\end{enumerate}
+
+\subsubsection*{$write\_netcdf$}
+
+This function must be turned on in \textbf{options.ini} by setting $write\_netcdf$ to True. To write and save a new NETCDF4 by splicing the loaded NETCDF4:
+
+\begin{enumerate}
+    \item Set $output\_folder$ and $netcdf\_path$ to the desired target directory and file path.
+    \item Set your start and end dates. Zero-pad them according to the ISO format, e.g. 04 instead of 4.
+    \item Set $timestep$ to the time step of the NETCDF4 file. This must be done to accurately title the output NETCDF4.
+    \item Set $write\_netcdf$ to True.
+    \item Save \textbf{options.ini}
+    \item Run \textbf{netcdf\_tools.py}
+\end{enumerate}
+
+\section{Structure}\label{Structure}
+
+The project is structed like so within \textbf{ice-tracker-deformations}'s \textbf{src} directory:
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[b]{.5\textwidth}
+        \dirtree{%
+            .1 .
+            .2 SatelliteCoverage.
+            .3 config.py.
+            .3 coverage$\_$frequency$\_$map.py.
+            .3 netcdf$\_$tools.py.
+            .3 options.ini.
+        }
+    \end{minipage}%
+    \begin{minipage}{.5\textwidth}
+        \dirtree{%
+            .1 .
+            .2 SeaIceDeformation.
+            .3 \textit{M00$\_$d00$\_$crop$\_$grid.py}.
+            .3 \textit{M00$\_$d01$\_$delaunay$\_$triangulation.py}.
+            .3 \textit{M00$\_$d02$\_$to$\_$grid$\_$coord$\_$system.py}.
+            .3 \textit{M00$\_$d03$\_$compute$\_$deformations.py}.
+            .3 M01$\_$d01$\_$delaunay$\_$triangulation.py.
+            .3 M01$\_$d03$\_$compute$\_$deformations.py.
+            .3 config.py.
+            .3 main.py.
+            .3 namelist.ini.
+            .3 utils$\_$datetime.py.
+            .3 utils$\_$deformation$\_$computations.py.
+            .3 utils$\_$get$\_$data$\_$paths.py.
+            .3 utils$\_$grid$\_$coord$\_$system.py.
+            .3 utils$\_$load$\_$data.py.
+            .3 utils$\_$load$\_$grid.py.
+            .3 utils$\_$visualise$\_$grid.py.
+            .3 visualise$\_$deformation.py.
+        }
+    \end{minipage}
+\end{figure}
+
+Files in \textit{italics} (\textit{M00$\_$*}) are depreciated and may not be present in future versions. The project runs using the MiniConda virtual environment discussed in \ref{Usage} Usage.
+
+\subsection{Data-set Generation}
+
+Files and functions designed to compute and visualise deformations from raw data files (image pairs) exist in the \textbf{SeaIceDeformation} subdirectory. The raw data files, containing a cloud of points, are formed into a mesh using a Delaunay triangulation which is then used to compute deformations according to line integral approximations (sums around each triangle based on strain rates). These data are then stored in a NETCDF4 file, and optionally plotted on a basemap. Only \textbf{namelist.ini} must be edited before generating deformation data sets. Directories with .csv files corresponding to each processed data file will be generated to be used in intermediate steps of the process, and will remain stored in the desired output path.
+
+\begin{itemize}
+    \item \textbf{M01$\_$d01$\_$delaunay$\_$triangulation.py}: Module that performs a Delaunay triangulation on a set of X/Y data points for all raw DAT files listed in config. The results are stored in a triangulated CSV file for each data file, using the triangulated data paths listed in config.
+    \item \textbf{M01$\_$d03$\_$compute$\_$deformations.py}: Module that computes sea-ice deformations for triangle cells for all triangulated CSV files listed in config. The results are then
+    stored in a calculations CSV file for each data file, in addition to a single output NETCDF4 file that combines the results from all processed datasets, using the calculations and output data paths listed in config.
+    \item \textbf{config.py}: This file contains helper functions for processing user inputs and data.
+    \item \textbf{main.py}: This file is the main file to be executed to perform data set generation.
+    \item \textbf{utils$\_$datetime.py}: Module that provides tools for finding the starting and ending times of a data file as Datetime objects given its filename, and for finding the time lapse in seconds between two Datetime objects.
+    \item \textbf{utils$\_$deformation$\_$computations.py}: This file contains helper functions for deformation computations, used in \textbf{M01$\_$d03$\_$compute$\_$deformations.py}.
+    \item \textbf{utils$\_$get$\_$data$\_$paths.py}: Module that provides tools that produce data file paths for each stage of data processing given a raw filename, an output folder, an experience name, a starting date and a duration (all of which are parameters in namelist.ini). These data file paths are used to write and load data files from all stages of data processing.
+    \item \textbf{utils$\_$grid$\_$coord$\_$system.py}: Module that provides tools for the conversion of a triangle’s starting and ending positions from Latitude/Longitude to X/Y coordinates in a local Cartesian grid coordinate system.
+    \item \textbf{utils$\_$load$\_$data.py}: This file contains helper functions for loading raw data files.
+    \item \textbf{utils$\_$load$\_$grid.py}: This file contains helper functions for loading the RIOPS grid.
+    \item \textbf{utils$\_$visualise$\_$grid.py}: This file contains functions for plotting information on the RIOPS grid.
+    \item \textbf{visualise$\_$deformation.py}: This file contains functions to visualise deformation data on a basemap.
+\end{itemize}
+
+\subsubsection*{NETCDF4 output}
+
+The output NETCDF4 file contains the following meta data:
+
+\begin{itemize}
+    \item Tracking error: Satellite's resolution.
+    \item Satellite name.
+    \item Reference time: 00:00:00 on the first date of data availability.
+\end{itemize}
+
+Each row of the NETCDF4 represents a triangle (produced by the Delaunay triangulation) formed by three vertices, the start and end positions in latitude/longitude of which take up six columns (three start positions and three end positions). Each row (triangle)) is further populated by the start and end times (seconds after the reference time corresponding to the start/end positions), deformation values (divergence, shear, and vorticity), the triangulation information (taking up seven columns: id1, id2, id3, idtri, id$\_$start$\_$lat1, id$\_$start$\_$lat2, id$\_$start$\_$lat3), and the strain rates ($\ode{u}{x}$, $\ode{u}{y}$, $\ode{v}{x}$, $\ode{v}{y}$). All deformation and strain rate values are in units of $1/days$.
+
+\subsection{Data-set Analysis}\label{structure}
+
+Scripts for analysing the data sets (in NETCDF4 format) and raw data exist in the \textbf{SatelliteCoverage} subdirectory. 
+
+\begin{itemize}
+    \item \textbf{config.py}: This file contains helper functions to load, sort, and filter raw satellite image pairs (henceforce called data files), as well as a function to read the user's preferences from \textbf{options.ini}.
+    
+    \item \textbf{coverage$\_$frequency$\_$map.py}: This file contains functions designed to analyze the spatio-temporal coverage of raw data files.
+
+        \begin{itemize}
+            \item \textbf{visualise$\_$coverage$\_$histogram2d}: This function takes in x and y points in the \textit{NSIDC Sea Ice Polar Stereographic North} (EPSG 3413) projection representing the tracked features, the maximum and minimum dates of the data's time range, and the user-set timestep. It then plots a 2-D histogram at the user-specified resolution, where the value of some bin (cell) is the number of data points which landed in that bin during the specified time range, at that timestep. The histogram is constructed using NumPy's \textit{histogram2d} function.
+            
+            \item \textbf{coverage$\_$histogram2d}: This is a helper function for \textbf{coverage$\_$timeseries} and \textbf{interval} frequency histogram2d. Like \textbf{visualise$\_$coverage$\_$histogram2d}, this function bins points from the raw data files into a 2-D histogram to investigate coverge, but outputs a binary, 2-D array, where cells with \underline{any} data have values of 1 and cells with no data have values of 0.
+            
+            \item \textbf{coverage$\_$timeseries}: This function plots a timeseries of coverage (in $\%$ of the Arctic Ocean) from raw data files. The area of the Arctic Ocean, as well as the size of the grid cells that cover it, can be modified in the source code. 
+            
+            \item \textbf{interval$\_$frequency$\_$histogram2d}: Similar to \textbf{visualise$\_$coverage$\_$histogram2d}, this function plots a heatmap of spatio-temporal coverage in chunks (intervals) of time. Each data point associated with a specified \textit{time step} (e.g. 24, 72 hours) that lands in a cell within the specified time \textit{interval} will switch that cell's value from 0 to 1. The purpose of this is to imitate model outputs, which may have a generation frequency of three days (One output every three days). 
+        \end{itemize}
+
+    \item \textbf{netcdf$\_$tools.py}: This file contains functions designed to analyse and splice NETCDF4 files created by the deformation calculation scripts in \textbf{src/SeaIceDeformation} directory.
+    
+        \begin{itemize}
+            \item \textbf{plot$\_$start$\_$end$\_$points}: This function plots the start and end points for the triangle vertices in the loaded NETCDF4. This translates to six points, three blue start points and three red end points, per row in the NETCDF4. This illustrates the rough coverage area of the NETCDF4.
+            
+            \item \textbf{recreate$\_$coordinates}: This function is necessary in plotting the deformations from the NETCDF4 file. The triangulation information that is embedded in the NETCDF4 when running the deformation calculation scripts (\textbf{src/SeaIceDeformation}) requires that the vertices (lat/lon points) of each of the triangles be in the order they were processed in during the intial loading of the raw data files. This function takes an ID associated with each triangle vertex (in the NETCDF4 file as \textbf{start$\_$lat$\_$id1, 2, 3}) and effectively recreates the conditions under which the deformations were calculating, allowing for accurate plotting.
+            
+            \item \textbf{plot$\_$deformations}:This function  plots the deformation information stored in the 
+            
+            
+            NETCDF4 file. It saves three plots to the user's specified output folder: one illustrating divergence, one illustrating vorticity, and one representing shear. It uses MatPlotLib's \textit{ax.tripcolor} function to plot and colour triangles according to the same colourbars used in the original deformation visualisation (located in \textbf{src/SeaIceDeformation}).
+        
+        \end{itemize}
+
+    \item \textbf{options.ini}: This file contains the user-editable options for all of the above scripts. It is broken down into five section: IO, meta, options, coverage$\_$frequency, and netcdf$\_$tools. The parameters in this file will be read by the generation and analysis scripts. This file is also where the user can specify which tools to use.
+\end{itemize}
+
+\section{Methodology}
+
+This section will discuss the methodology behind the deformation calculations.
+
+\subsection{Computing Deformations}
 
 We compute deformations for every triangle using X/Y coordinates in a local Cartesian coordinate system as computed in the previous step and following \textit{Bouchat et al. (2020)}. The following is taken from \textit{Bouchat et al. (2020)} and presents the equations used to compute deformations.
 
@@ -125,189 +396,5 @@ where A is the Lagrangian cell area. If $(x_{i}, y_{i})$ is the position of the 
  \end{equation}
 and $x_{n+1} = x_1$, and similar other cyclical equalities for $y_{n+1}$, $u_{n+1}$, and $v_{n+1}$. Similar equations also hold for the other velocity derivatives. Here, $(u_{i},v_{i})$ is computed as $(\Delta x_{i}/\Delta t_{i}, \Delta y_{i}/\Delta t_{i})$, where $\Delta x_{i}$ and $\Delta y_{i}$ are the displacement of the cell's vertices during the time interval $\Delta t_{i}$. Note that Equation (\ref{eq:A}) is also derived using the divergence theorem and the trapezoidal rule.
 %%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Method 01}
-
-This algorithm processes the input data in X/Y coordinates in 2 steps. A Delaunay triangulation is first performed, and is followed by the computation of deformations. The following describes these steps.
-
-\subsubsection{Performing a Delaunay Triangulation}
-
-The Delaunay triangulation is performed as described in section 2.1.1. We reject triangles that have an angle of less than 10 degrees.
-
-\subsubsection{Computing Deformations}
-
-We compute deformations for every triangle following \textit{Bouchat et al. (2020)} (equations 2 to 7).
-
-\section{Project Structure}
-
-In the following, we describe the structure of the project. We start by presenting the configuration INI file and module in section 3.1. We then present the data processing modules in section 3.2. Finally, we present the visualisation and utility modules in section 3.3 and 3.4, respectively. 
-
-
-% methods M00 in names
-
-\subsection{Configuration}
-
-The user can configure the project by modifying the definitions of the parameters in namelist.ini. The config module reads these parameters. It then uses them to create a list of data files to process and lists of paths to which data files of all stages of data processing are to be written and loaded. The config module is imported by all data processing modules in order to retrieve configuration parameters, as well as the lists of input and output data file paths.
-
-The following provides a more detailed description of namelist.ini and config.
-
-\begin{description}
-
-  \item[namelist.ini -- ]  Configuration file that contains configuration parameter definitions (see section 4 for further details).
-    
-    \item[config --] Configuration module that first retrieves configuration arguments from namelist.ini. From a folder (specified in namelist.ini), it then selects raw datasets that satisfy time requirements specified in namelist.ini. That is, datasets that start at a specific date and have a specific duration (± 6 hours) are selected for data processing. From that selection process, a list of raw datasets to process is created, and from that list, lists of paths to which data files of all stages of data processing are to be written and loaded are created.
-\end{description}
-
-\subsection{Data Processing}
-
-In order to launch a data processing experience, the main module must be executed. Depending on the method specified in namelist.ini (method 00 or 01), the main module executes in chain the main functions from the appropriate data processing modules. That is, if we are using the method 00, the main module will use processing modules in the following order: M00\_d01\_delaunay\_triangulation, M00\_d02\_to\_grid\_coord\_system and M00\_d03\_compute\_deformations. If we are using the method 01, the order will be: M01\_d01\_delaunay\_triangulation and M01\_d03\_compute\_deformations. If the visualise parameter in namelist.ini is set to `yes', the main function of the visualise\_deformation module is called in order to visualise the output.
-
-In the following, the data processing modules are presented in more details.
-
-\subsubsection{Main Module}
-
-\begin{description}
-    \item[main -- ]
-    Module that performs all steps of data processing using the method specified in namelist.ini and by calling the main functions of the triangulation, conversion (for method 00 only) and calculations modules described below. If the visualise parameter in namelist.ini is set to `yes', it calls the main function of the visualise\_deformation module described below.
-\end{description}
-
-\subsubsection{Method 00 Modules}
-
-The modules listed below follow the method 00 as described in section 2.1.
-
-\begin{description}
-  \item[M00\_d00\_crop\_grid --]
-    Module that creates a modified RIOPS grid. This module is not imported by the main module and should be executed only once to produce a grid. It takes as input the RIOPS grid and its bathymetry data, and produces a cropped grid in NETCDF4 format (all for which the path is specified in namelist.ini). The output grid stores tracer points (in Latitude/Longitude and X/Y coordinates in the Azimuthal Equidistant projection), speed points (in Latitude/Longitude coordinates), distances between tracer points and land (in km), and a sea-land mask.
-
-  \item[M00\_d01\_delaunay\_triangulation --]
-    Module that performs a Delaunay triangulation for all raw DAT files listed in config. It then stores the results in a triangulated CSV file for each dataset, using the triangulated data paths listed in config.
-
-  \item[M00\_d02\_to\_grid\_coord\_system --] Module that converts triangle vertices' starting and ending positions from Latitude/Longitude to X/Y coordinates in a local Cartesian grid coordinate system, for all triangulated CSV files listed in config. It then stores the results in a converted CSV file for each dataset, using the conversion data paths listed in config.
-
-   \item[M00\_d03\_compute\_deformations --]
-    Module that computes sea-ice deformations for triangle cells for all converted CSV files listed in config. The results are then stored in a calculations CSV file for each dataset, using the calculations data paths listed in config.
-\end{description}
-
-\subsubsection{Method 01 Modules}
-The modules listed below follow the method 01 as described in section 2.2.
-\begin{description}
-   \item[M01\_d01\_delaunay\_triangulation --] Module that performs a Delaunay triangulation on a set of X/Y data points for all raw DAT files listed in config. The results are stored in a triangulated CSV file for each dataset, using the triangulated data paths listed in config.
-
-   \item[M01\_d03\_compute\_deformations --]
-    Module that computes sea-ice deformations for triangle cells for all triangulated CSV files listed in config. The results are then stored in a calculations CSV file for each dataset, in addition to a single output NETCDF4 file that combines the results from all processed datasets, using the calculations and output data paths listed in config.
-    
-\end{description}
-
-\subsection{Visualisation}
-
-In the following, we present the output visualisation module. 
-
-\begin{description}
-    
-    \item[visualise\_deformation --] Module that plots total sea-ice deformations, divergence, rotation and shear strain rates for all datasets listed in config. 
-
-\end{description}
-
-\subsection{Utility Modules}
-
-The utility modules listed in the following are used in all configuration and processing modules. Here, we describe their general purpose.
-
-\begin{description}
-   
-    \item[utils\_datetime --] Module that provides tools for finding the starting and ending times of a dataset as Datetime objects given its filename, and for finding the time lapse in seconds between two Datetime objects.
-    
-    \item[utils\_deformation\_computations --] Module that provides tools for the calculation of sea-ice deformations.      
-    
-    \item[utils\_get\_data\_paths --]  Module that provides tools that produce data file paths for each stage of data processing given a raw filename, an output folder, an experience name, a starting date and a duration (all of which are parameters in namelist.ini). These data file paths are used to write and load data files from all stages of data processing.
-    
-    \item[utils\_grid\_coord\_system --] Module that provides tools for the conversion of a triangle's starting and ending positions from Latitude/Longitude to X/Y coordinates in a local Cartesian grid coordinate system.
-    
-    \item[utils\_load\_data --] Module that provides tools for loading files from all stages of data processing. 
-    
-    \item[utils\_load\_grid --] Module that provides a tool for loading the project grid.
-
-    
-\end{description}
-
-
-\begin{description}
-  \item[]
-    
-\end{description}
-
-\section{Parameters}
-
-In the following, we define configuration arguments listed in namelist.ini.
-
-\subsection{Input/Output}
-
-The input/output (IO) parameters that follow define the path of the input and output files.
-
-\begin{description}
-\item[data\_folder --] Absolute path of the folder from which datasets are selected for processing.
-
-\item[output\_folder --] Absolute path of the folder in which the algorithm's outputs are stored. Outputs from all experiences will be stored under output\_folder.
-
-\item[exp --] Name of the current experience. Outputs of the current experience will be stored under output\_folder/exp.
-\end{description}
-
-\subsection{Grid}
-
-The grid parameters below are strictly used in method 00. 
-
-\begin{description}
-\item[riops\_grid --] Absolute path of the netcdf file that stores the original RIOPS grid (used in M00\_d00\_crop\_grid module).
-
-\item[bathymetry --]  Absolute path of the netcdf file that stores a bathymetry dataset (used in M00\_d00\_crop\_grid module).
-
-\item[cropped\_grid --] Absolute path of the netcdf file that stores the cropped RIOPS grid (created in M00\_d00\_crop\_grid module).
-
-\end{description}
-
-\subsection{Metadata}
-
-The metadata parameters that follow are used in the creation of NETCDF4 file outputs.
-
-\begin{description}
-
-\item[ice\_tracker --] (S1/RCM) Sea-ice motion tracker.
- 
-\item[tracking\_error --] Resolution or tracking error (meters) of the sea-ice motion tracker.
-
-\end{description}
-
-\subsection{Processing Options}
-
-The processing options parameters that follow control the way by which datasets are processed.
-
-\begin{description}
-
-\item[overwrite --] (yes/no) When the overwrite argument is set to `yes', all raw data sets that have  already been processed will be re-processed and the resulting CSV files for all stages of data processing will be overwritten. Otherwise, raw data sets that have already been processed will not be re-processed. In any case, an output NETCDF4 file is written with all datasets listed in config for which the deformation calculations could be performed.
-
-\item[method --]  (M00/M01) Method to be used when processing datasets.
-
-\item[visualise --] (yes/no) When the visualise argument is set to `yes', the main function from the visualise\_deformation module is executed by the main module. That is, plots of total sea-ice deformations, divergence and shear strain rates are created and saved under output\_folder/exp/figs. These plots combine output data from all processed datasets.
-
-\end{description}
-
-
-
-\subsection{Date Options}
-
-The date options that follow define the time requirements used to select datasets for processing.
-
-\begin{description}
-\item[start\_year --]  (YYYY) Starting year of the datasets to process.
-
-\item[start\_month --] (MM) Starting month of the datasets to process.
-
-\item[start\_day --]  (DD) Starting day of the datasets to process.
-
-\item[duration --]   Time span (days) of the datasets to process.
-\end{description}
-
-\section{Output NETCDF File}
-
-The method 01 algorithm produces a NETCDF4 file at the end of its execution. This output file combines all datasets that have a common start date and time interval (± 6 hours). On one hand, it stores metadata, which includes the tracking error (or resolution), the satellite which captured the SAR images from which the ice-tracker data was produced (all of which can be specified in the metadata section of namelist.ini), and a reference time. The latter reference time corresponds to the common starting date of the datasets at time 00:00:00. On the other hand, it stores arrays of data organized by triangle: the starting and ending times (in seconds since the reference time), the starting and ending Lat/Lon positions of each vertex, the divergence and the shear ($days^{-1}$).
 
 \end{document}

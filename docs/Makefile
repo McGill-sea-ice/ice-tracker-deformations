@@ -1,9 +1,7 @@
-PROJECT = '2021_SeaIceDeformation'
+PROJECT = '2022_SeaIceDeformation'
 MAIN = SeaIceDeformation_doc
 TEX_SOURCES = Makefile \
               $(MAIN).tex
-
-FIGURES := $(shell find figures/* -type f)
 
 SHELL=/bin/bash
 DATE = $(shell date +"%d%b%Y")
@@ -14,7 +12,7 @@ all: $(MAIN).pdf
 final: final.pdf
 	$(MAKE) clean
 
-$(MAIN).pdf: $(TEX_SOURCES) $(FIGURES)
+$(MAIN).pdf: $(TEX_SOURCES)
 	pdflatex $(MAIN)
 	bibtex $(MAIN)
 	pdflatex $(MAIN)
