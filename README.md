@@ -42,7 +42,7 @@ Install the Cartopy shapefiles (this would be done automatically by Cartopy, but
 ~~~bash
 conda activate icetrackdefs
 wget -q https://raw.githubusercontent.com/SciTools/cartopy/master/tools/cartopy_feature_download.py -O $CONDA_PREFIX/bin/cartopy_feature_download.py
-python cartopy_feature_download.py physical
+python $CONDA_PREFIX/bin/cartopy_feature_download.py physical
 ~~~
 
 
