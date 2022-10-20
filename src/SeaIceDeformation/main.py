@@ -75,7 +75,7 @@ compute_deformations.compute_deformations()
 
 if config.config['Processing_options'].getboolean('visualise'):
     
-    print('--- Creating sea-ice deformations figures ---')
+    print('--- Creating sea-ice deformation figures ---')
 
     visualise_deformation.visualise_deformations()
 
