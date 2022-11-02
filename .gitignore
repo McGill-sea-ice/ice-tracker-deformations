@@ -18,6 +18,7 @@
 *.fls
 *.fdb*
 *.synctex*
+*.out
 
 # Ignore bytecodes
 *.pyc
