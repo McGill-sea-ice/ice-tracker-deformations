@@ -1,3 +1,14 @@
+"""
+Author: Lekima Yakuden
+GitHub: LekiYak
+
+--------------------------------------------------------------------------------
+Tools for analysing raw data files
+--------------------------------------------------------------------------------
+
+This file contains functions for analysing raw data files' spatial and temporal coverage.
+"""
+
 import os
 from time import strftime
 
@@ -7,69 +18,20 @@ from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pyproj
 import math
 
 from config import *
 
-def compile_data(raw_paths):
+# IGNORING WARNINGS, COMMENT IF YOU WANT TO SEE THEM
+import warnings
+warnings.filterwarnings("ignore")
 
-    """ 
-    Compiles all data points in the list of data files (raw_paths) into a dataframe (df)
-
-    Returns the dataframe with all datapoints' starting lat and lon in columns.
-
-    INPUTS:
-    raw_paths -- List of paths to data files {List}
-
-    OUTPUTS: 
-    df -- Pandas dataframe with the following columns: Index  lat  lon {Dataframe}
-    """
-
-    df = pd.DataFrame()
-
-    # Initialising progression counters
-    num_files = len(raw_paths)
-    i = 0
-
-    # Appending each file's datapoints to the dataframe
-    for filepath in raw_paths:
-        
-        # Initialize temporary dataframe
-        temp_df = pd.DataFrame()
-
-        # Reading datapoints into temporary dataframe
-        temp_df = pd.read_csv(filepath, sep='\s\s+', engine='python', usecols = ['sLat','sLon'])
-
-        temp_df.rename(columns = {'sLat':'lat', 'sLon':'lon'}, inplace = True)
-
-        df = df.append(temp_df)
-
-        # Updating counter
-        i += 1
-        print(f'{i} / {num_files}')
-
-    return df
-
+# Visualises spatio-temporal coverage on a basemap
 def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
-    print('Plotting heat map')
+    print('--- Plotting heat map ---')
     """
     Preamble
     """
-    # Reading config
-    config = read_config()
-
-    IO = config['IO']
-    options = config['options']
-    meta = config['meta']
-
-    timestep = options['timestep']
-    tolerance = options['tolerance']
-    resolution = float(options['resolution'])
-    strres = options['resolution']
-    output_path = IO['output_folder']
-    tracker = meta['ice_tracker']
-
     proj = ccrs.NorthPolarStereo(central_longitude=0)
 
     fig = plt.figure(figsize=(6.5, 5.5), )
@@ -102,8 +64,8 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
     xscale = uxextent - lxextent
     yscale = uyextent - lyextent
 
-    xscale = math.floor(xscale / (1000 * resolution))
-    yscale = math.floor(yscale / (1000 * resolution))
+    xscale = math.floor(xscale / (1000 * float(resolution)))
+    yscale = math.floor(yscale / (1000 * float(resolution)))
 
     # Extracting x and y coordinates of datapoints (Numpy arrays)
     xi, yj = xy
@@ -136,12 +98,20 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
 
     # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
     prefix = min_date_str + '_' + max_date_str + '_' + timestep + '_' + tolerance + '_' + 'res' + str(int(resolution)) + '_' + tracker
-    plt.savefig(output + '/' + prefix + '_' + 'freq.png')
+
+    # Set a directory to store figures
+    figsPath =  output + '/' + '/figs/'
+
+    # Create directory if it doesn't exist
+    os.makedirs(figsPath, exist_ok=True)
+
+    plt.savefig(figsPath + prefix + '_' + 'freq.png')
 
     print(f'Saved as {prefix}_freq.png')
 
     return hh[1], hh[2]
 
+# Returns histogram of coverage representing the arctic ocean
 def coverage_histogram2d(xy, xbins, ybins):
     """
     Returns a 2D numpy array representing grid cells with or without data
@@ -197,32 +167,7 @@ def coverage_histogram2d(xy, xbins, ybins):
 
     return H
 
-def convert_to_grid(lon, lat):
-    """
-    WARNING: INPUT IS LON, LAT (X, Y), AND THE OUTPUT IS ALSO X, Y
-
-    Takes in a point in EPSG 4326 (Lat/Lon) and transforms said point to
-    a polar stereographic projection (EPSG 3413).
-
-    lon, lat {float} -> x, y {float}
-
-    INPUTS:
-    lat, lon -- Float values representing a point in WGS 84
-
-    OUTPUTS:
-    x, y -- Float values representing the transformed point in EPSG 3413
-    """
-
-    # Input projection (lat/lon)
-    in_proj = pyproj.Proj(init='epsg:4326')
-
-    # Output projection (EPSG 3413, Polar Stereographic)
-    out_proj = pyproj.Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
-
-    # Transform function
-    x, y = np.array(pyproj.transform(in_proj, out_proj, lon, lat))
-    return x, y
-
+# Plots timeseries of spatial coverage
 def coverage_timeseries(interval_list, resolution, date_pairs):
     """
     Plots a time series of the area coverage (in % of the Arctic ocean) for a given list of lists containing
@@ -238,9 +183,10 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
                   found at the same index in *interval_list* {list}
 
     OUTPUTS:
-    Plot of % of area covered as a function of time.
+    None -- Plot of % of area covered as a function of time.
 
     """
+    print('--- Plotting coverage time series ---')
 
     # Setting constants (Adjusting ocean area to units of histogram grid)
     arctic_ocean_area = 15558000 # Square kilometres
@@ -274,14 +220,24 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
         # Appending to main dataframe
         df.loc[len(df.index)] = [covered_percentage, start_date, end_date]
 
+    # Plotting timeseries
     df.plot(x='start_date', y='percentage', kind='line')
 
-    plt.savefig('coverage_areaRSCMS1202011102021060172hrs.png')
+    # Set a directory to store figures
+    figsPath =  output + '/' + '/figs/'
 
-    print(df.sort_values(by=['percentage']))
+    # Create directory if it doesn't exist
+    os.makedirs(figsPath, exist_ok=True)
 
-    return 
+    # Title
+    title = 'coverage_area_timeseries' + tracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '.png'
 
+    # Saving figure
+    plt.savefig(figsPath + title, bbox_inches='tight')
+
+    print('Saved as ' + figsPath)
+
+# Visualises coverage as a heatmap, split between user-set intervals
 def interval_frequency_histogram2d(interval_list):
     """
     Plots a heatmap showing data availaibility (in % of time intervals covered) in a specified range of times.
@@ -295,6 +251,8 @@ def interval_frequency_histogram2d(interval_list):
     hrs_RESOLUTION_km_INTERVAL_hrs"
     
     """
+    print('--- Plotting interval frequency histogram ---')
+
     # Initializing empty numpy array (2D histogram)
     H = np.array([])
 
@@ -372,11 +330,17 @@ def interval_frequency_histogram2d(interval_list):
     # Saving the file
     plt.axis('scaled')
 
+    # Converting dates for title and file name purposes
     max_date_title = str(max_date.strftime('%Y')) + '-' + str(max_date.strftime('%m')) + '-' + str(max_date.strftime('%d'))
     min_date_title = str(min_date.strftime('%Y')) + '-' + str(min_date.strftime('%m')) + '-' + str(min_date.strftime('%d'))
     max_date_str = max_date.strftime("%Y%m%d")
     min_date_str = min_date.strftime("%Y%m%d") 
   
+    # Set a directory to store figures
+    figsPath =  output + '/' + '/figs/'
+
+    # Create directory if it doesn't exist
+    os.makedirs(figsPath, exist_ok=True)
 
     # if/elif for title creation, for grammatical correctness
     if timestep != '0':
@@ -385,62 +349,65 @@ def interval_frequency_histogram2d(interval_list):
     elif timestep == '0':
         ax.set_title(f'{tracker}, {min_date} to {max_date}, all timesteps, {resolution} km, {interval} hr intervals')
 
-    # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
+    # Saving figure as YYYYMMDD_YYYYMMDD_timestep_tolerance_resolution_'res'_tracker_freq.png
     prefix = min_date_str + '_' + max_date_str + '_' + timestep + '_' + tolerance + '_' + 'res' + resolution + '_' + tracker + '_' + interval
-    plt.savefig(output + '/' + prefix + '_' + 'intervalfreq.png')
+    plt.savefig(figsPath + prefix + '_' + 'intervalfreq.png')
 
-    print(f'Saved as {prefix}_freq.png')
+    print(f'Saved as {prefix}_intervalfreq.png')
     
-    return h
+if __name__ == '__main__':
+    config = read_config()
 
-config = read_config()
+    # Initializing more specific ConfigParser objects
+    IO = config['IO']
+    options = config['options']
+    meta = config['meta']
+    coverage_frequency = config['coverage_frequency']
 
-# Initializing more specific ConfigParser objects
-IO = config['IO']
-options = config['options']
-meta = config['meta']
+    data_path = IO['data_folder']
+    output = IO['output_folder']
+    tracker = meta['ice_tracker']
 
-data_path = IO['data_folder']
-output = IO['output_folder']
-tracker = meta['ice_tracker']
+    start_year = options['start_year']
+    start_month = options['start_month']
+    start_day = options['start_day']
 
-start_year = options['start_year']
-start_month = options['start_month']
-start_day = options['start_day']
+    end_year = options['end_year']
+    end_month = options['end_month']
+    end_day = options['end_day']
 
-end_year = options['end_year']
-end_month = options['end_month']
-end_day = options['end_day']
+    timestep = options['timestep']
+    tolerance = options['tolerance']
 
-timestep = options['timestep']
-tolerance = options['tolerance']
+    resolution = options['resolution']
 
-resolution = options['resolution']
+    interval = options['interval']
 
-interval = options['interval']
+    # Fetching filter information
+    raw_list = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['raw_paths']
+    max_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['max_date']
+    min_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['min_date']
 
-# Fetching filter information
-raw_list = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['raw_paths']
-max_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['max_date']
-min_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['min_date']
+    # Dividing data into intervals if the user desires
+    if coverage_frequency['visualise_timeseries'] == 'True' or coverage_frequency['visualise_interval'] == True:
+        interval_list = divide_intervals(raw_list, max_date, min_date, interval)['interval_list']
+        date_pairs = divide_intervals(raw_list, max_date, min_date, interval)['date_pairs']
 
-interval_list = divide_intervals(raw_list, max_date, min_date, interval)['interval_list']
-date_pairs = divide_intervals(raw_list, max_date, min_date, interval)['date_pairs']
+    # Compiling master dataframe
+    df = compile_data(raw_list)
 
-# Compiling master dataframe
-df = compile_data(raw_list)
+    # Converting points from lat/lon to EPSG 3413
+    xy = convert_to_grid(df['lon'], df['lat'])
 
-# Converting points from lat/lon to EPSG 3413
-xy = convert_to_grid(df['lon'], df['lat'])
+    # Plotting coverage heat map
+    xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date, timestep)
 
-# Plotting heat map
-xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date, timestep)
+    if coverage_frequency['visualise_timeseries'] == 'True':
+        
+        # Plotting time series
+        coverage_timeseries(interval_list, resolution, date_pairs)
 
-#xbins = np.delete(xbins, len(xbins)-3)
-#ybins = np.delete(ybins, len(ybins)-3)
+    if coverage_frequency['visualise_interval'] == 'True':
 
-# Plotting time series
-#coverage_timeseries(interval_list, resolution, date_pairs)
-
-# Plotting interval heat map
-print(interval_frequency_histogram2d(interval_list))
+        # Plotting interval heat map
+        interval_frequency_histogram2d(interval_list)

@@ -4,13 +4,9 @@
 
 This project aims at computing arctic sea-ice deformations from icetracker data (Sentinel-1 and RCM). Two distinct methods can be used to compute sea-ice deformations. 
 
-###### Method M00
-
-In the first method, data points with Latitude/Longitude coordinates are processed. A Delaunay triangulation is performed on these data points and the RIOPS grid is used to create local cartesian coordinate systems for each triangular data cell. The triangulated and converted data set is then used to compute sea-ice deformations following *Bouchat et al. (2020)*.
-
 ###### Method M01
 
-In the second method, data points with X/Y coordinates are processed. After performing a Delaunay triangulation, we compute sea-ice deformations following *Bouchat et al. (2020)*.
+In this method, data points with X/Y coordinates are processed. After performing a Delaunay triangulation, we compute sea-ice deformations following *Bouchat et al. (2020)*.
 
 ## Installation
 
@@ -49,7 +45,7 @@ python $CONDA_PREFIX/bin/cartopy_feature_download.py physical
 [1]: https://github.com/SciTools/cartopy/pull/1833
 ## Usage
 
-In order to launch a data processing experience, the main module must be executed. Assuming we are in the project folder, we can execute the main module using the command that follows:
+In order to generate a data set, the main module must be executed. Assuming we are in the project folder, we can execute the main module using the following commands:
 
 ```bash
 # Activate the virtual environment
@@ -60,7 +56,29 @@ python src/SeaIceDeformation/main.py
 conda deactivate
 ```
 
-The user can configure the experience by modifying the definitions of the parameters in the configuration file `src/SeaIceDeformation/namelist.ini`. In particular, the `output_folder` in the `IO` section should be modified to point to a filesystem location where one has write permissions.  
+To use the analysis tools, we activate the Conda environment and run one of the two files in `src/SatelliteCoverage/`:
+
+```bash
+# Activate the virtual environment
+conda activate icetrackdefs
+# Launch the raw data anylsis tool
+python src/SatelliteCoverage/coverage_frequency_map.py
+# Deactivate the environment when you are done
+conda deactivate
+```
+
+or
+
+```bash
+# Activate the virtual environment
+conda activate icetrackdefs
+# Launch the NetCDF tool
+python src/SatelliteCoverage/netcdf_tools.py
+# Deactivate the environment when you are done
+conda deactivate
+```
+
+The user can configure the deformation calculations by modifying the definitions of the parameters in the configuration file `src/SeaIceDeformation/namelist.ini`, and the NetCDF analyses can be configured in `src/SatelliteCoverage`. In particular, the `output_folder` in the `IO` section should be modified to point to a filesystem location where one has write permissions. 
 
 ## Documentation
 
