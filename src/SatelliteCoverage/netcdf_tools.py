@@ -47,6 +47,7 @@ def plot_start_end_points(path:str):
     # Load data from netCDF file
     data = load_netcdf(path)
 
+    satellite = data['icetracker']
     start_lats = data['start_lats']
     start_lons = data['start_lons']
     end_lats = data['end_lats']
@@ -105,7 +106,7 @@ def plot_start_end_points(path:str):
     os.makedirs(figsPath, exist_ok=True)
 
     # Set prefix for filename
-    prefix = start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_' + str(timestep) 
+    prefix = satellite + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance) 
 
     # Full path of figure
     fig_path = figsPath + prefix + '_start_end_points.png'
@@ -278,7 +279,7 @@ def plot_deformations(path:str):
     os.makedirs(figsPath, exist_ok=True)
 
     # Create a prefix for the figure filenames
-    prefix = start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_' + str(timestep) 
+    prefix = data['icetracker'] + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
         
     # Create the figure filenames
     div_path   = figsPath + prefix + '_div.png'
@@ -296,7 +297,9 @@ def plot_deformations(path:str):
         fig.savefig(fig_path, bbox_inches='tight', dpi=600)
 
 def write_netcdf(path:str, output_folder:str):
-
+    # !!! THIS FUNCTION SEEMS LIKE IT WRITES THE EXACT SAME NETCDF FILE AS THE ONE IT OPENS...
+    # !!! IT DOES NOT SEEM NECESSARY.... KILL?
+    
     # Load data
     data = load_netcdf(path)
 
@@ -305,7 +308,7 @@ def write_netcdf(path:str, output_folder:str):
     WRITE ALL RESULTS COMBINED TO A NETCDF FILE
     '''
     # Find absolute path in which the output netcdf file is to be stored
-    output_path = output_folder + '/' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_' + timestep + '_filtered_dx.nc'
+    output_path = output_folder + '/' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + timestep + '_filtered_dx.nc'
 
     # Create a directory to store the output netcdf file if it does not exist already
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -429,24 +432,24 @@ if __name__ == '__main__':
 
     # Initializing more specific ConfigParser objects
     IO = config['IO']
+    Date_options = config['Date_options']
     options = config['options']
-    meta = config['meta']
+    meta = config['Metadata']
     netcdf_tools = config['netcdf_tools']
 
     path = IO['netcdf_path']
     output_folder = IO['output_folder']
 
-    ice_tracker = meta['ice_tracker']
+    start_year = Date_options['start_year']
+    start_month = Date_options['start_month']
+    start_day = Date_options['start_day']
 
-    start_year = options['start_year']
-    start_month = options['start_month']
-    start_day = options['start_day']
+    end_year = Date_options['end_year']
+    end_month = Date_options['end_month']
+    end_day = Date_options['end_day']
 
-    end_year = options['end_year']
-    end_month = options['end_month']
-    end_day = options['end_day']
-
-    timestep = options['timestep']
+    timestep = Date_options['timestep']
+    tolerance = Date_options['tolerance']
 
     area_filter = options['area_filter']
     centre_lat = options['centre_lat']
@@ -459,5 +462,5 @@ if __name__ == '__main__':
     if netcdf_tools['plot_deformation'] == 'True':
         plot_deformations(path)
 
-    if netcdf_tools['write_netcdf'] == 'True':
-        write_netcdf(path, output_folder)
+    # if netcdf_tools['write_netcdf'] == 'True':
+    #     write_netcdf(path, output_folder)

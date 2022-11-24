@@ -11,6 +11,7 @@ This file contains functions for loading and processing user options, raw data, 
 
 import configparser
 import os
+import sys
 from datetime import datetime, timedelta
 import numpy as np
 from netCDF4 import Dataset
@@ -166,10 +167,10 @@ def divide_intervals(raw_paths, max_date, min_date, interval):
         # Appending list of interval-contained files        
         interval_list.append(temp_list)      
 
-    return {'interval_list': interval_list, 'date_pairs': date_pairs}
+    return interval_list, date_pairs
 
 # Filters raw data based on user set parameters
-def filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path):
+def filter_data(Date_options = None, IO = None, Metadata = None):
     """
     Filters through the data files located in 'data_path' using the user 
     options in 'options.ini'. Outputs a list of paths to data files which
@@ -178,7 +179,7 @@ def filter_data(start_year, start_month, start_day, end_year, end_month, end_day
     Automatically changes date range to match data availability. i.e. if the user specifies
     a date range between 01-11-2020 and 01-06-2021, but data is only available from 
     05-11-2020 and 24-05-2021, dates to be processed will be set to the latter, and
-    the user will be notified (Line 164)
+    the user will be notified (Line 
 
     INPUTS:
     start_year -- Starting year YYYY {str}
@@ -195,13 +196,21 @@ def filter_data(start_year, start_month, start_day, end_year, end_month, end_day
     data_path -- Path to directory containing data files {str}
 
     OUTPUTS:
-    dictionary object -- raw_paths: List of file paths, max_date: Latest date in file list, 
-                         min_date: Earliest date in file list
+    raw_paths -- List of file paths {list}
     """
+    
+    start_year  = str(Date_options['start_year'])
+    start_month = str(Date_options['start_month'])
+    start_day   = str(Date_options['start_day'])
+    end_year    = str(Date_options['end_year'])
+    end_month   = str(Date_options['end_month'])
+    end_day     = str(Date_options['end_day'])
+    timestep    = int(Date_options['timestep'])
+    tolerance   = int(Date_options['tolerance'])
 
     # Concatenate start and end dates
-    start_date = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
-    end_date = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
+    sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
+    eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
 
     # Set delta t tolerance 
     upper_timestep = timedelta(hours=(int(timestep) + int(tolerance)))
@@ -212,41 +221,69 @@ def filter_data(start_year, start_month, start_day, end_year, end_month, end_day
     min_date = datetime(3000, 12, 25)
     max_date = datetime(1000, 12, 25)
 
-    # Filtering data files by date
-    for filename in os.listdir(data_path):
-        
-        # Extracting initial and final dates from data file names
-        initial_date = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
-        final_date = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
+    # List of summer months (Won't include data from these months)
+    summer_months = [6, 7, 8, 9, 10]
 
-        # Checking if all files from initial_date to final_date will be loaded (timestep == '0')
-        if timestep != '0':
-            # Filtering by date range and delta t and appending to the file list
-            if start_date.date() <= initial_date.date() <= end_date.date() and start_date.date() <= final_date.date() <= end_date.date() and lower_timestep <= (final_date-initial_date) <= upper_timestep: 
-                raw_paths.append(data_path + '/' + filename)
+    date_path = IO['data_folder']
+    satellite = Metadata['ice_tracker']
 
-                # Updating date tracker
-                if initial_date < min_date:
-                    min_date = initial_date
-                if final_date > max_date:
-                    max_date = final_date    
-        
-        elif timestep == '0':
-            # Filtering by date range only
-            if start_date.date() <= initial_date.date() <= end_date.date() and start_date.date() <= final_date.date() <= end_date.date(): 
-                raw_paths.append(data_path + '/' + filename)
-                
-                # Updating date tracker
-                if initial_date < min_date:
-                    min_date = initial_date
-                if final_date > max_date:
-                    max_date = final_date
+    if satellite == 'RCMS1':
+        sat_list = ['rcm/','s1/']
+    elif satellite == 'S1':
+        sat_list = ['s1/']
+    elif satellite == 'RCM':
+        sat_list = ['rcm/']
+    else:
+        sys.exit("Oh, original, but satellite data other than RCM or S1 is not defined!!")
+
+    for sat_type in sat_list:
+        for year in range(int(start_year), int(end_year)+1):
+
+            if not(os.path.exists(date_path + sat_type + str(year) + '/')):
+                print('No data for '+ sat_type + ' in ' + str(year) )
+            else:
+                data_path = date_path + sat_type + str(year) + '/'
+    
+                #--------------------------------------------------------------------------
+                # listing the files in the folder and adding the pairs if in the right dates
+                #     This could be made a function if used when a IO class is made
+                #---------------------------------------------------------------------------
+    
+                # Filtering data files by date
+                for filename in os.listdir(data_path):
+                    
+                    # Extracting initial and final dates from data file names
+                    iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
+                    fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
+            
+                    # Checking if all files from iDate to fDate will be loaded (timestep == '0')
+                    if timestep != '0':
+                        # Filtering by date range and delta t and appending to the file list
+                        if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months: 
+                            raw_paths.append(data_path + '/' + filename)
+            
+                            # Updating date tracker
+                            if iDate < min_date:
+                                min_date = iDate
+                            if fDate > max_date:
+                                max_date = fDate
+                    
+                    elif timestep == '0':
+                        # Filtering by date range only
+                        if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and iDate.month not in summer_months: 
+                            raw_paths.append(data_path + '/' + filename)
+                            
+                            # Updating date tracker
+                            if iDate < min_date:
+                                min_date = iDate
+                            if fDate > max_date:
+                                max_date = fDate
 
     # Notifying user of date range change
-    if start_date != min_date or end_date != max_date:
-        print(f'Start and end dates of data updated to {min_date} and {max_date}')
+    if sDate != min_date or eDate != max_date:
+        print(f"Start and end dates of data updated to {min_date} and {max_date}")
             
-    return {'raw_paths': raw_paths, 'max_date': max_date, 'min_date': min_date}
+    return raw_paths, max_date, min_date      
 
 
 """
@@ -372,11 +409,12 @@ def load_netcdf(path:str):
     
     # Reading config
     config = read_config()
+    Date_options = config['Date_options']
     options = config['options']
 
     # Reading user options
-    start_year, start_month, start_day = options['start_year'], options['start_month'], options['start_day']
-    end_year, end_month, end_day = options['end_year'], options['end_month'], options['end_day']
+    start_year, start_month, start_day = Date_options['start_year'], Date_options['start_month'], Date_options['start_day']
+    end_year, end_month, end_day = Date_options['end_year'], Date_options['end_month'], Date_options['end_day']
     area_filter, centre_lat, centre_lon, radius = options['area_filter'], options['centre_lat'], options['centre_lon'], options['radius']
 
     # Load netCDF as Dataset from *path*
@@ -439,6 +477,8 @@ def load_netcdf(path:str):
 
     reftime = ds.getncattr('referenceTime')
     icetracker = ds.getncattr('iceTracker')
+    timestep = ds.getncattr('timestep')
+    tolerance = ds.getncattr('tolerance')
     trackingerror = ds.getncattr('trackingError')
 
     if area_filter == 'True':
@@ -479,7 +519,8 @@ def load_netcdf(path:str):
     return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons, 
             'div': div, 'shr': shr, 'vrt': vrt, 
             'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices, 
-            'reftime': reftime, 'icetracker': icetracker, 'trackingerror': trackingerror, 
+            'reftime': reftime, 'icetracker': icetracker, 'timestep': timestep,'tolerance': tolerance,
+            'trackingerror': trackingerror, 
             'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no, 
             'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3, 
             'dudx': dudx, 'dudy': dudy, 'dvdx': dvdx, 'dvdy': dvdy}

@@ -7,6 +7,7 @@
 *.csv
 *.dat
 *.nc
+*.tar.gz
 
 # Ignore pdf files and files created during the creation of PDF files
 *.pdf

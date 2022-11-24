@@ -97,7 +97,7 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
         ax.set_title(f'{tracker}, {min_date} to {max_date} encompassing all time intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
-    prefix = min_date_str + '_' + max_date_str + '_' + timestep + '_' + tolerance + '_' + 'res' + str(int(resolution)) + '_' + tracker
+    prefix = tracker + '_' + min_date_str + '_' + max_date_str + '_dt' + timestep + '_tol' + tolerance + '_res' + str(int(resolution)) 
 
     # Set a directory to store figures
     figsPath =  output + '/' + '/figs/'
@@ -132,8 +132,9 @@ def coverage_histogram2d(xy, xbins, ybins):
     config = read_config()
 
     IO = config['IO']
+    Date_options = config['Date_options']
     options = config['options']
-    meta = config['meta']
+    meta = config['Metadata']
 
     resolution = float(options['resolution'])
 
@@ -230,7 +231,7 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
     os.makedirs(figsPath, exist_ok=True)
 
     # Title
-    title = 'coverage_area_timeseries' + tracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '.png'
+    title = tracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + '_coverage_area_timeseries'+ '.png'
 
     # Saving figure
     plt.savefig(figsPath + title, bbox_inches='tight')
@@ -350,7 +351,7 @@ def interval_frequency_histogram2d(interval_list):
         ax.set_title(f'{tracker}, {min_date} to {max_date}, all timesteps, {resolution} km, {interval} hr intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_timestep_tolerance_resolution_'res'_tracker_freq.png
-    prefix = min_date_str + '_' + max_date_str + '_' + timestep + '_' + tolerance + '_' + 'res' + resolution + '_' + tracker + '_' + interval
+    prefix = tracker + '_'+ min_date_str + '_' + max_date_str + '_dt' + timestep + '_tol' + tolerance + '_res' + resolution + '_' + interval
     plt.savefig(figsPath + prefix + '_' + 'intervalfreq.png')
 
     print(f'Saved as {prefix}_intervalfreq.png')
@@ -360,38 +361,35 @@ if __name__ == '__main__':
 
     # Initializing more specific ConfigParser objects
     IO = config['IO']
+    Date_options = config['Date_options']
     options = config['options']
-    meta = config['meta']
+    meta = config['Metadata']
     coverage_frequency = config['coverage_frequency']
 
     data_path = IO['data_folder']
     output = IO['output_folder']
     tracker = meta['ice_tracker']
 
-    start_year = options['start_year']
-    start_month = options['start_month']
-    start_day = options['start_day']
+    start_year = Date_options['start_year']
+    start_month = Date_options['start_month']
+    start_day = Date_options['start_day']
 
-    end_year = options['end_year']
-    end_month = options['end_month']
-    end_day = options['end_day']
+    end_year = Date_options['end_year']
+    end_month = Date_options['end_month']
+    end_day = Date_options['end_day']
 
-    timestep = options['timestep']
-    tolerance = options['tolerance']
+    timestep = Date_options['timestep']
+    tolerance = Date_options['tolerance']
 
     resolution = options['resolution']
-
     interval = options['interval']
 
     # Fetching filter information
-    raw_list = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['raw_paths']
-    max_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['max_date']
-    min_date = filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path)['min_date']
+    raw_list, max_date, min_date = filter_data(Date_options = Date_options, IO = IO, Metadata = meta)
 
     # Dividing data into intervals if the user desires
     if coverage_frequency['visualise_timeseries'] == 'True' or coverage_frequency['visualise_interval'] == True:
-        interval_list = divide_intervals(raw_list, max_date, min_date, interval)['interval_list']
-        date_pairs = divide_intervals(raw_list, max_date, min_date, interval)['date_pairs']
+        interval_list, date_pairs = divide_intervals(raw_list, max_date, min_date, interval)
 
     # Compiling master dataframe
     df = compile_data(raw_list)
