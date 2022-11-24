@@ -284,19 +284,21 @@ def compute_deformations():
     WRITE ALL RESULTS COMBINED TO A NETCDF FILE
     '''
     # Find absolute path in which the output netcdf file is to be stored
-    output_path = config.data_paths['output']
+    nc_output_path = config.data_paths['nc_output']
 
     # Create a directory to store the output netcdf file if it does not exist already
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    os.makedirs(os.path.dirname(nc_output_path), exist_ok=True)
 
     # Create an output netcdf file and dataset
-    output_ds = Dataset(output_path, 'w', format = 'NETCDF4')
+    output_ds = Dataset(nc_output_path, 'w', format = 'NETCDF4')
     
     # Add metadata
     Metadata = config.config['Metadata']
     output_ds.iceTracker = Metadata['ice_tracker']
     output_ds.referenceTime = YYYY + '-' + MM + '-' + DD + ' 00:00:00' 
     output_ds.trackingError = Metadata['tracking_error'] + ' m'
+    output_ds.timestep = Date_options['timestep'] + ' hours'
+    output_ds.tolerance = Date_options['tolerance'] + ' hours'
 
     # Create x array to store output data
     x = output_ds.createDimension('x', len(sTime))

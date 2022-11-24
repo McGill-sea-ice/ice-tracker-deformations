@@ -108,7 +108,7 @@ def get_calculations_csv_path(raw_filename, output_path, exp):
     return calc_csv_path
 
 
-def get_output_nc_path(output_path, exp, start_year, start_month, start_day):
+def get_output_nc_path(IO, Date_options, Metadata):
     ''' (str, str, str, str, str) -> str
 
     This function produces an output netcdf file absolute path. The output file is to 
@@ -130,15 +130,27 @@ def get_output_nc_path(output_path, exp, start_year, start_month, start_day):
     >>> output_path = '/home/bdu002/outputs'
     >>> exp = '2020_MarApr_S1'
     >>> print( get_output_nc_path(output_path, exp, '2020', '03', '01') )
-    '/home/bdu002/outputs/2020_MarApr_S1/05_output/RCMS1SID_20200301_dx.nc'
+    '/home/bdu002/outputs/2020_MarApr_S1/05_output/S1SID_20200301_dx.nc'
     '''
+    
+    output_path = IO['output_folder']
+    exp = IO['exp']
+    satellite = Metadata['ice_tracker']
+    start_year  = str(Date_options['start_year'])
+    start_month = str(Date_options['start_month'])
+    start_day   = str(Date_options['start_day'])
+    end_year    = str(Date_options['end_year'])
+    end_month   = str(Date_options['end_month'])
+    end_day     = str(Date_options['end_day'])
+    timestep    = str(Date_options['timestep'])
+    tolerance   = str(Date_options['tolerance'])
 
     # Create the calculations stage data .csv filename using the raw filename
-    output_filename = 'RCMS1SID_' + start_year + start_month + start_day + '_dx.nc'
+    output_filename = satellite + 'SID_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + timestep + '_tol' + tolerance + '_dx.nc'
 
     # Get the directory in which the calculated .csv file is to be stored
-    output_nc_path = output_path + '/' + exp + '/05_output/' + output_filename
+    nc_output_path = output_path + '/' + exp + '/05_output/' + output_filename
 
-    # Return a normalized calculated csv path
-    return output_nc_path
+    # Return the netcdf output path
+    return nc_output_path
 
