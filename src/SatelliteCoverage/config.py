@@ -432,10 +432,16 @@ def load_netcdf(path:str):
     end_time = ds.variables['end_time'][:]
 
     # Indices of data in desired time frame
-    time_indices = np.where( (start_time > start_time_s) & (start_time < end_time_s) )[0]
+    # AB: THIS NOW SELECTS ALL PAIRS THAT START OR END DURING THE PLOTTING TIME 
+    #     INTERVAL SPECIFIED IN [Date_options] IN 'options.ini'
+    #     !!!! MAYBE ADD A SECOND FILTER TO KEEP ONLY THOSE THAT HAVE A MINIMUM OF 
+    #     50% OF THEIR DT COVERING THE SELECTED PLOTTING TIME INTERVAL?
+    time_indices_s = np.where( (start_time > start_time_s) & (start_time < end_time_s) )[0]
+    time_indices_e = np.where( (end_time > start_time_s) & (start_time < start_time_s) )[0]
+    time_indices = np.unique(np.append(time_indices_s,time_indices_e))
+    
     
     # Extracting data (Filtered by time only)
-
     start_time = start_time[time_indices]
     end_time = end_time[time_indices]
 
