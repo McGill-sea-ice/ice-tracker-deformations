@@ -79,7 +79,7 @@ def compile_data(raw_paths):
 
         # Updating counter
         i += 1
-        print(f'{i} / {num_files}')
+        # print(f'{i} / {num_files}')
 
     return df
 
@@ -279,6 +279,10 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
                             if fDate > max_date:
                                 max_date = fDate
 
+    # Force interval limit dates to start/end at 00:00:00
+    min_date = min_date.replace(hour=0,minute=0,second=0)
+    max_date = max_date.replace(hour=0,minute=0,second=0)
+    
     # Notifying user of date range change
     if sDate != min_date or eDate != max_date:
         print(f"Start and end dates of data updated to {min_date} and {max_date}")
@@ -429,7 +433,7 @@ def load_netcdf(path:str):
 
     # Indices of data in desired time frame
     time_indices = np.where( (start_time > start_time_s) & (start_time < end_time_s) )[0]
-
+    
     # Extracting data (Filtered by time only)
 
     start_time = start_time[time_indices]
