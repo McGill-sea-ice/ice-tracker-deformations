@@ -140,39 +140,39 @@ def divide_intervals(raw_paths, max_date, min_date, interval):
     interval_count = date_range // int(interval)
 
     # Allowing *min_date* to be updated and initializing time difference object
-    min_date = min_date
+    min_date_it = min_date
     dtime = timedelta(hours=int(interval))
 
     # Creating list containing tuples of date ranges [(dt1, dt2), (dt2, dt3) ...]
     date_pairs = []
     for i in range(interval_count):
-        date_pairs.append((min_date, min_date + dtime))
-        min_date = min_date + dtime
+        date_pairs.append((min_date_it, min_date_it + dtime))
+        min_date_it = min_date_it + dtime
 
     # Sorting files into intervals
     interval_list = []
     for pair in date_pairs:
-        
+
         # Initializing temporary list to store dates in interval
         temp_list = []
 
         # Checking if date range of file overlaps with interval (if true, append)
         for filepath in raw_paths:
             initial_date = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
-            final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')            
+            final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')
 
             if (initial_date <= pair[1]) and (final_date >= pair[0]):
                 temp_list.append(filepath)
 
-        # Appending list of interval-contained files        
-        interval_list.append(temp_list)      
+        # Appending list of interval-contained files
+        interval_list.append(temp_list)
 
     return interval_list, date_pairs
 
 # Filters raw data based on user set parameters
 def filter_data(Date_options = None, IO = None, Metadata = None):
     """
-    Filters through the data files located in 'data_path' using the user 
+    Filters through the data files located in 'data_path' using the user
     options in 'options.ini'. Outputs a list of paths to data files which
     satisfy the user's criteria.
 

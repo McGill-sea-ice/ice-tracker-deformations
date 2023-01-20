@@ -15,11 +15,13 @@ from time import strftime
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from matplotlib.colors import Normalize
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import math
 
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from config import *
 
 # IGNORING WARNINGS, COMMENT IF YOU WANT TO SEE THEM
@@ -69,7 +71,7 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
 
     # Extracting x and y coordinates of datapoints (Numpy arrays)
     xi, yj = xy
-    
+
     # Plotting histogram (cmin=1 to make values = 0 transparent)
     norm = plt.Normalize(0, int(length))
     hh = ax.hist2d(xi, yj, bins=(xscale, yscale), cmap='plasma', cmin=1, norm=norm)
@@ -92,7 +94,7 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
     # if/elif for title creation, for grammatical correctness
     if timestep != '0':
         ax.set_title(f'{tracker}, {min_date} to {max_date}, {timestep} \u00B1 {tolerance} hours, {resolution} km resolution')
-    
+
     elif timestep == '0':
         ax.set_title(f'{tracker}, {min_date} to {max_date} encompassing all time intervals')
 
@@ -151,7 +153,7 @@ def coverage_histogram2d(xy, xbins, ybins):
     uxextent = 2500000
     uyextent = 2500000
     lyextent = -1900000
- 
+
     # Grid resolution calculations (x,yscale final values in *resolution* km)
     xscale = uxextent - lxextent
     yscale = uyextent - lyextent
@@ -175,7 +177,7 @@ def coverage_timeseries(interval_list, resolution, date_pairs):
     data file paths [interval_list], where each list of files defines a user-set interval (i.e. interval of 72hrs)
 
     INPUTS:
-    interval_list -- List of lists, each sublist containing data file paths and each sublist (index n) representing 
+    interval_list -- List of lists, each sublist containing data file paths and each sublist (index n) representing
                      the data files which share temporal overlap with the n th interval. {list}
 
     resolution -- Resolution of grid to be used, in km. Read from config. {str}
@@ -250,7 +252,7 @@ def interval_frequency_histogram2d(interval_list):
     OUTPUTS:
     Heatmap image (.png) in user-set output folder, with file name 'TRACKER_STARTDATE_to_ENDDATE_DELTAt+-TOLERANCE_
     hrs_RESOLUTION_km_INTERVAL_hrs"
-    
+
     """
     print('--- Plotting interval frequency histogram ---')
 
@@ -271,7 +273,7 @@ def interval_frequency_histogram2d(interval_list):
 
         # Generates histogram (2D numpy array)
         histogram = coverage_histogram2d(xy, xbins, ybins)
-
+        histogram[histogram>0.0] = 1.0
         # Changing size of total histogram (only on first run)
         if i == 0:
             H.resize(histogram.shape)
@@ -289,8 +291,29 @@ def interval_frequency_histogram2d(interval_list):
     proj = ccrs.NorthPolarStereo(central_longitude=0)
 
     fig = plt.figure(figsize=(6.5, 5.5), )
-    ax = fig.add_subplot(projection = proj, frameon=False)
+    ax = fig.add_axes([0.1, 0.1, 0.8, 0.8],projection = proj)
 
+    out_proj = pyproj.Proj(init='epsg:4326')
+    in_proj = pyproj.Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
+
+    xx, yy = np.meshgrid(xbins, ybins)
+
+    binslon,binslat = pyproj.transform(in_proj,out_proj,xx,yy)
+    H[H==0.0] = np.nan
+    H = H*100.0
+    print(binslon.shape,binslat.shape,H.shape)
+
+    cmap1 = mpl.colormaps['plasma']
+    cmap1.set_bad('w')
+
+    im = ax.pcolormesh(binslon,binslat,H/len(interval_list),
+                           transform=ccrs.PlateCarree(),
+                           vmin=0,vmax=100.0,
+                           cmap=cmap1)
+
+    #divider = make_axes_locatable(ax)
+    #cax = divider.append_axes("right", size="5%",pad=0.2)
+    clb = plt.colorbar(im)#,shrink=0.5
     """
     Terrain
     """
@@ -299,44 +322,31 @@ def interval_frequency_histogram2d(interval_list):
     uxextent = 2500000
     uyextent = 2500000
     lyextent = -1900000
-    
+
     # Show lat/lon grid
-    ax.gridlines(draw_labels=True)
+    ax.gridlines()
 
     # Hide datapoints over land
     ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
-    
+
     """
     Data
     """
     # Grid resolution calculations
-    xscale = uxextent - lxextent
-    yscale = uyextent - lyextent
+#    xscale = uxextent - lxextent
+#    yscale = uyextent - lyextent
 
-    xscale = math.floor(xscale / (1000 * int(resolution)))
-    yscale = math.floor(yscale / (1000 * int(resolution)))
+#    xscale = math.floor(xscale / (1000 * int(resolution)))
+#    yscale = math.floor(yscale / (1000 * int(resolution)))
 
-    length = len(interval_list)
-
-    # Plotting histogram using axis.contourf function
-    norm = plt.Normalize(0, length) # Normalizing colours (values)
-    levels = np.linspace(1, length, 11) # Dividing contours into 10 levels (10%, 20% etc)
-    h = ax.contourf(np.delete(xbins, len(xbins) - 1), np.delete(ybins, len(ybins) - 1), H, cmap='plasma', norm=norm, levels=levels)
-
-    # Colourbar
-    cbar = fig.colorbar(h, ax=ax)
-    cbar.set_label(f'% of total period tile has data')
-    cbar.set_ticklabels(np.arange(0, 110, 10))
-
-    # Saving the file
-    plt.axis('scaled')
+#    length = len(interval_list)
 
     # Converting dates for title and file name purposes
     max_date_title = str(max_date.strftime('%Y')) + '-' + str(max_date.strftime('%m')) + '-' + str(max_date.strftime('%d'))
     min_date_title = str(min_date.strftime('%Y')) + '-' + str(min_date.strftime('%m')) + '-' + str(min_date.strftime('%d'))
     max_date_str = max_date.strftime("%Y%m%d")
-    min_date_str = min_date.strftime("%Y%m%d") 
-  
+    min_date_str = min_date.strftime("%Y%m%d")
+
     # Set a directory to store figures
     figsPath =  output + '/' + '/figs/'
 
@@ -345,8 +355,8 @@ def interval_frequency_histogram2d(interval_list):
 
     # if/elif for title creation, for grammatical correctness
     if timestep != '0':
-        ax.set_title(f'{tracker}, {min_date_title} to {max_date_title}, {timestep} \u00B1 {tolerance} hrs, {resolution} km, {interval} hr intervals')
-    
+        ax.set_title(f'Percent coverage ({interval}h intervals), {tracker}, \n {min_date_title} - {max_date_title}, {timestep} \u00B1 {tolerance} h pairs')
+
     elif timestep == '0':
         ax.set_title(f'{tracker}, {min_date} to {max_date}, all timesteps, {resolution} km, {interval} hr intervals')
 
@@ -355,7 +365,10 @@ def interval_frequency_histogram2d(interval_list):
     plt.savefig(figsPath + prefix + '_' + 'intervalfreq.png')
 
     print(f'Saved as {prefix}_intervalfreq.png')
-    
+
+
+
+
 if __name__ == '__main__':
     config = read_config()
 
@@ -401,7 +414,7 @@ if __name__ == '__main__':
     xbins, ybins = visualise_coverage_histogram2d(xy, max_date, min_date, timestep)
 
     if coverage_frequency['visualise_timeseries'] == 'True':
-        
+
         # Plotting time series
         coverage_timeseries(interval_list, resolution, date_pairs)
 
