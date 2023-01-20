@@ -300,6 +300,7 @@ def interval_frequency_histogram2d(interval_list):
 
     binslon,binslat = pyproj.transform(in_proj,out_proj,xx,yy)
     H[H==0.0] = np.nan
+    H = H*100.0
     print(binslon.shape,binslat.shape,H.shape)
 
     cmap1 = mpl.colormaps['plasma']
@@ -307,7 +308,7 @@ def interval_frequency_histogram2d(interval_list):
 
     im = ax.pcolormesh(binslon,binslat,H/len(interval_list),
                            transform=ccrs.PlateCarree(),
-                           vmin=0,vmax=1.0,
+                           vmin=0,vmax=100.0,
                            cmap=cmap1)
 
     #divider = make_axes_locatable(ax)
@@ -354,7 +355,7 @@ def interval_frequency_histogram2d(interval_list):
 
     # if/elif for title creation, for grammatical correctness
     if timestep != '0':
-        ax.set_title(f'{tracker}, {min_date_title} to {max_date_title}, {timestep} \u00B1 {tolerance} hrs, {resolution} km, {interval} hr intervals')
+        ax.set_title(f'Percent coverage ({interval}h intervals), {tracker}, \n {min_date_title} - {max_date_title}, {timestep} \u00B1 {tolerance} h pairs')
 
     elif timestep == '0':
         ax.set_title(f'{tracker}, {min_date} to {max_date}, all timesteps, {resolution} km, {interval} hr intervals')
