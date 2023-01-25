@@ -25,12 +25,12 @@ class DataError(DataFileError):
 def load_raw( path_raw ):
     ''' (str) -> dict[str, list]
 
-    Loads data from a raw .dat file. 
-    
-    Returns a dictionnary containing sLat, sLon, eLat, eLon, startX, startY, 
+    Loads data from a raw .dat file.
+
+    Returns a dictionnary containing sLat, sLon, eLat, eLon, startX, startY,
     endX, endY, dispX, and dispY.
-    
-    An error is raised if the file is not a .dat file, or if the file 
+
+    An error is raised if the file is not a .dat file, or if the file
     is empty or contains less than 3 data points (not enough to perform a triangulation).
 
     Keyword arguments: \\
@@ -59,7 +59,7 @@ def load_raw( path_raw ):
     endY    = df['endY']    # Ending Y positions (px)
     dispX   = df['dispX']   # X displacement (px)
     dispY   = df['dispY']   # Y displacement (px)
-        
+
     # Raise an error if the input raw csv file is empty or if it contains less than 3 data points
     if ( len(sLon) < 3 ):
 
@@ -68,9 +68,9 @@ def load_raw( path_raw ):
 
         raise DataError(filename_raw_csv  + \
                          " is empty or does not have enough data to perform a triangulation. ")
-    
+
     # Create a dictionnary of raw data and return it
-    raw_data = {'sLat': sLat, 'sLon': sLon, 'eLat': eLat, 'eLon': eLon, 
+    raw_data = {'sLat': sLat, 'sLon': sLon, 'eLat': eLat, 'eLon': eLon,
                         'startX': startX, 'startY': startY, 'endX': endX, 'endY': endY,
                         'dispX': dispX, 'dispY': dispY}
 
@@ -81,16 +81,16 @@ def load_raw( path_raw ):
 def load_triangulated( path_triangulated, method ):
     ''' (str) -> dict[str, list]
 
-    Loads data from a triangulated .csv file. 
-    
+    Loads data from a triangulated .csv file.
+
     If the method is M00:
-        Returns a dictionnary of arrays of triangle numbers, 
-        starting and ending positions of the vertices in the aeqd transform, 
-        and the vertices' index in the raw file: (no, sX1_aeqd, sX2_aeqd, sX3_aeqd, 
+        Returns a dictionnary of arrays of triangle numbers,
+        starting and ending positions of the vertices in the aeqd transform,
+        and the vertices' index in the raw file: (no, sX1_aeqd, sX2_aeqd, sX3_aeqd,
         sY1_aeqd, sY2_aeqd, sY3_aeqd,  vertice_idx1, vertice_idx2, vertice_idx3).
 
     If the method is M01:
-        Returns a dictionnary of arrays of triangle numbers, and the vertices' 
+        Returns a dictionnary of arrays of triangle numbers, and the vertices'
         index in the raw file: (no, vertice_idx1, vertice_idx2, vertice_idx3).
 
     Keyword arguments: \\
@@ -102,7 +102,7 @@ def load_triangulated( path_triangulated, method ):
 
     # Retrieve data
     no           = df['no.']          # Triangle number
-    
+
     # Create a return dictionnary of triangulated data for method M00 and M01
     if method == 'M00':
 
@@ -118,7 +118,7 @@ def load_triangulated( path_triangulated, method ):
         vertice_idx2 = df['vertice_idx2']
         vertice_idx3 = df['vertice_idx3']
 
-        tri_data = {'no': no, 'sX1_aeqd': sX1_aeqd, 'sX2_aeqd': sX2_aeqd, 'sX3_aeqd': sX3_aeqd, 
+        tri_data = {'no': no, 'sX1_aeqd': sX1_aeqd, 'sX2_aeqd': sX2_aeqd, 'sX3_aeqd': sX3_aeqd,
                               'sY1_aeqd': sY1_aeqd, 'sY2_aeqd': sY2_aeqd, 'sY3_aeqd': sY3_aeqd,
                               'vertice_idx1': vertice_idx1, 'vertice_idx2': vertice_idx2, 'vertice_idx3': vertice_idx3}
 
@@ -139,10 +139,10 @@ def load_converted( path_converted ):
 
     Function specifically for the method M01.
 
-    Loads data from a converted .csv file. Returns a dictionnary containing arrays 
-    of triangle numbers, starting and ending (x,y) positions of the vertices in a 
-    local cartesian coordinate system, and the (j, i) indices of the nearest grid 
-    tracer point that defines the local cartesian coordinate system (no, sX1,sX2, 
+    Loads data from a converted .csv file. Returns a dictionnary containing arrays
+    of triangle numbers, starting and ending (x,y) positions of the vertices in a
+    local cartesian coordinate system, and the (j, i) indices of the nearest grid
+    tracer point that defines the local cartesian coordinate system (no, sX1,sX2,
     sX3, sY1, sY2, sY3, eX1, eX2, eX3, eY1, eY2, eY3, j_tracers, i_tracers).
 
     Keyword arguments: \\
@@ -170,12 +170,12 @@ def load_converted( path_converted ):
     eY2         = df['eY2']
     eY3         = df['eY3']
 
-    j_tracers   = df['tracer_j']        # Tracer point (which defines the local CS) indices 
+    j_tracers   = df['tracer_j']        # Tracer point (which defines the local CS) indices
     i_tracers   = df['tracer_i']
 
 
     converted_data = {'no': no, 'sX1': sX1, 'sX2': sX2, 'sX3': sX3, 'eX1': eX1, 'eX2': eX2, 'eX3': eX3,
-                                'sY1': sY1, 'sY2': sY2, 'sY3': sY3, 'eY1': eY1, 'eY2': eY2, 'eY3': eY3, 
+                                'sY1': sY1, 'sY2': sY2, 'sY3': sY3, 'eY1': eY1, 'eY2': eY2, 'eY3': eY3,
                                 'j_tracers': j_tracers, 'i_tracers': i_tracers}
 
     return converted_data
@@ -184,8 +184,8 @@ def load_converted( path_converted ):
 def load_calculations( path_calculations ):
     ''' (str) -> dict[str, list]
 
-    Loads data from a calculations .csv file. Returns a dictionnary of arrays 
-    of triangle numbers, strain rates, divergence rate, maximum shear strain 
+    Loads data from a calculations .csv file. Returns a dictionnary of arrays
+    of triangle numbers, strain rates, divergence rate, maximum shear strain
     rate, and total deformation rate (no, dudx, dudy, dvdx, dvdy, eps_I, eps_II, eps_tot).
 
     Keyword arguments:

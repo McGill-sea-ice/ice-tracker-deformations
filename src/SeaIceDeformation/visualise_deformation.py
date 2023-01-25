@@ -5,7 +5,7 @@ Author: Beatrice Duval (bdu002)
 Visualise deformations
 ------------------------------------------------------------------------------
 
-Code that plots total sea-ice deformations, divergence and shear strain rates 
+Code that plots total sea-ice deformations, divergence and shear strain rates
 using the datasets listed in a txt file (see config).
 
 '''
@@ -75,7 +75,7 @@ def visualise_deformations():
             eps_I           = calculated_data['eps_I']    # Divergence rate
             eps_II          = calculated_data['eps_II']   # Maximum shear strain rate
             eps_tot         = calculated_data['eps_tot']  # Total deformation rate
-            dvdx            = calculated_data['dvdx']       
+            dvdx            = calculated_data['dvdx']
             dudy            = calculated_data['dudy']
             rot             = dvdx - dudy
 
@@ -101,26 +101,26 @@ def visualise_deformations():
     ADD FEATURES TO THE PLOTS
     '''
 
-    # Check if at least one dataset has been plotted, 
-    # ie if the figures have been plotted (cb_tot should 
+    # Check if at least one dataset has been plotted,
+    # ie if the figures have been plotted (cb_tot should
     # have been initialized in that case)
-    try: 
+    try:
         cb_tot
-    except NameError: 
+    except NameError:
         cb_tot = None
-    
-    # Retrieve namelist arguments that define the dataset 
+
+    # Retrieve namelist arguments that define the dataset
     # that has been selected for processing
     Date_options = config.config['Date_options']
     start_year   = Date_options['start_year']
     start_month  = Date_options['start_month']
     start_day    = Date_options['start_day']
     duration     = Date_options['timestep']
-    
+
     IO            = config.config['IO']
     output_folder = IO['output_folder']
     exp           = IO['exp']
-    
+
     # All figures have been plotted
     if cb_tot is not None:
 
@@ -149,22 +149,22 @@ def visualise_deformations():
 
         # Set a directory to store figures for the current experiment
         figsPath =  output_folder + '/' + exp + '/figs/'
-        
+
         # Create the directory if it does not exist already
         os.makedirs(figsPath, exist_ok=True)
 
         # Create a prefix for the figure filenames
-        prefix = start_year + start_month + start_day + '_' + str(duration) 
-        
+        prefix = start_year + start_month + start_day + '_' + str(duration)
+
         # Create the figure filenames
         tot_path   = figsPath + prefix + '_tot.png'
         div_path   = figsPath + prefix + '_div.png'
         shear_path = figsPath + prefix + '_shear.png'
         rot_path   = figsPath + prefix + '_rot.png'
 
-        
+
         for fig, fig_path in zip([fig_tot, fig_I, fig_II, fig_rot], [tot_path, div_path, shear_path, rot_path]):
-            
+
             # Check if the figures already exist. If they do, delete them.
             if os.path.isfile(fig_path):
                 os.remove(fig_path)
