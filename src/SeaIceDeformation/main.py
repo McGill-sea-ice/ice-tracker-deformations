@@ -35,21 +35,7 @@ delaunay_triangulation.delaunay_triangulation()
 
 
 '''
-2) Conversion (M00 method only)
-
-Convert the triangulation results to a local cartesian grid coordinate system
-
-'''
-
-if method == 'M00':
-
-    print('--- Converting to local grid coordinate systems ---')
-
-    to_grid_coord_system.to_grid_coord_syst()
-
-
-'''
-3) Calculations
+2) Calculations
 
 Compute sea-ice deformations rates using the X/Y triangulations results
 
@@ -61,7 +47,7 @@ compute_deformations.compute_deformations()
 
 
 '''
-4) Visualise Deformations
+3) Visualise Deformations
 '''
 
 if config.config['Processing_options'].getboolean('visualise'):

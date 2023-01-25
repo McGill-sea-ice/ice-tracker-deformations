@@ -27,7 +27,6 @@ import config
 import utils_grid_coord_system as grid_coord_system
 import utils_load_data as load_data
 
-
 def delaunay_triangulation():
 
     # Retrieve data_paths from config arguments
@@ -35,7 +34,6 @@ def delaunay_triangulation():
 
     # Iterate through all raw and triangulated data file paths listed in config
     for raw_path, triangulated_path, calculations_path in zip(dp['raw'], dp['triangulated'], dp['calculations']):
-
         '''
         _________________________________________________________________________________________
         LOAD DATA

@@ -174,7 +174,7 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
 
 
 def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
-    # def get_datapaths(raw_paths, output_path, exp, start_year, start_month, start_day, method, ice_tracker):
+    # def get_datapaths(raw_paths, output_path, exp, start_year, start_month, start_day, ice_tracker):
     ''' (str, str, str, str) -> dict[str, Any]
 
     Function that creates lists that store data file paths for every dataset
@@ -186,8 +186,7 @@ def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
 
     Every raw data file (e.g. pairs_20200320010317_20200401010317_1.dat) is
     associated to a triangulated (e.g. tri_20200320010317_20200401010317_1.csv),
-    converted (e.g. conv_20200320010317_20200401010317_1.csv) (for M00
-    method only) and calculated (e.g. calc_20200320010317_20200401010317_1.csv)
+    and calculated (e.g. calc_20200320010317_20200401010317_1.csv)
     .csv file.
 
     The output netcdf file combines the output data of all processed datasets
@@ -212,7 +211,6 @@ def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
     start_year  -- starting year of the raw datasets listed in raw_paths \\
     start_month -- starting month of the raw datasets listed in raw_paths \\
     start_day   -- starting day of the raw datasets listed in raw_paths \\
-    method      -- method that will be used to process datasets \\
     ice_tracker -- sea-ice motion tracker used for calculations \\
     '''
 
@@ -241,7 +239,7 @@ def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
     # Find the appropriate path for the output netcdf file
     nc_output_path = get_data_paths.get_output_nc_path(IO, Date_options, Metadata)
 
-    # Create the output data paths dictionnary depending on the method
+    # Create the output data paths dictionnary
     # we are using to process data
     data_paths =  { 'raw': raw_paths,
                     'triangulated': triangulated_paths,

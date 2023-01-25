@@ -66,8 +66,11 @@ def load_raw( path_raw ):
         # Retrieve the raw filename and raise an error
         filename_raw_csv  = os.path.basename( path_raw )
 
-        raise DataError(filename_raw_csv  + \
-                         " is empty or does not have enough data to perform a triangulation. ")
+        raise DataError(filename_raw_csv  + " is empty or does not have enough data to perform a triangulation. ")
+
+    else: # print the name of the file and the number of data points in there
+        filename_raw_csv  = os.path.basename( path_raw )
+        print(filename_raw_csv + " was read and contains " +  str(len(sLon)) + " data points. ")
 
     # Create a dictionnary of raw data and return it
     raw_data = {'sLat': sLat, 'sLon': sLon, 'eLat': eLat, 'eLon': eLon,
@@ -78,24 +81,17 @@ def load_raw( path_raw ):
 
 
 
-def load_triangulated( path_triangulated, method ):
+def load_triangulated( path_triangulated ):
     ''' (str) -> dict[str, list]
 
     Loads data from a triangulated .csv file.
 
-    If the method is M00:
-        Returns a dictionnary of arrays of triangle numbers,
-        starting and ending positions of the vertices in the aeqd transform,
-        and the vertices' index in the raw file: (no, sX1_aeqd, sX2_aeqd, sX3_aeqd,
-        sY1_aeqd, sY2_aeqd, sY3_aeqd,  vertice_idx1, vertice_idx2, vertice_idx3).
-
-    If the method is M01:
-        Returns a dictionnary of arrays of triangle numbers, and the vertices'
+    Returns a dictionnary of arrays of triangle numbers, and the vertices'
         index in the raw file: (no, vertice_idx1, vertice_idx2, vertice_idx3).
 
     Keyword arguments: \\
     path_triangulated -- absolute path to processed .csv file
-    method -- method currently used to process data
+
     '''
     # Create a data frame
     df = pd.read_csv(path_triangulated)
@@ -103,41 +99,19 @@ def load_triangulated( path_triangulated, method ):
     # Retrieve data
     no           = df['no.']          # Triangle number
 
-    # Create a return dictionnary of triangulated data for method M00 and M01
-    if method == 'M00':
+    # Create a return dictionnary of triangulated data
 
-        sX1_aeqd     = df['sX1_aeqd']     # Starting X coordinates in the aeqd transform
-        sX2_aeqd     = df['sX2_aeqd']
-        sX3_aeqd     = df['sX3_aeqd']
+    vertice_idx1 = df['vertice_idx1'] # Vertex indices in raw file
+    vertice_idx2 = df['vertice_idx2']
+    vertice_idx3 = df['vertice_idx3']
 
-        sY1_aeqd     = df['sY1_aeqd']     # Starting Y coordinates in the aeqd transform
-        sY2_aeqd     = df['sY2_aeqd']
-        sY3_aeqd     = df['sY3_aeqd']
-
-        vertice_idx1 = df['vertice_idx1'] # Vertex indices in raw file
-        vertice_idx2 = df['vertice_idx2']
-        vertice_idx3 = df['vertice_idx3']
-
-        tri_data = {'no': no, 'sX1_aeqd': sX1_aeqd, 'sX2_aeqd': sX2_aeqd, 'sX3_aeqd': sX3_aeqd,
-                              'sY1_aeqd': sY1_aeqd, 'sY2_aeqd': sY2_aeqd, 'sY3_aeqd': sY3_aeqd,
-                              'vertice_idx1': vertice_idx1, 'vertice_idx2': vertice_idx2, 'vertice_idx3': vertice_idx3}
-
-    if method == 'M01':
-
-        vertice_idx1 = df['vertice_idx1'] # Vertex indices in raw file
-        vertice_idx2 = df['vertice_idx2']
-        vertice_idx3 = df['vertice_idx3']
-
-        tri_data = {'no': no, 'vertice_idx1': vertice_idx1, 'vertice_idx2': vertice_idx2, 'vertice_idx3': vertice_idx3}
-
+    tri_data = {'no': no, 'vertice_idx1': vertice_idx1, 'vertice_idx2': vertice_idx2, 'vertice_idx3': vertice_idx3}
 
     return tri_data
 
 
 def load_converted( path_converted ):
     ''' (str) -> dict[str, list]
-
-    Function specifically for the method M01.
 
     Loads data from a converted .csv file. Returns a dictionnary containing arrays
     of triangle numbers, starting and ending (x,y) positions of the vertices in a

@@ -65,7 +65,7 @@ def visualise_deformations():
             sLon        = raw_data['sLon']       # Starting longitudes
 
             # Load triangulated data
-            triangulated_data = load_data.load_triangulated(triangulated_path, config.config['Processing_options']['method'])
+            triangulated_data = load_data.load_triangulated(triangulated_path)
             vertice_idx1      = triangulated_data['vertice_idx1']   # Vertex indices in raw csv file
             vertice_idx2      = triangulated_data['vertice_idx2']
             vertice_idx3      = triangulated_data['vertice_idx3']
@@ -80,6 +80,7 @@ def visualise_deformations():
             rot             = dvdx - dudy
 
         except:
+            print('Error in reading the file : ',raw_path,' continuing.')
             continue
 
         '''
