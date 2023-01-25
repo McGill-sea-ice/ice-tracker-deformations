@@ -5,8 +5,8 @@ Author: Beatrice Duval (bdu002)
 Utils - Datetime
 ------------------------------------------------------------------------------
 
-Module that provides tools for finding starting and ending times as Datetime 
-objects of a dataset given its filename, and for finding the time lapse in 
+Module that provides tools for finding starting and ending times as Datetime
+objects of a dataset given its filename, and for finding the time lapse in
 seconds between two Datetime objects.
 
 '''
@@ -15,10 +15,10 @@ import datetime
 
 def dataDatetimes(p):
     ''' (str) -> (datetime, datetime)
-    
-    Takes as input RCM or S1 data file path or name and returns 
+
+    Takes as input RCM or S1 data file path or name and returns
     start and end times as datetime objects using the file name.
-    
+
     Keyword arguments: \\
     p -- data file path or name
 
@@ -50,7 +50,7 @@ def dataDatetimes(p):
 
 def dT(se):
     ''' tuple(datetime, datetime) -> float
-    
+
     Takes as input start and end times as datetime objects
     and returns delta time (seconds)
 
@@ -65,6 +65,6 @@ def dT(se):
     # Unpack the input start and end times
     s, e = se
 
-    return (e-s).total_seconds() 
+    return (e-s).total_seconds()
 
 

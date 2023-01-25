@@ -5,10 +5,10 @@ Author: Beatrice Duval (bdu002)
 M01 - Sea-ice deformations calculations
 ---------------------------------------
 
-Module that computes triangle cells' sea-ice deformations using a triangulated csv file. 
+Module that computes triangle cells' sea-ice deformations using a triangulated csv file.
 
-The results are then stored in a calculations csv file for each dataset, and in a 
-single output netcdf4 file that combines all processed datasets. 
+The results are then stored in a calculations csv file for each dataset, and in a
+single output netcdf4 file that combines all processed datasets.
 
 1. Calculations csv file:
 
@@ -31,7 +31,7 @@ single output netcdf4 file that combines all processed datasets.
 2. Output netcdf4 file:
 
     Description: The deformation results of all processed datasets are stored
-                 in a single output netcdf file. Each data row corresponds to 
+                 in a single output netcdf file. Each data row corresponds to
                  a triangle.
 
 
@@ -75,44 +75,44 @@ def compute_deformations():
     '''
 
     # Initialize arrays of data to be stored in a netcdf file.
-    # These arrays will combine the output data from all datasets 
+    # These arrays will combine the output data from all datasets
     # that are being processed.
     sTime, eTime, \
         sLat1, sLat2, sLat3, sLon1, sLon2, sLon3, \
         eLat1, eLat2, eLat3, eLon1, eLon2, eLon3, \
         div, shr, vrt, idx1, idx2, idx3, no, idx_sLat1, idx_sLat2, idx_sLat3, dudx_l, dudy_l, dvdx_l, dvdy_l \
         = ([] for i in range(28))
-    
+
     # Retrieve the starting date common to all processed datasets (from namelist.ini)
     Date_options = config.config['Date_options']
-    YYYY = Date_options['start_year'] 
-    MM = Date_options['start_month'] 
-    DD = Date_options['start_day'] 
+    YYYY = Date_options['start_year']
+    MM = Date_options['start_month']
+    DD = Date_options['start_day']
 
     # Create a datetime object for the reference start time
     refTime = datetime.datetime(int(YYYY), # Year
                        int(MM),   # Month
                        int(DD),   # Day
                        0, 0, 0)   # Hour, minute, second
-    
+
     # Counter of current file being processed
     file_num = 0
 
     # Iterate through all raw, triangulated and calculations data files listed in config
     for raw_path, triangulated_path, calculations_path in zip(config.data_paths['raw'], config.data_paths['triangulated'], config.data_paths['calculations']):
-        
+
         '''
         _________________________________________________________________________________________
         LOAD DATA
         '''
 
-        
-        
+
+
         # Check if the triangulated data set exists. If it does not, go to the next iteration
         if not( os.path.exists(triangulated_path) ):
             continue
 
-        # Load the raw data set. If an error is encountered (no or not enough data points), 
+        # Load the raw data set. If an error is encountered (no or not enough data points),
         # go to the next dataset.
         try:
             raw_data = load_data.load_raw( raw_path )
@@ -126,11 +126,11 @@ def compute_deformations():
             eLon    = raw_data['eLon']    # Ending longitudes
 
         except load_data.DataFileError as dfe:
-            # The error has already been printed in the triangulation stage            
+            # The error has already been printed in the triangulation stage
             continue
-        
+
         # Load the triangulated dataset
-        triangulated_data = load_data.load_triangulated( triangulated_path, config.config['Processing_options']['method'] )
+        triangulated_data = load_data.load_triangulated( triangulated_path )
         vertice_idx1 = triangulated_data['vertice_idx1'] # Vertex indices in raw data file
         vertice_idx2 = triangulated_data['vertice_idx2']
         vertice_idx3 = triangulated_data['vertice_idx3']
@@ -151,26 +151,26 @@ def compute_deformations():
         sX2 = np.array(startX)[vertice_idx2]
         sX3 = np.array(startX)[vertice_idx3]
 
-        sY1 = np.array(startY)[vertice_idx1]             
-        sY2 = np.array(startY)[vertice_idx2]   
-        sY3 = np.array(startY)[vertice_idx3]   
+        sY1 = np.array(startY)[vertice_idx1]
+        sY2 = np.array(startY)[vertice_idx2]
+        sY3 = np.array(startY)[vertice_idx3]
 
-        eX1 = np.array(endX)[vertice_idx1]             
-        eX2 = np.array(endX)[vertice_idx2]        
-        eX3 = np.array(endX)[vertice_idx3]        
+        eX1 = np.array(endX)[vertice_idx1]
+        eX2 = np.array(endX)[vertice_idx2]
+        eX3 = np.array(endX)[vertice_idx3]
 
-        eY1 = np.array(endY)[vertice_idx1]          
-        eY2 = np.array(endY)[vertice_idx2] 
-        eY3 = np.array(endY)[vertice_idx3] 
+        eY1 = np.array(endY)[vertice_idx1]
+        eY2 = np.array(endY)[vertice_idx2]
+        eY3 = np.array(endY)[vertice_idx3]
 
         '''
         _________________________________________________________________________________________
         COMPUTE DEFORMATIONS FOR EACH TRIANGLE
         '''
 
-        # Iterate through every triangle in the triangulated csv file 
+        # Iterate through every triangle in the triangulated csv file
         for n in range(num_tri):
-  
+
             # Create lists of triangular cell vertices' positions
             sx_list = np.array([sX1[n], sX2[n], sX3[n]])  # Starting x positions
             sy_list = np.array([sY1[n], sY2[n], sY3[n]])  # Starting y positions
@@ -182,7 +182,7 @@ def compute_deformations():
             idx2.append(vertice_idx2[n])
             idx3.append(vertice_idx3[n])
             no.append(file_num)
-            
+
             # Create a list of velocity components for each triangle vertex
             u_list, v_list = deformation_comp.calculate_uv_lists( sx_list, ex_list, sy_list, ey_list, dt)
 
@@ -200,20 +200,20 @@ def compute_deformations():
 
             # Compute the total sea-ice deformation rate
             eps_tot = sqrt( eps_I**2 + eps_II**2 )
-            
+
 
             '''
             _________________________________________________________________________________________
-            POPULATE CSV ROW LIST  
+            POPULATE CSV ROW LIST
             '''
 
             # Add the data row corresponding to the current triangle to the list of data rows
             row_list.append( [n, dudx, dudy, dvdx, dvdy, eps_I, eps_II, rot, eps_tot] )
-            
+
 
             '''
             _________________________________________________________________________________________
-            POPULATE NETCDF ARRAYS      
+            POPULATE NETCDF ARRAYS
             '''
 
             # Add the divergence and the shear strain rates to the netcdf lists
@@ -230,14 +230,14 @@ def compute_deformations():
         # Update file counter
         file_num += 1
 
-        # Add the starting and ending times (in seconds since the reference time) 
+        # Add the starting and ending times (in seconds since the reference time)
         # to the times list
         s = utils_datetime.dT((refTime, start))
         sTime.extend([s for i in range(num_tri)])
-        
+
         e = utils_datetime.dT((refTime, end))
         eTime.extend([e for i in range(num_tri)])
-        
+
 
         # Add the starting and ending Lat/Lon positions of each triangle vertices
         # to the netcdf list
@@ -245,17 +245,17 @@ def compute_deformations():
         sLat2.extend(np.array(sLat)[vertice_idx2])
         sLat3.extend(np.array(sLat)[vertice_idx3])
 
-        sLon1.extend(np.array(sLon)[vertice_idx1])             
-        sLon2.extend(np.array(sLon)[vertice_idx2])  
-        sLon3.extend(np.array(sLon)[vertice_idx3])   
+        sLon1.extend(np.array(sLon)[vertice_idx1])
+        sLon2.extend(np.array(sLon)[vertice_idx2])
+        sLon3.extend(np.array(sLon)[vertice_idx3])
 
-        eLat1.extend(np.array(eLat)[vertice_idx1])             
-        eLat2.extend(np.array(eLat)[vertice_idx2])        
-        eLat3.extend(np.array(eLat)[vertice_idx3])       
+        eLat1.extend(np.array(eLat)[vertice_idx1])
+        eLat2.extend(np.array(eLat)[vertice_idx2])
+        eLat3.extend(np.array(eLat)[vertice_idx3])
 
-        eLon1.extend(np.array(eLon)[vertice_idx1])          
-        eLon2.extend(np.array(eLon)[vertice_idx2]) 
-        eLon3.extend(np.array(eLon)[vertice_idx3]) 
+        eLon1.extend(np.array(eLon)[vertice_idx1])
+        eLon2.extend(np.array(eLon)[vertice_idx2])
+        eLon3.extend(np.array(eLon)[vertice_idx3])
 
         idx_sLat1.extend(vertice_idx1)
         idx_sLat2.extend(vertice_idx2)
@@ -267,7 +267,7 @@ def compute_deformations():
         '''
         # If the calculations file already exists and overwrite (in namelist.ini) is set to 'no',
         # do not write the calculations csv file
-        if not ( os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite')):            
+        if not ( os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite')):
             # Create a directory to store the calculations csv path if it does not exist already
             os.makedirs(os.path.dirname(calculations_path), exist_ok=True)
 
@@ -291,41 +291,41 @@ def compute_deformations():
 
     # Create an output netcdf file and dataset
     output_ds = Dataset(nc_output_path, 'w', format = 'NETCDF4')
-    
+
     # Add metadata
     Metadata = config.config['Metadata']
     output_ds.iceTracker = Metadata['ice_tracker']
-    output_ds.referenceTime = YYYY + '-' + MM + '-' + DD + ' 00:00:00' 
+    output_ds.referenceTime = YYYY + '-' + MM + '-' + DD + ' 00:00:00'
     output_ds.trackingError = Metadata['tracking_error'] + ' m'
     output_ds.timestep = Date_options['timestep'] + ' hours'
     output_ds.tolerance = Date_options['tolerance'] + ' hours'
 
     # Create x array to store output data
     x = output_ds.createDimension('x', len(sTime))
-        
+
     # Create variables for netcdf data set
     start_time = output_ds.createVariable('start_time', 'u4', 'x') # Start and end times
     end_time   = output_ds.createVariable('end_time', 'u4', 'x')
-    
+
     start_lat1 = output_ds.createVariable('start_lat1', 'f8', 'x') # Starting Lat/Lon triangle vertices
     start_lat2 = output_ds.createVariable('start_lat2', 'f8', 'x')
     start_lat3 = output_ds.createVariable('start_lat3', 'f8', 'x')
     start_lon1 = output_ds.createVariable('start_lon1', 'f8', 'x')
     start_lon2 = output_ds.createVariable('start_lon2', 'f8', 'x')
     start_lon3 = output_ds.createVariable('start_lon3', 'f8', 'x')
-    
+
     end_lat1   = output_ds.createVariable('end_lat1', 'f8', 'x') # Ending Lat/Lon triangle vertices
     end_lat2   = output_ds.createVariable('end_lat2', 'f8', 'x')
     end_lat3   = output_ds.createVariable('end_lat3', 'f8', 'x')
     end_lon1   = output_ds.createVariable('end_lon1', 'f8', 'x')
     end_lon2   = output_ds.createVariable('end_lon2', 'f8', 'x')
     end_lon3   = output_ds.createVariable('end_lon3', 'f8', 'x')
-    
+
     d          = output_ds.createVariable('div', 'f8', 'x') # Divergence and shear strain and vorticity rates
     s          = output_ds.createVariable('shr', 'f8', 'x')
     v          = output_ds.createVariable('vrt', 'f8', 'x')
 
-    id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices 
+    id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices
     id2        = output_ds.createVariable('idx2', 'u4', 'x')
     id3        = output_ds.createVariable('idx3', 'u4', 'x')
     idtri      = output_ds.createVariable('no', 'u4', 'x')
@@ -342,14 +342,14 @@ def compute_deformations():
     # Specify units for each variable
     start_time.units = 'seconds since the reference time'
     end_time.units   = 'seconds since the reference time'
-    
+
     start_lat1.units = 'degrees North'
     start_lat2.units = 'degrees North'
     start_lat3.units = 'degrees North'
     start_lon1.units = 'degrees East'
     start_lon2.units = 'degrees East'
     start_lon3.units = 'degrees East'
-    
+
     end_lat1.units   = 'degrees North'
     end_lat2.units   = 'degrees North'
     end_lat3.units   = 'degrees North'
@@ -369,14 +369,14 @@ def compute_deformations():
     # Attribute data arrays to each variable
     start_time[:] = sTime
     end_time[:]   = eTime
-    
+
     start_lat1[:] = sLat1
     start_lat2[:] = sLat2
     start_lat3[:] = sLat3
     start_lon1[:] = sLon1
     start_lon2[:] = sLon2
     start_lon3[:] = sLon3
-    
+
     end_lat1[:]   = eLat1
     end_lat2[:]   = eLat2
     end_lat3[:]   = eLat3

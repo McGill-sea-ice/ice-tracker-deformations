@@ -8,7 +8,7 @@ M01 - Delaunay triangulation
 Module that performs a Delaunay triangulation on a set of X/Y data points and stores the results in a csv file.
 
 1. Output csv file
-    
+
     Format:
         no. | vertice_idx1 | vertice_idx2 | vertice_idx3
 
@@ -27,7 +27,6 @@ import config
 import utils_grid_coord_system as grid_coord_system
 import utils_load_data as load_data
 
-
 def delaunay_triangulation():
 
     # Retrieve data_paths from config arguments
@@ -35,25 +34,24 @@ def delaunay_triangulation():
 
     # Iterate through all raw and triangulated data file paths listed in config
     for raw_path, triangulated_path, calculations_path in zip(dp['raw'], dp['triangulated'], dp['calculations']):
-        
         '''
         _________________________________________________________________________________________
         LOAD DATA
         '''
-        
+
         # If the triangulated file already exists and overwrite (in config) is set to 'no',
         # go to the next iteration.
         # Else, process the raw file and write the triangulated file.
         if os.path.exists(triangulated_path) and not config.config['Processing_options'].getboolean('overwrite'):
             continue
 
-        # Load the raw data set. If an error is encountered (no or not enough data points), 
+        # Load the raw data set. If an error is encountered (no or not enough data points),
         # print the error message and go to the next raw file.
         try:
             raw_data = load_data.load_raw( raw_path )
             startX = raw_data['startX']
             startY = raw_data['startY']
-        
+
         except load_data.DataFileError as dfe:
             print(str(dfe) + 'It will not be processed.')
             continue
@@ -62,12 +60,12 @@ def delaunay_triangulation():
         _________________________________________________________________________________________
         PERFORM DELAUNAY TRIANGULATION
         '''
-        
+
         # Generate a Delaunay triangulation
         startXY = list(zip(startX, startY))
         try:
             tri = Delaunay(startXY)
-        
+
         except Exception as e:
             print(e)
             continue
@@ -83,7 +81,7 @@ def delaunay_triangulation():
 
         # Iterate through all triangles
         for n in range(len(tri.simplices)):
-                
+
             # Find the index of all 3 data points that form the current triangle
             vertice_idx1 = tri.simplices[n][0]
             vertice_idx2 = tri.simplices[n][1]
@@ -102,7 +100,7 @@ def delaunay_triangulation():
 
             # Keep the triangle if and only if none of its angles are inferior to 10 degrees (= 0.175 rad)
             if not any(angle < 0.175 for angle in angles):
-                
+
                 # Add the data row corresponding to the current triangle to the list of data rows
                 row_list.append([ n, vertice_idx1, vertice_idx2,  vertice_idx3] )
 
@@ -136,7 +134,7 @@ def delaunay_triangulation():
                 os.remove(calculations_path)
             except OSError:
                 pass
-        
+
 
 if __name__ == "__main__":
     delaunay_triangulation()

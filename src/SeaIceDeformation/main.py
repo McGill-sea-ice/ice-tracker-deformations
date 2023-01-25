@@ -13,17 +13,8 @@ import time
 
 import config
 
-# Retrieve the selected processing method (in namelist.ini)
-method = config.config['Processing_options']['method'] 
-
-if method == 'M00':
-    import M00_d01_delaunay_triangulation as delaunay_triangulation
-    import M00_d02_to_grid_coord_system as to_grid_coord_system
-    import M00_d03_compute_deformations as compute_deformations
-
-elif method == 'M01':
-    import M01_d01_delaunay_triangulation as delaunay_triangulation
-    import M01_d03_compute_deformations as compute_deformations
+import utils_delaunay_triangulation as delaunay_triangulation
+import utils_compute_deformations as compute_deformations
 
 import visualise_deformation
 
@@ -44,21 +35,7 @@ delaunay_triangulation.delaunay_triangulation()
 
 
 '''
-2) Conversion (M00 method only)
-
-Convert the triangulation results to a local cartesian grid coordinate system
-
-'''
-
-if method == 'M00':
-
-    print('--- Converting to local grid coordinate systems ---')
-
-    to_grid_coord_system.to_grid_coord_syst()
-
-
-'''
-3) Calculations
+2) Calculations
 
 Compute sea-ice deformations rates using the X/Y triangulations results
 
@@ -70,11 +47,11 @@ compute_deformations.compute_deformations()
 
 
 '''
-4) Visualise Deformations
+3) Visualise Deformations
 '''
 
 if config.config['Processing_options'].getboolean('visualise'):
-    
+
     print('--- Creating sea-ice deformation figures ---')
 
     visualise_deformation.visualise_deformations()
