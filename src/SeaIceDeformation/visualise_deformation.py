@@ -19,7 +19,7 @@ import numpy as np
 
 import config
 import utils_load_data as load_data
-
+from tqdm import tqdm 
 
 def visualise_deformations():
 
@@ -177,6 +177,195 @@ def visualise_deformations():
 
     else:
         print('No figures have been created.')
+
+def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_lon2, start_lon3, start_id1, start_id2, start_id3):
+    """
+    This function takes in a list of start lats/lons and corresponding start lat/lon IDs (triangle vertices)
+    and outputs corresponding, larger lists of start lats/lons (with 0s in some indices) that reflect the
+    coordinates' placement in the original data files for use with ax.tripcolor
+
+    INPUTS:
+    start_lat1,2,3 -- Arrays of starting latitudes {np.array, list}
+    start_lons1,2,3 -- Arrays of starting longitudes {np.array, list}
+    start_id1,2,3 -- Array of starting IDs corresponding to start_lats1,2,3 and start_lons1,2,3 {np.array, list}
+
+    OUTPUTS:
+    new_lat -- Array of latitude values at the positions they were orignally in, in the data file
+    new_lon -- Array of longitude values at the positions they were originally in, in the data file
+
+    """
+
+    # Combined list of start IDs
+    start_ids = np.hstack((start_id1, start_id2, start_id3))
+
+    # Skipping blank data files
+    if len(start_ids) == 0:
+        return 0, 0
+
+    # Initializing new lists of coordinates
+    new_lon, new_lat = ([np.nan] * (max(start_ids) + 1) for i in range(2))
+
+    for i in range(len(start_lat1)):
+        new_lat[start_id1[i]] = (start_lat1[i])
+        new_lat[start_id2[i]] = (start_lat2[i])
+        new_lat[start_id3[i]] = (start_lat3[i])
+
+    for i in range(len(start_lon1)):
+        new_lon[start_id1[i]] = start_lon1[i]
+        new_lon[start_id2[i]] = start_lon2[i]
+        new_lon[start_id3[i]] = start_lon3[i]
+
+    return new_lat, new_lon
+
+
+def plot_deformations_netdcf(data):
+    """
+    This function plots deformations from a netCDF file using matplotlib's ax.tripcolor.
+    The function assumes that the netCDF was generated from src/SeaIceDeformation's M01_d03_compute_deformations.py.
+
+    INUPTS:
+    path -- Path to netCDF {str}
+
+    OUTPUTS:
+    None -- Saves divergence, shear, and vorticity plots to the output directory
+    """
+
+    """
+    Preamble
+    """
+
+    # Set the matplotlib projection and transform
+    proj = ccrs.NorthPolarStereo(central_longitude=0)
+    trans = ccrs.Geodetic()
+
+    # Initialize figures for total deformation (tot), divergence (I) and shear (II)
+    fig_div = plt.figure()
+    fig_shr = plt.figure()
+    fig_vrt = plt.figure()
+
+    # Initialize subplots
+    ax_div = fig_div.add_subplot(111, projection=proj)
+    ax_shr = fig_shr.add_subplot(111, projection=proj)
+    ax_vrt = fig_vrt.add_subplot(111, projection=proj)
+
+    # Create a list of axes to be iterated over
+    ax_list = [ax_div, ax_shr, ax_vrt]
+
+    for ax in ax_list:
+        # Set the map extent in order to see the entire region of interest
+        ax.set_extent((-4400000, 2500000, 3500000, -2500000), ccrs.NorthPolarStereo())
+
+    """
+    Plotting
+    """
+
+    # Obtaining start index of data
+    min_no = np.nanmin(data['no']) # Minimum (smallest) ID number
+    min_index = np.nanmin(np.where(data['no'] == min_no)) # This value will be updated for each triangle
+
+    # Iterating over all files (Unique triangulations)
+    for i in tqdm(range(len(set(np.array(data['no']))))):
+
+        # Here the file indice is zero-indexed, so the first file has the indice 0, regardless of its ID
+
+        # Obtaining number of rows to iterate over
+        file_length = np.count_nonzero(data['no'] == i + min_no)
+
+        # Setting maximum index
+        max_index = min_index + file_length
+
+        # Arranging triangle vertices in array for use in ax.tripcolor
+        triangles = np.stack((data['id_start_lat1'][min_index:max_index], data['id_start_lat2'][min_index:max_index],
+                    data['id_start_lat3'][min_index:max_index]), axis=-1)
+
+        # Filtering data range to that of the current "file"
+
+        start_lat1_temp, start_lat2_temp, start_lat3_temp = data['start_lat1'][min_index:max_index], \
+            data['start_lat2'][min_index:max_index], data['start_lat3'][min_index:max_index]
+
+        start_lon1_temp, start_lon2_temp, start_lon3_temp = data['start_lon1'][min_index:max_index], \
+            data['start_lon2'][min_index:max_index], data['start_lon3'][min_index:max_index]
+
+        start_lat, start_lon = recreate_coordinates(start_lat1_temp, start_lat2_temp, start_lat3_temp,
+                                                        start_lon1_temp, start_lon2_temp, start_lon3_temp,
+                                                        data['id_start_lat1'][min_index:max_index],
+                                                        data['id_start_lat2'][min_index:max_index],
+                                                        data['id_start_lat3'][min_index:max_index])
+
+        # Extracting deformation data
+        div_colours = data['div'][min_index:max_index]
+        shr_colours = data['shr'][min_index:max_index]
+        vrt_colours = data['vrt'][min_index:max_index]
+
+        if len(triangles) != 0:
+        # Plotting
+            cb_div = ax_div.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=div_colours, cmap='coolwarm', vmin=-0.04, vmax=0.04)
+            cb_shr = ax_shr.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=shr_colours, cmap='plasma', vmin=0, vmax=0.1)
+            cb_vrt = ax_vrt.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=vrt_colours, cmap='coolwarm', vmin=-0.1, vmax=0.1)
+
+        # Updating minimum index
+        min_index = max_index
+
+    # Create a list of colorbars and titles to be iterated over
+    cb_list = [cb_div, cb_shr, cb_vrt]
+    title_list = ['Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Rotation Rate $(Days^{-1})$']
+
+    Date_options = config.config['Date_options']
+    start_year   = Date_options['start_year']
+    end_year   = Date_options['end_year']
+    start_month  = Date_options['start_month']
+    end_month  = Date_options['end_month']
+    start_day    = Date_options['start_day']
+    end_day    = Date_options['end_day']
+    timestep     = Date_options['timestep']
+
+    IO            = config.config['IO']
+    output_folder = IO['output_folder']
+    exp           = IO['exp']
+
+    # Iterate through all axes
+    for ax, title, cb in zip(ax_list, title_list, cb_list):
+        # Add a colorbar
+        plt.colorbar(cb, ax=ax)
+
+        # Add a title
+        ax.set_title(title + '\n' + start_year + '-' + start_month + '-' + start_day + ' to ' +
+                        end_year + '-' + end_month + '-' + end_day + ', ' + timestep + 'hr')
+
+        # Add gridlines
+        ax.gridlines()
+
+        # Hide deformations over land
+        ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
+
+        '''
+        _________________________________________________________________________________________
+        SAVE PLOTS
+        '''
+
+    # Set a directory to store figures for the current experiment
+    figsPath =  output_folder + '/' + exp + '/figs/'
+
+    # Create the directory if it does not exist already
+    os.makedirs(figsPath, exist_ok=True)
+
+    # Create a prefix for the figure filenames
+    prefix = data.icetracker + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(data.tolerance)
+
+    # Create the figure filenames
+    div_path   = figsPath + prefix + '_div.png'
+    shr_path = figsPath + prefix + '_shr.png'
+    rot_path   = figsPath + prefix + '_rot.png'
+
+
+    for fig, fig_path in zip([fig_div, fig_shr, fig_vrt], [div_path, shr_path, rot_path]):
+
+        # Check if the figures already exist. If they do, delete them.
+        if os.path.isfile(fig_path):
+            os.remove(fig_path)
+
+        # Save the new figures
+        fig.savefig(fig_path, bbox_inches='tight', dpi=600)
 
 if __name__ == '__main__':
     visualise_deformations()

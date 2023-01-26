@@ -22,7 +22,7 @@ class FileFormatError(DataFileError):
 class DataError(DataFileError):
     pass
 
-def load_raw( path_raw ):
+def load_raw(path_raw, nbfb, empty_files, nbfg, nbpg):
     ''' (str) -> dict[str, list]
 
     Loads data from a raw .dat file.
@@ -61,23 +61,27 @@ def load_raw( path_raw ):
     dispY   = df['dispY']   # Y displacement (px)
 
     # Raise an error if the input raw csv file is empty or if it contains less than 3 data points
-    if ( len(sLon) < 3 ):
+    if ( len(sLon) < 4 ):
 
         # Retrieve the raw filename and raise an error
         filename_raw_csv  = os.path.basename( path_raw )
 
-        raise DataError(filename_raw_csv  + " is empty or does not have enough data to perform a triangulation. ")
+        # raise DataError(filename_raw_csv  + " is empty or does not have enough data to perform a triangulation. ")
+
+        nbfb += 1
+        empty_files.append(filename_raw_csv)
+
 
     else: # print the name of the file and the number of data points in there
-        filename_raw_csv  = os.path.basename( path_raw )
-        print(filename_raw_csv + " was read and contains " +  str(len(sLon)) + " data points. ")
+        nbfg += 1
+        nbpg += len(sLon)
 
     # Create a dictionnary of raw data and return it
     raw_data = {'sLat': sLat, 'sLon': sLon, 'eLat': eLat, 'eLon': eLon,
                         'startX': startX, 'startY': startY, 'endX': endX, 'endY': endY,
                         'dispX': dispX, 'dispY': dispY}
 
-    return raw_data
+    return raw_data, nbfb, empty_files, nbfg, nbpg
 
 
 

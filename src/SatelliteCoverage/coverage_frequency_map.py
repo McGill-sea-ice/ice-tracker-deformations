@@ -52,13 +52,13 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
     uxextent = 2500000
     uyextent = 2500000
     lyextent = -1900000
-    
+
     # Show lat/lon grid
     ax.gridlines(draw_labels=True)
 
     # Hide datapoints over land
     ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
-    
+
     """
     Data
     """
@@ -99,7 +99,7 @@ def visualise_coverage_histogram2d(xy, max_date, min_date, timestep):
         ax.set_title(f'{tracker}, {min_date} to {max_date} encompassing all time intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_deltat_tolerance_resolution_'res'_tracker_freq.png
-    prefix = tracker + '_' + min_date_str + '_' + max_date_str + '_dt' + timestep + '_tol' + tolerance + '_res' + str(int(resolution)) 
+    prefix = tracker + '_' + min_date_str + '_' + max_date_str + '_dt' + timestep + '_tol' + tolerance + '_res' + str(int(resolution))
 
     # Set a directory to store figures
     figsPath =  output + '/' + '/figs/'

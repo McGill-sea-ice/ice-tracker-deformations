@@ -244,7 +244,8 @@ def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
     data_paths =  { 'raw': raw_paths,
                     'triangulated': triangulated_paths,
                     'calculations': calculations_paths,
-                    'nc_output': nc_output_path }
+                    'nc_output': nc_output_path,
+                    'output_folder': IO['output_folder']+IO['exp']}
 
     return data_paths
 

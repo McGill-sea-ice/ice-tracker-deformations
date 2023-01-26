@@ -1,5 +1,5 @@
 """
-Author: Lekima Yakuden 
+Author: Lekima Yakuden
 GitHub: LekiYak
 
 --------------------------------------------------------------------------------
@@ -41,12 +41,12 @@ def read_config():
     return config
 
 """
-Raw Data 
+Raw Data
 """
 # Compiles raw data into pandas dataframe
 def compile_data(raw_paths):
 
-    """ 
+    """
     Compiles all data points in the list of data files (raw_paths) into a dataframe (df)
 
     Returns the dataframe with all datapoints' starting lat and lon in columns.
@@ -54,7 +54,7 @@ def compile_data(raw_paths):
     INPUTS:
     raw_paths -- List of paths to data files {List}
 
-    OUTPUTS: 
+    OUTPUTS:
     df -- Pandas dataframe with the following columns: Index  lat  lon {Dataframe}
     """
 
@@ -66,7 +66,7 @@ def compile_data(raw_paths):
 
     # Appending each file's datapoints to the dataframe
     for filepath in raw_paths:
-        
+
         # Initialize temporary dataframe
         temp_df = pd.DataFrame()
 
@@ -129,7 +129,7 @@ def divide_intervals(raw_paths, max_date, min_date, interval):
                      with the n th interval.
     date_pairs -- List of tuples, each containing the start and end dates of the n th interval (datetime
                   objects in tuples, all in a list)
-    
+
     """
 
     # Converting date range to timedelta object (hours)
@@ -177,9 +177,9 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
     satisfy the user's criteria.
 
     Automatically changes date range to match data availability. i.e. if the user specifies
-    a date range between 01-11-2020 and 01-06-2021, but data is only available from 
+    a date range between 01-11-2020 and 01-06-2021, but data is only available from
     05-11-2020 and 24-05-2021, dates to be processed will be set to the latter, and
-    the user will be notified (Line 
+    the user will be notified (Line
 
     INPUTS:
     start_year -- Starting year YYYY {str}
@@ -188,7 +188,7 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
 
     end_year -- Ending year YYYY {str}
     end_month -- Ending month MM {str}
-    end_day -- Ending day DD {str} 
+    end_day -- Ending day DD {str}
 
     timestep -- Desired timestep in hours {str}
     tolerance -- Number of hours around timestep that will be filtered through {str}
@@ -198,7 +198,7 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
     OUTPUTS:
     raw_paths -- List of file paths {list}
     """
-    
+
     start_year  = str(Date_options['start_year'])
     start_month = str(Date_options['start_month'])
     start_day   = str(Date_options['start_day'])
@@ -212,7 +212,7 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
     sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
     eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
 
-    # Set delta t tolerance 
+    # Set delta t tolerance
     upper_timestep = timedelta(hours=(int(timestep) + int(tolerance)))
     lower_timestep = timedelta(hours=(int(timestep) - int(tolerance)))
 
@@ -243,36 +243,36 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
                 print('No data for '+ sat_type + ' in ' + str(year) )
             else:
                 data_path = date_path + sat_type + str(year) + '/'
-    
+
                 #--------------------------------------------------------------------------
                 # listing the files in the folder and adding the pairs if in the right dates
                 #     This could be made a function if used when a IO class is made
                 #---------------------------------------------------------------------------
-    
+
                 # Filtering data files by date
                 for filename in os.listdir(data_path):
-                    
+
                     # Extracting initial and final dates from data file names
                     iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
                     fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
-            
+
                     # Checking if all files from iDate to fDate will be loaded (timestep == '0')
                     if timestep != '0':
                         # Filtering by date range and delta t and appending to the file list
-                        if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months: 
+                        if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months:
                             raw_paths.append(data_path + '/' + filename)
-            
+
                             # Updating date tracker
                             if iDate < min_date:
                                 min_date = iDate
                             if fDate > max_date:
                                 max_date = fDate
-                    
+
                     elif timestep == '0':
                         # Filtering by date range only
-                        if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and iDate.month not in summer_months: 
+                        if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and iDate.month not in summer_months:
                             raw_paths.append(data_path + '/' + filename)
-                            
+
                             # Updating date tracker
                             if iDate < min_date:
                                 min_date = iDate
@@ -282,8 +282,8 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
     # Notifying user of date range change
     if sDate != min_date or eDate != max_date:
         print(f"Start and end dates of data updated to {min_date} and {max_date}")
-            
-    return raw_paths, max_date, min_date      
+
+    return raw_paths, max_date, min_date
 
 
 """
@@ -345,9 +345,9 @@ def filter_area(centre_lat, centre_lon, radius, start_lats, start_lons):
     centre_lat -- Latitude of the centre point {float}
     centre_lon -- Longitude of the centre point {float}
     radius -- Radius of the circle (mask) in kilometres {float}
-    start_lats -- Starting latitudes of the triangles in the format 
+    start_lats -- Starting latitudes of the triangles in the format
                   [[Latitudes (1)], [Latitudes (2)], [Latitudes (3)]] {NumPy array}
-    start_lons -- Starting latitudes of the triangles in the format 
+    start_lons -- Starting latitudes of the triangles in the format
                   [[Longitudes (1)], [Longitudes (2)], [Longitudes (3)]] {NumPy array}
 
     OUTPUTS:
@@ -369,11 +369,11 @@ def filter_area(centre_lat, centre_lon, radius, start_lats, start_lons):
 
     # Iterating over all lists
     for coordinate in zip(start_lat1, start_lon1):
-        if hs.haversine(coordinate, centre_point) <= radius: # hs.haversine calculates the 
+        if hs.haversine(coordinate, centre_point) <= radius: # hs.haversine calculates the
             tf_list1.append(1)                               # distance between two lats/lons
         else:
             tf_list1.append(0)
-    
+
     for coordinate in zip(start_lat2, start_lon2):
         if hs.haversine(coordinate, centre_point) <= radius:
             tf_list2.append(1)
@@ -397,7 +397,7 @@ def load_netcdf(path:str):
     This function reads and loads data from a netCDF file in the same format as those output by the deformation
     calculation script in src/SeaIceDeformation. The user is able to filter the data by time and area,
     allowing for analytical tools to be applied to selected snippets of data.
-    
+
     INPUTS:
     path -- String of path to the netCDF file the data will be read from {str}
 
@@ -406,7 +406,7 @@ def load_netcdf(path:str):
     """
 
     print('--- Loading data ---')
-    
+
     # Reading config
     config = read_config()
     Date_options = config['Date_options']
@@ -455,9 +455,10 @@ def load_netcdf(path:str):
     shr = (ds.variables['shr'][:])[time_indices]
     vrt = (ds.variables['vrt'][:])[time_indices]
 
-    idx1 = (ds.variables['idx1'][:])[time_indices]
-    idx2 = (ds.variables['idx2'][:])[time_indices]
-    idx3 = (ds.variables['idx3'][:])[time_indices]
+    # DR: issue #11: This is not needed as idX is the same as id_start_latX
+    # idx1 = (ds.variables['idx1'][:])[time_indices]
+    # idx2 = (ds.variables['idx2'][:])[time_indices]
+    # idx3 = (ds.variables['idx3'][:])[time_indices]
     no   = (ds.variables['no'][:])[time_indices]
 
     id_start_lat1 = (ds.variables['id_start_lat1'][:])[time_indices]
@@ -499,9 +500,10 @@ def load_netcdf(path:str):
         shr = shr[area_indices]
         vrt = vrt[area_indices]
 
-        idx1 = idx1[area_indices]
-        idx2 = idx2[area_indices]
-        idx3 = idx3[area_indices]
+        # DR: issue #11: This is not needed as idX is the same as id_start_latX
+        # idx1 = idx1[area_indices]
+        # idx2 = idx2[area_indices]
+        # idx3 = idx3[area_indices]
         no   = no[area_indices]
 
         id_start_lat1 = id_start_lat1[area_indices]
@@ -516,11 +518,11 @@ def load_netcdf(path:str):
     # Closing dataset
     ds.close()
 
-    return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons, 
-            'div': div, 'shr': shr, 'vrt': vrt, 
-            'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices, 
+    return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons,
+            'div': div, 'shr': shr, 'vrt': vrt,
+            'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices,
             'reftime': reftime, 'icetracker': icetracker, 'timestep': timestep,'tolerance': tolerance,
-            'trackingerror': trackingerror, 
-            'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no, 
-            'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3, 
+            'trackingerror': trackingerror,
+            'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no,
+            'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3,
             'dudx': dudx, 'dudy': dudy, 'dvdx': dvdx, 'dvdy': dvdy}

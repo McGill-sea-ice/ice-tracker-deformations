@@ -42,8 +42,8 @@ Compute sea-ice deformations rates using the X/Y triangulations results
 '''
 
 print('--- Computing sea-ice deformations ---')
-
-compute_deformations.compute_deformations()
+# Output the netcdf dataset
+dataset = compute_deformations.compute_deformations()
 
 
 '''
@@ -54,8 +54,15 @@ if config.config['Processing_options'].getboolean('visualise'):
 
     print('--- Creating sea-ice deformation figures ---')
 
-    visualise_deformation.visualise_deformations()
+    # Ploting using csv file
+    # visualise_deformation.visualise_deformations()
 
+    # Plotting using the netCDF dataset
+    visualise_deformation.plot_deformations_netdcf(dataset)
+
+
+# Close netCDF dataset
+dataset.close()
 
 # Display the run time
 print("--- %s seconds ---" % (time.time() - start_time))

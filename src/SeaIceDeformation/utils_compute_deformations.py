@@ -66,7 +66,7 @@ import config
 import utils_datetime
 import utils_deformation_computations as deformation_comp
 import utils_load_data as load_data
-
+from tqdm import tqdm
 
 def compute_deformations():
     '''
@@ -99,7 +99,11 @@ def compute_deformations():
     file_num = 0
 
     # Iterate through all raw, triangulated and calculations data files listed in config
-    for raw_path, triangulated_path, calculations_path in zip(config.data_paths['raw'], config.data_paths['triangulated'], config.data_paths['calculations']):
+    empty_files_list = []
+    nbfb = 0
+    nbfg = 0
+    nbpg = 0
+    for raw_path, triangulated_path, calculations_path in zip(tqdm(config.data_paths['raw']), config.data_paths['triangulated'], config.data_paths['calculations']):
 
         '''
         _________________________________________________________________________________________
@@ -115,7 +119,7 @@ def compute_deformations():
         # Load the raw data set. If an error is encountered (no or not enough data points),
         # go to the next dataset.
         try:
-            raw_data = load_data.load_raw( raw_path )
+            raw_data, nbfb, empty_files_list, nbfg, nbpg = load_data.load_raw( raw_path, nbfb, empty_files_list, nbfg, nbpg )
             startX  = raw_data['startX']  # Starting X positions (px)
             startY  = raw_data['startY']  # Starting Y positions (px)
             endX    = raw_data['endX']    # Ending X positions (px)
@@ -178,9 +182,10 @@ def compute_deformations():
             ey_list = np.array([eY1[n], eY2[n], eY3[n]])  # Ending y positions
 
             # Write the vertices' IDs and triangle ID to lists
-            idx1.append(vertice_idx1[n])
-            idx2.append(vertice_idx2[n])
-            idx3.append(vertice_idx3[n])
+            # DR: issue #11: This is not needed as idX is the same as id_start_latX
+            # idx1.append(vertice_idx1[n])
+            # idx2.append(vertice_idx2[n])
+            # idx3.append(vertice_idx3[n])
             no.append(file_num)
 
             # Create a list of velocity components for each triangle vertex
@@ -263,21 +268,20 @@ def compute_deformations():
 
         '''
         _________________________________________________________________________________________
-        WRITE THE CURRENT DATASET'S RESULTS TO A CSV FILE
+        WRITE THE CURRENT DATASET'S RESULTS TO A CSV FILE (DEPRECATED)
         '''
         # If the calculations file already exists and overwrite (in namelist.ini) is set to 'no',
         # do not write the calculations csv file
-        if not ( os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite')):
+        # if not ( os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite')):
             # Create a directory to store the calculations csv path if it does not exist already
-            os.makedirs(os.path.dirname(calculations_path), exist_ok=True)
+            # os.makedirs(os.path.dirname(calculations_path), exist_ok=True)
 
             # Write the results in the calculations_csv_path file path
-            with open(calculations_path, 'w', encoding='UTF8', newline='') as f:
-                writer = csv.writer(f)
+            # with open(calculations_path, 'w', encoding='UTF8', newline='') as f:
+                # writer = csv.writer(f)
 
                 # Write the data rows to the csv file
-                writer.writerows(row_list)
-
+                # writer.writerows(row_list)
 
     '''
     _________________________________________________________________________________________
@@ -294,7 +298,7 @@ def compute_deformations():
 
     # Add metadata
     Metadata = config.config['Metadata']
-    output_ds.iceTracker = Metadata['ice_tracker']
+    output_ds.icetracker = Metadata['ice_tracker']
     output_ds.referenceTime = YYYY + '-' + MM + '-' + DD + ' 00:00:00'
     output_ds.trackingError = Metadata['tracking_error'] + ' m'
     output_ds.timestep = Date_options['timestep'] + ' hours'
@@ -325,9 +329,10 @@ def compute_deformations():
     s          = output_ds.createVariable('shr', 'f8', 'x')
     v          = output_ds.createVariable('vrt', 'f8', 'x')
 
-    id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices
-    id2        = output_ds.createVariable('idx2', 'u4', 'x')
-    id3        = output_ds.createVariable('idx3', 'u4', 'x')
+    # DR: issue #11: This is not needed as idX is the same as id_start_latX
+    # id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices
+    # id2        = output_ds.createVariable('idx2', 'u4', 'x')
+    # id3        = output_ds.createVariable('idx3', 'u4', 'x')
     idtri      = output_ds.createVariable('no', 'u4', 'x')
 
     id_start_lat1  = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
@@ -388,9 +393,10 @@ def compute_deformations():
     s[:]          = shr
     v[:]          = vrt
 
-    id1[:]        = idx1
-    id2[:]        = idx2
-    id3[:]        = idx3
+    # DR: issue #11: This is not needed as idX is the same as id_start_latX
+    # id1[:]        = idx1
+    # id2[:]        = idx2
+    # id3[:]        = idx3
     idtri[:]      = no
 
     id_start_lat1[:] = idx_sLat1
@@ -402,9 +408,10 @@ def compute_deformations():
     dvx[:]       = dvdx_l
     dvy[:]       = dvdy_l
 
-    # Close dataset
-    output_ds.close()
+    return output_ds
 
+    # # Close dataset
+    # output_ds.close()
 
 if __name__ == '__main__':
     compute_deformations()

@@ -26,6 +26,7 @@ from scipy.spatial import Delaunay
 import config
 import utils_grid_coord_system as grid_coord_system
 import utils_load_data as load_data
+from tqdm import tqdm
 
 def delaunay_triangulation():
 
@@ -33,7 +34,11 @@ def delaunay_triangulation():
     dp = config.data_paths
 
     # Iterate through all raw and triangulated data file paths listed in config
-    for raw_path, triangulated_path, calculations_path in zip(dp['raw'], dp['triangulated'], dp['calculations']):
+    empty_files = list(['# Files without data in them'])
+    nbfb = 0
+    nbfg = 0
+    nbpg = 0
+    for raw_path, triangulated_path, calculations_path in zip(tqdm(dp['raw']), dp['triangulated'], dp['calculations']):
         '''
         _________________________________________________________________________________________
         LOAD DATA
@@ -48,12 +53,12 @@ def delaunay_triangulation():
         # Load the raw data set. If an error is encountered (no or not enough data points),
         # print the error message and go to the next raw file.
         try:
-            raw_data = load_data.load_raw( raw_path )
+            raw_data, nbfb, empty_files, nbfg, nbpg = load_data.load_raw( raw_path, nbfb, empty_files, nbfg, nbpg )
             startX = raw_data['startX']
             startY = raw_data['startY']
 
         except load_data.DataFileError as dfe:
-            print(str(dfe) + 'It will not be processed.')
+            # print(str(dfe) + 'It will not be processed.')
             continue
 
         '''
@@ -67,7 +72,7 @@ def delaunay_triangulation():
             tri = Delaunay(startXY)
 
         except Exception as e:
-            print(e)
+            # print(e)
             continue
 
         '''
@@ -135,6 +140,16 @@ def delaunay_triangulation():
             except OSError:
                 pass
 
+    fname_b = dp["output_folder"]+"/empty_files.txt"
+    with open(fname_b, 'w') as file:
+        for row in empty_files:
+            file.write(row+'\n')
+
+    print("The number of read files is ", nbfg, " with a total of ", nbpg, "data points.")
+    print("The number of files with no or not enough data is ", nbfb, ". These files were not processed")
+    print("The list of not processed files is save in file ", fname_b)
+
+    return None
 
 if __name__ == "__main__":
     delaunay_triangulation()
