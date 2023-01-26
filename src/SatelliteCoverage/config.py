@@ -1,5 +1,5 @@
 """
-Author: Lekima Yakuden - this is a test
+Author: Lekima Yakuden
 GitHub: LekiYak
 
 --------------------------------------------------------------------------------
