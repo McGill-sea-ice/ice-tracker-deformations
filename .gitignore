@@ -4,7 +4,7 @@
 !.gitkeep
 
 # Ignore output folder
-./output/
+./outputs/
 
 # Ignore data (.csv, .dat and .nc) files
 *.csv
