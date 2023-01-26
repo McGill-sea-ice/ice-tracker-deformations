@@ -3,9 +3,6 @@
 !/.gitignore
 !.gitkeep
 
-# Ignore output folder
-./outputs/
-
 # Ignore data (.csv, .dat and .nc) files
 *.csv
 *.dat
