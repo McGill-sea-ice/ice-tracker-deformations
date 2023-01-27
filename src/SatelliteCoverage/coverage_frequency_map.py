@@ -34,10 +34,10 @@ def get_map_bins(xy, options=None):
     resolution = float(options['resolution'])
 
     # Upper (u) and lower (l) extents of map_x, map_y (metres)
-    lxextent = -4400000
+    lxextent = -3100000
     uxextent = 2500000
-    uyextent = 3500000
-    lyextent = -2500000
+    uyextent = 2500000
+    lyextent = -1900000
 
     # Grid resolution calculations
     xscale = uxextent - lxextent
@@ -179,7 +179,7 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, Date_opt
         # Loads data and converts to x/y for each interval
         interval_df = compile_data(interval_list[i])
 
-            # Skips empty lists
+        # Skips empty lists
         try:
             xy = convert_to_grid(interval_df['lon'], interval_df['lat'])
         except KeyError:
@@ -233,6 +233,7 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, Date_opt
     #cax = divider.append_axes("right", size="5%",pad=0.2)
     clb = plt.colorbar(im)#,shrink=0.5
     clb.set_label('% of total period tile has data')
+    clb.set_ticks(np.arange(0, 110, 10))
     clb.set_ticklabels(np.arange(0, 110, 10))
     # plt.axis('scaled')
 

@@ -261,9 +261,6 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
                     # Checking if all files from iDate to fDate will be loaded (timestep == '0')
                     if timestep != '0':
                         # Filtering by date range and delta t and appending to the file list
-                        # AB: THIS WAS THE ORIGINAL FILTER:
-                        # if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months:
-                        # AB: THIS IS WHAT I WOULD PROPOSE:
                         if iDate < eDate and fDate > sDate and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months:
                             raw_paths.append(data_path + '/' + filename)
 
@@ -275,8 +272,7 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
 
                     elif timestep == '0':
                         # Filtering by date range only
-                        # AB: NEED TO CORRECT WITH THE SAME FILTER AS ABOVE HERE:
-                        if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and iDate.month not in summer_months:
+                        if iDate < eDate and fDate > sDate and iDate.month not in summer_months:
                             raw_paths.append(data_path + '/' + filename)
 
                             # Updating date tracker
@@ -454,23 +450,6 @@ def load_netcdf(path:str):
     end_time = ds.variables['end_time'][:]
 
     # Indices of data in desired time frame
-    # AB: THIS WAS THE ORIGINAL VERSION:
-    # time_indices = np.where( (start_time > start_time_s) & (start_time < end_time_s) )[0]
-
-    # AB: THIS WOULD CORRESPOND TO WHAT IS DONE COVERAGE FREQUENCY MAP:
-    # time_indices = []
-    # for i in range(len(start_time)):
-    #     sDate = seconds_to_date(path,start_time_s)
-    #     eDate = seconds_to_date(path,end_time_s)
-    #     iDate = seconds_to_date(path,start_time[i])
-    #     fDate = seconds_to_date(path,end_time[i])
-    #     if (sDate.date() <= iDate.date() <= eDate.date()) & (sDate.date() <= fDate.date() <= eDate.date()):
-    #         time_indices += i
-    # time_indices_s = np.where((start_time_s <= start_time) & (start_time <= end_time_s))[0]
-    # time_indices_e = np.where((start_time_s <= end_time) & (end_time <= end_time_s))[0]
-    # time_indices = np.intersect1d(time_indices_s, time_indices_e) # THIS IS NOT EXACTLY EQUIVALENT BECAUSE IN COVERAGE_FREQUENCY_MAP THE .date() IS USED...
-
-    # AB: THIS IS WHAT I WOULD PROPOSE TO DO:
     time_indices = np.where( ((start_time < end_time_s) & (end_time > start_time_s)))[0]
     start_time = start_time[time_indices]
     end_time = end_time[time_indices]
@@ -500,7 +479,6 @@ def load_netcdf(path:str):
     idx2 = (ds.variables['idx2'][:])[time_indices]
     idx3 = (ds.variables['idx3'][:])[time_indices]
     no   = (ds.variables['no'][:])[time_indices]
-    print(len(np.unique(no)))
 
     id_start_lat1 = (ds.variables['id_start_lat1'][:])[time_indices]
     id_start_lat2 = (ds.variables['id_start_lat2'][:])[time_indices]

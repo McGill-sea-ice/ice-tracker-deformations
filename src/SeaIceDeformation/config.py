@@ -146,7 +146,7 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
                     # Checking if all files from iDate to fDate will be loaded (timestep == '0')
                     if timestep != '0':
                         # Filtering by date range and delta t and appending to the file list
-                        if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months:
+                        if iDate < eDate and fDate > sDate and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months:
                             raw_paths.append(data_path + '/' + filename)
 
                             # Updating date tracker
@@ -157,7 +157,7 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
 
                     elif timestep == '0':
                         # Filtering by date range only
-                        if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and iDate.month not in summer_months:
+                        if iDate < eDate and fDate > sDate and iDate.month not in summer_months:
                             raw_paths.append(data_path + '/' + filename)
 
                             # Updating date tracker
