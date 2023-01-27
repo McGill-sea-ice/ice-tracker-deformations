@@ -40,7 +40,7 @@ def plot_start_end_points(path:str):
 
     OUTPUTS:
     None -- Saves plot to the output directory
-    
+
     """
     print('--- Plotting start and end points ---')
 
@@ -71,7 +71,7 @@ def plot_start_end_points(path:str):
     lyextent = -2500000
 
     ax.set_extent((lxextent, uxextent, uyextent, lyextent), ccrs.NorthPolarStereo())
-    
+
     # Show lat/lon grid and coastlines
     ax.gridlines(draw_labels=True)
     ax.coastlines()
@@ -89,7 +89,7 @@ def plot_start_end_points(path:str):
         # Converting start/end lat/lons to x/y (North pole stereographic)
         start_x, start_y = convert_to_grid(start_lons[i], start_lats[i])
         end_x, end_y = convert_to_grid(end_lons[i], end_lats[i])
-        
+
         # Plotting start points (Blue)
         ax.scatter(start_x, start_y, color = 'blue', s = 0.01)
 
@@ -106,7 +106,7 @@ def plot_start_end_points(path:str):
     os.makedirs(figsPath, exist_ok=True)
 
     # Set prefix for filename
-    prefix = satellite + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance) 
+    prefix = satellite + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
 
     # Full path of figure
     fig_path = figsPath + prefix + '_start_end_points.png'
@@ -121,7 +121,7 @@ def plot_start_end_points(path:str):
 def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_lon2, start_lon3, start_id1, start_id2, start_id3):
     """
     This function takes in a list of start lats/lons and corresponding start lat/lon IDs (triangle vertices)
-    and outputs corresponding, larger lists of start lats/lons (with 0s in some indices) that reflect the 
+    and outputs corresponding, larger lists of start lats/lons (with 0s in some indices) that reflect the
     coordinates' placement in the original data files for use with ax.tripcolor
 
     INPUTS:
@@ -141,7 +141,7 @@ def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_l
     # Skipping blank data files
     if len(start_ids) == 0:
         return 0, 0
-    
+
     # Initializing new lists of coordinates
     new_lon, new_lat = ([np.nan] * (max(start_ids) + 1) for i in range(2))
 
@@ -149,17 +149,17 @@ def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_l
         new_lat[start_id1[i]] = (start_lat1[i])
         new_lat[start_id2[i]] = (start_lat2[i])
         new_lat[start_id3[i]] = (start_lat3[i])
-    
+
     for i in range(len(start_lon1)):
         new_lon[start_id1[i]] = start_lon1[i]
         new_lon[start_id2[i]] = start_lon2[i]
         new_lon[start_id3[i]] = start_lon3[i]
-        
+
     return new_lat, new_lon
-    
+
 def plot_deformations(path:str):
     """
-    This function plots deformations from a netCDF file using matplotlib's ax.tripcolor. 
+    This function plots deformations from a netCDF file using matplotlib's ax.tripcolor.
     The function assumes that the netCDF was generated from src/SeaIceDeformation's M01_d03_compute_deformations.py.
 
     INUPTS:
@@ -200,38 +200,34 @@ def plot_deformations(path:str):
     Plotting
     """
 
-    # Obtaining start index of data
-    min_no = np.nanmin(data['no']) # Minimum (smallest) ID number
-    min_index = np.nanmin(np.where(data['no'] == min_no)) # This value will be updated for each triangle
-
     print('--- Creating sea-ice deformation figures ---')
 
     # Iterating over all files (Unique triangulations)
-    for i in range(len(set(data['no']))):
-        # Here the file indice is zero-indexed, so the first file has the indice 0, regardless of its ID
+    for i in np.unique(data['no']):
 
-        # Obtaining number of rows to iterate over
-        file_length = np.count_nonzero(data['no'] == i + min_no)
+        # Obtaining number of rows corresponding to triangles in given file that will be iterated over
+        file_length = np.count_nonzero(data['no'] == i)
 
         # Setting maximum index
-        max_index = min_index + file_length
+        min_index = np.where(data['no'] == i)[0][0]
+        max_index = np.where(data['no'] == i)[0][-1]+1
+        print(i,file_length,min_index,max_index)
 
         # Arranging triangle vertices in array for use in ax.tripcolor
-        triangles = np.stack((data['idx1'][min_index:max_index], data['idx2'][min_index:max_index], 
+        triangles = np.stack((data['idx1'][min_index:max_index], data['idx2'][min_index:max_index],
                     data['idx3'][min_index:max_index]), axis=-1)
 
         # Filtering data range to that of the current "file"
-
         start_lat1_temp, start_lat2_temp, start_lat3_temp = data['start_lats'][0][min_index:max_index], \
             data['start_lats'][1][min_index:max_index], data['start_lats'][2][min_index:max_index]
-        
+
         start_lon1_temp, start_lon2_temp, start_lon3_temp = data['start_lons'][0][min_index:max_index], \
             data['start_lons'][1][min_index:max_index], data['start_lons'][2][min_index:max_index]
 
-        start_lat, start_lon = recreate_coordinates(start_lat1_temp, start_lat2_temp, start_lat3_temp, 
-                                                        start_lon1_temp, start_lon2_temp, start_lon3_temp, 
+        start_lat, start_lon = recreate_coordinates(start_lat1_temp, start_lat2_temp, start_lat3_temp,
+                                                        start_lon1_temp, start_lon2_temp, start_lon3_temp,
                                                         data['start_id1'][min_index:max_index],
-                                                        data['start_id2'][min_index:max_index], 
+                                                        data['start_id2'][min_index:max_index],
                                                         data['start_id3'][min_index:max_index])
 
         # Extracting deformation data
@@ -245,8 +241,6 @@ def plot_deformations(path:str):
             cb_shr = ax_shr.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=shr_colours, cmap='plasma', vmin=0, vmax=0.1)
             cb_vrt = ax_vrt.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=vrt_colours, cmap='coolwarm', vmin=-0.1, vmax=0.1)
 
-        # Updating minimum index
-        min_index = max_index
 
     # Create a list of colorbars and titles to be iterated over
     cb_list = [cb_div, cb_shr, cb_vrt]
@@ -258,7 +252,7 @@ def plot_deformations(path:str):
         plt.colorbar(cb, ax=ax)
 
         # Add a title
-        ax.set_title(title + '\n' + start_year + '-' + start_month + '-' + start_day + ' to ' + 
+        ax.set_title(title + '\n' + start_year + '-' + start_month + '-' + start_day + ' to ' +
                         end_year + '-' + end_month + '-' + end_day + ', ' + timestep + 'hr')
 
         # Add gridlines
@@ -274,21 +268,21 @@ def plot_deformations(path:str):
 
     # Set a directory to store figures for the current experiment
     figsPath =  output_folder + '/' + '/figs/'
-        
+
     # Create the directory if it does not exist already
     os.makedirs(figsPath, exist_ok=True)
 
     # Create a prefix for the figure filenames
     prefix = data['icetracker'] + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
-        
+
     # Create the figure filenames
     div_path   = figsPath + prefix + '_div.png'
     shr_path = figsPath + prefix + '_shr.png'
     rot_path   = figsPath + prefix + '_rot.png'
 
-        
+
     for fig, fig_path in zip([fig_div, fig_shr, fig_vrt], [div_path, shr_path, rot_path]):
-            
+
         # Check if the figures already exist. If they do, delete them.
         if os.path.isfile(fig_path):
             os.remove(fig_path)
@@ -296,135 +290,6 @@ def plot_deformations(path:str):
         # Save the new figures
         fig.savefig(fig_path, bbox_inches='tight', dpi=600)
 
-def write_netcdf(path:str, output_folder:str):
-    # !!! THIS FUNCTION SEEMS LIKE IT WRITES THE EXACT SAME NETCDF FILE AS THE ONE IT OPENS...
-    # !!! IT DOES NOT SEEM NECESSARY.... KILL?
-    
-    # Load data
-    data = load_netcdf(path)
-
-    '''
-    _________________________________________________________________________________________
-    WRITE ALL RESULTS COMBINED TO A NETCDF FILE
-    '''
-    # Find absolute path in which the output netcdf file is to be stored
-    output_path = output_folder + '/' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + timestep + '_filtered_dx.nc'
-
-    # Create a directory to store the output netcdf file if it does not exist already
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    # Create an output netcdf file and dataset
-    output_ds = Dataset(output_path, 'w', format = 'NETCDF4')
-    
-    # Add metadata
-    output_ds.iceTracker    = data['icetracker']
-    output_ds.referenceTime = data['reftime']
-    output_ds.trackingError = data['trackingerror']
-
-    # Create x array to store output data
-    x = output_ds.createDimension('x', len(data['start_time']))
-        
-    # Create variables for netcdf data set
-    start_time = output_ds.createVariable('start_time', 'u4', 'x') # Start and end times
-    end_time   = output_ds.createVariable('end_time', 'u4', 'x')
-    
-    start_lat1 = output_ds.createVariable('start_lat1', 'f8', 'x') # Starting Lat/Lon triangle vertices
-    start_lat2 = output_ds.createVariable('start_lat2', 'f8', 'x')
-    start_lat3 = output_ds.createVariable('start_lat3', 'f8', 'x')
-    start_lon1 = output_ds.createVariable('start_lon1', 'f8', 'x')
-    start_lon2 = output_ds.createVariable('start_lon2', 'f8', 'x')
-    start_lon3 = output_ds.createVariable('start_lon3', 'f8', 'x')
-    
-    end_lat1   = output_ds.createVariable('end_lat1', 'f8', 'x') # Ending Lat/Lon triangle vertices
-    end_lat2   = output_ds.createVariable('end_lat2', 'f8', 'x')
-    end_lat3   = output_ds.createVariable('end_lat3', 'f8', 'x')
-    end_lon1   = output_ds.createVariable('end_lon1', 'f8', 'x')
-    end_lon2   = output_ds.createVariable('end_lon2', 'f8', 'x')
-    end_lon3   = output_ds.createVariable('end_lon3', 'f8', 'x')
-    
-    d          = output_ds.createVariable('div', 'f8', 'x') # Divergence and shear strain and vorticity rates
-    s          = output_ds.createVariable('shr', 'f8', 'x')
-    v          = output_ds.createVariable('vrt', 'f8', 'x')
-
-    id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices 
-    id2        = output_ds.createVariable('idx2', 'u4', 'x')
-    id3        = output_ds.createVariable('idx3', 'u4', 'x')
-    idtri      = output_ds.createVariable('no', 'u4', 'x')
-
-    id_start_lat1 = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
-    id_start_lat2 = output_ds.createVariable('id_start_lat2', 'u4', 'x')
-    id_start_lat3 = output_ds.createVariable('id_start_lat3', 'u4', 'x')
-
-    dux        = output_ds.createVariable('dudx', 'f8', 'x') # Strain rates
-    duy        = output_ds.createVariable('dudy', 'f8', 'x')
-    dvx        = output_ds.createVariable('dvdx', 'f8', 'x')
-    dvy        = output_ds.createVariable('dvdy', 'f8', 'x')
-
-    # Specify units for each variable
-    start_time.units = 'seconds since the reference time'
-    end_time.units   = 'seconds since the reference time'
-    
-    start_lat1.units = 'degrees North'
-    start_lat2.units = 'degrees North'
-    start_lat3.units = 'degrees North'
-    start_lon1.units = 'degrees East'
-    start_lon2.units = 'degrees East'
-    start_lon3.units = 'degrees East'
-    
-    end_lat1.units   = 'degrees North'
-    end_lat2.units   = 'degrees North'
-    end_lat3.units   = 'degrees North'
-    end_lon1.units   = 'degrees East'
-    end_lon2.units   = 'degrees East'
-    end_lon3.units   = 'degrees East'
-
-    d.units          = '1/days'
-    s.units          = '1/days'
-    v.units          = '1/days'
-
-    dux.units        = '1/days'
-    duy.units        = '1/days'
-    dvx.units        = '1/days'
-    dvy.units        = '1/days'
-
-    # Attribute data arrays to each variable
-    start_time[:] = data['start_time']
-    end_time[:]   = data['end_time']
-    
-    start_lat1[:] = data['start_lats'][0]
-    start_lat2[:] = data['start_lats'][1]
-    start_lat3[:] = data['start_lats'][2]
-    start_lon1[:] = data['start_lons'][0]
-    start_lon2[:] = data['start_lons'][1]
-    start_lon3[:] = data['start_lons'][2]
-    
-    end_lat1[:]   = data['end_lats'][0]
-    end_lat2[:]   = data['end_lats'][1]
-    end_lat3[:]   = data['end_lats'][2]
-    end_lon1[:]   = data['end_lons'][0]
-    end_lon2[:]   = data['end_lons'][1]
-    end_lon3[:]   = data['end_lons'][2]
-
-    d[:]          = data['div']
-    s[:]          = data['shr']
-    v[:]          = data['vrt']
-
-    id1[:]        = data['idx1']
-    id2[:]        = data['idx2']
-    id3[:]        = data['idx3']
-    idtri[:]      = data['no']
-
-    id_start_lat1[:] = data['start_id1']
-    id_start_lat2[:] = data['start_id2']
-    id_start_lat3[:] = data['start_id3']
-
-    dux[:]       = data['dudx']
-    duy[:]       = data['dudy']
-    dvx[:]       = data['dvdx']
-    dvy[:]       = data['dvdy']
-
-    # Close dataset
-    output_ds.close()
 
 if __name__ == '__main__':
     # Reading config
@@ -461,6 +326,3 @@ if __name__ == '__main__':
 
     if netcdf_tools['plot_deformation'] == 'True':
         plot_deformations(path)
-
-    # if netcdf_tools['write_netcdf'] == 'True':
-    #     write_netcdf(path, output_folder)

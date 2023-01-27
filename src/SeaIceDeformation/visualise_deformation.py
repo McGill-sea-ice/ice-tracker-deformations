@@ -171,7 +171,7 @@ def visualise_deformations():
                 os.remove(fig_path)
 
             # Save the new figures
-            fig.savefig(fig_path, bbox_inches='tight')
+            fig.savefig(fig_path, bbox_inches='tight', dpi=600)
 
         plt.show()
 
