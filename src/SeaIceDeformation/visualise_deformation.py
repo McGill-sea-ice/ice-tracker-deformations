@@ -15,11 +15,13 @@ import os
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
+import matplotlib.tri as tri
 import numpy as np
 
 import config
 import utils_load_data as load_data
-from tqdm import tqdm 
+from tqdm import tqdm
+from timeit import default_timer as dt
 
 def visualise_deformations():
 
@@ -130,7 +132,7 @@ def visualise_deformations():
         title_list = ['Total Deformation Rate $(Days^{-1})$', 'Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Rotation Rate $(Days^{-1})$']
 
         # Iterate through all axes
-        for ax, title, cb in zip(ax_list, title_list, cb_list):
+        for ax, title, cb in zip(tqdm(ax_list), title_list, cb_list):
             # Add a colorbar
             plt.colorbar(cb, ax=ax)
 
@@ -171,7 +173,7 @@ def visualise_deformations():
                 os.remove(fig_path)
 
             # Save the new figures
-            fig.savefig(fig_path, bbox_inches='tight')
+            fig.savefig(fig_path, bbox_inches='tight', dpi=600)
 
         plt.show()
 
@@ -255,6 +257,11 @@ def plot_deformations_netdcf(data):
         # Set the map extent in order to see the entire region of interest
         ax.set_extent((-4400000, 2500000, 3500000, -2500000), ccrs.NorthPolarStereo())
 
+    timer_recreate = 0.
+    timer_plot = 0.
+    timer_tria = 0.
+    timer_trans = 0.
+
     """
     Plotting
     """
@@ -279,36 +286,51 @@ def plot_deformations_netdcf(data):
                     data['id_start_lat3'][min_index:max_index]), axis=-1)
 
         # Filtering data range to that of the current "file"
-
         start_lat1_temp, start_lat2_temp, start_lat3_temp = data['start_lat1'][min_index:max_index], \
             data['start_lat2'][min_index:max_index], data['start_lat3'][min_index:max_index]
 
         start_lon1_temp, start_lon2_temp, start_lon3_temp = data['start_lon1'][min_index:max_index], \
             data['start_lon2'][min_index:max_index], data['start_lon3'][min_index:max_index]
 
+        start_rec = dt()
         start_lat, start_lon = recreate_coordinates(start_lat1_temp, start_lat2_temp, start_lat3_temp,
                                                         start_lon1_temp, start_lon2_temp, start_lon3_temp,
                                                         data['id_start_lat1'][min_index:max_index],
                                                         data['id_start_lat2'][min_index:max_index],
                                                         data['id_start_lat3'][min_index:max_index])
+        timer_recreate += dt() - start_rec
 
         # Extracting deformation data
         div_colours = data['div'][min_index:max_index]
         shr_colours = data['shr'][min_index:max_index]
         vrt_colours = data['vrt'][min_index:max_index]
 
+        start_tria = dt()
+        tria = tri.Triangulation(start_lon, start_lat, triangles=triangles)
+        timer_tria = dt() - start_tria
+
+        start_trans = dt()
+        new_lon_lat = ax_div.projection.transform_points(trans, np.array(start_lon), np.array(start_lat))
+        timer_trans = dt() - start_trans
+
         if len(triangles) != 0:
         # Plotting
-            cb_div = ax_div.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=div_colours, cmap='coolwarm', vmin=-0.04, vmax=0.04)
-            cb_shr = ax_shr.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=shr_colours, cmap='plasma', vmin=0, vmax=0.1)
-            cb_vrt = ax_vrt.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=vrt_colours, cmap='coolwarm', vmin=-0.1, vmax=0.1)
-
+            start_plt = dt()
+            cb_div = ax_div.tripcolor(new_lon_lat[:,0], new_lon_lat[:,1], facecolors=div_colours, triangles = triangles, cmap='coolwarm', vmin=-0.04, vmax=0.04)
+            cb_shr = ax_shr.tripcolor(new_lon_lat[:,0], new_lon_lat[:,1], facecolors=shr_colours, triangles = triangles, cmap='plasma', vmin=0, vmax=0.1)
+            cb_vrt = ax_vrt.tripcolor(new_lon_lat[:,0], new_lon_lat[:,1], facecolors=vrt_colours, triangles = triangles, cmap='coolwarm', vmin=-0.1, vmax=0.1)
+            timer_plot += dt() - start_plt
         # Updating minimum index
         min_index = max_index
 
+    print('Recreate time = ',timer_recreate, 'seconds' )
+    print('Triangulation time = ',timer_tria, 'seconds' )
+    print('Transform time = ',timer_tria, 'seconds' )
+    print('Ploting time = ',timer_plot, 'seconds' )
+
     # Create a list of colorbars and titles to be iterated over
     cb_list = [cb_div, cb_shr, cb_vrt]
-    title_list = ['Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Rotation Rate $(Days^{-1})$']
+    title_list = ['Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Vorticity Rate $(Days^{-1})$']
 
     Date_options = config.config['Date_options']
     start_year   = Date_options['start_year']
@@ -355,7 +377,7 @@ def plot_deformations_netdcf(data):
     # Create the figure filenames
     div_path   = figsPath + prefix + '_div.png'
     shr_path = figsPath + prefix + '_shr.png'
-    rot_path   = figsPath + prefix + '_rot.png'
+    rot_path   = figsPath + prefix + '_vrt.png'
 
 
     for fig, fig_path in zip([fig_div, fig_shr, fig_vrt], [div_path, shr_path, rot_path]):
