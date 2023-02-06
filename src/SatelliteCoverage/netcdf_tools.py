@@ -200,28 +200,24 @@ def plot_deformations(path:str):
     Plotting
     """
 
-    # Obtaining start index of data
-    min_no = np.nanmin(data['no']) # Minimum (smallest) ID number
-    min_index = np.nanmin(np.where(data['no'] == min_no)) # This value will be updated for each triangle
-
     print('--- Creating sea-ice deformation figures ---')
 
     # Iterating over all files (Unique triangulations)
-    for i in range(len(set(data['no']))):
-        # Here the file indice is zero-indexed, so the first file has the indice 0, regardless of its ID
+    for i in np.unique(data['no']):
 
-        # Obtaining number of rows to iterate over
-        file_length = np.count_nonzero(data['no'] == i + min_no)
+        # Obtaining number of rows corresponding to triangles in given file that will be iterated over
+        file_length = np.count_nonzero(data['no'] == i)
 
         # Setting maximum index
-        max_index = min_index + file_length
+        min_index = np.where(data['no'] == i)[0][0]
+        max_index = np.where(data['no'] == i)[0][-1]+1
+        print(i,file_length,min_index,max_index)
 
         # Arranging triangle vertices in array for use in ax.tripcolor
         triangles = np.stack((data['id_start_lat1'][min_index:max_index], data['id_start_lat2'][min_index:max_index],
                     data['id_start_lat3'][min_index:max_index]), axis=-1)
 
         # Filtering data range to that of the current "file"
-
         start_lat1_temp, start_lat2_temp, start_lat3_temp = data['start_lats'][0][min_index:max_index], \
             data['start_lats'][1][min_index:max_index], data['start_lats'][2][min_index:max_index]
 
@@ -245,8 +241,6 @@ def plot_deformations(path:str):
             cb_shr = ax_shr.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=shr_colours, cmap='plasma', vmin=0, vmax=0.1)
             cb_vrt = ax_vrt.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=vrt_colours, cmap='coolwarm', vmin=-0.1, vmax=0.1)
 
-        # Updating minimum index
-        min_index = max_index
 
     # Create a list of colorbars and titles to be iterated over
     cb_list = [cb_div, cb_shr, cb_vrt]
@@ -463,6 +457,3 @@ if __name__ == '__main__':
 
     if netcdf_tools['plot_deformation'] == 'True':
         plot_deformations(path)
-
-    # if netcdf_tools['write_netcdf'] == 'True':
-    #     write_netcdf(path, output_folder)
