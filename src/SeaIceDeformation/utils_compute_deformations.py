@@ -182,10 +182,9 @@ def compute_deformations():
             ey_list = np.array([eY1[n], eY2[n], eY3[n]])  # Ending y positions
 
             # Write the vertices' IDs and triangle ID to lists
-            # DR: issue #11: This is not needed as idX is the same as id_start_latX
-            # idx1.append(vertice_idx1[n])
-            # idx2.append(vertice_idx2[n])
-            # idx3.append(vertice_idx3[n])
+            idx1.append(vertice_idx1[n])
+            idx2.append(vertice_idx2[n])
+            idx3.append(vertice_idx3[n])
             no.append(file_num)
 
             # Create a list of velocity components for each triangle vertex
@@ -329,15 +328,15 @@ def compute_deformations():
     s          = output_ds.createVariable('shr', 'f8', 'x')
     v          = output_ds.createVariable('vrt', 'f8', 'x')
 
-    # DR: issue #11: This is not needed as idX is the same as id_start_latX
-    # id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices
-    # id2        = output_ds.createVariable('idx2', 'u4', 'x')
-    # id3        = output_ds.createVariable('idx3', 'u4', 'x')
+    id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices
+    id2        = output_ds.createVariable('idx2', 'u4', 'x')
+    id3        = output_ds.createVariable('idx3', 'u4', 'x')
     idtri      = output_ds.createVariable('no', 'u4', 'x')
 
-    id_start_lat1  = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
-    id_start_lat2  = output_ds.createVariable('id_start_lat2', 'u4', 'x')
-    id_start_lat3  = output_ds.createVariable('id_start_lat3', 'u4', 'x')
+    # DR: issue #11: This is not needed as idX is the same as id_start_latX
+    # id_start_lat1  = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
+    # id_start_lat2  = output_ds.createVariable('id_start_lat2', 'u4', 'x')
+    # id_start_lat3  = output_ds.createVariable('id_start_lat3', 'u4', 'x')
 
     dux        = output_ds.createVariable('dudx', 'f8', 'x') # Strain rates
     duy        = output_ds.createVariable('dudy', 'f8', 'x')
@@ -393,15 +392,15 @@ def compute_deformations():
     s[:]          = shr
     v[:]          = vrt
 
-    # DR: issue #11: This is not needed as idX is the same as id_start_latX
-    # id1[:]        = idx1
-    # id2[:]        = idx2
-    # id3[:]        = idx3
+    id1[:]        = idx1
+    id2[:]        = idx2
+    id3[:]        = idx3
     idtri[:]      = no
 
-    id_start_lat1[:] = idx_sLat1
-    id_start_lat2[:] = idx_sLat2
-    id_start_lat3[:] = idx_sLat3
+    # DR: issue #11: This is not needed as idX is the same as id_start_latX
+    # id_start_lat1[:] = idx_sLat1
+    # id_start_lat2[:] = idx_sLat2
+    # id_start_lat3[:] = idx_sLat3
 
     dux[:]       = dudx_l
     duy[:]       = dudy_l

@@ -9,6 +9,9 @@ Script that executes all steps towards the calculation of sea-ice deformations a
 
 '''
 
+import sys
+sys.path.insert(0, '/aos/home/dringeisen/code/ice-tracker-deformations/')
+
 import time
 
 import config
@@ -17,6 +20,8 @@ import utils_delaunay_triangulation as delaunay_triangulation
 import utils_compute_deformations as compute_deformations
 
 import visualise_deformation
+
+from src.SatelliteCoverage import netcdf_tools
 
 # Retrieve the starting time
 start_time = time.time()
@@ -58,7 +63,7 @@ if config.config['Processing_options'].getboolean('visualise'):
     # visualise_deformation.visualise_deformations()
 
     # Plotting using the netCDF dataset
-    visualise_deformation.plot_deformations_netdcf(dataset)
+    netcdf_tools.plot_deformations(data_in=dataset)
 
 
 # Close netCDF dataset

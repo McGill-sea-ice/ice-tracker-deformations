@@ -14,6 +14,7 @@ from lib2to3.pytree import convert
 from time import strftime
 
 import cartopy.crs as ccrs
+import matplotlib.tri as tri
 import cartopy.feature as cfeature
 import matplotlib
 import matplotlib.pyplot as plt
@@ -21,10 +22,13 @@ import numpy as np
 import pyproj
 import math
 from netCDF4 import Dataset
-from config import *
-from coverage_frequency_map import convert_to_grid
+import src.SeaIceDeformation.config as SID_config
+# from src.SatelliteCoverage.config import convert_to_grid
+from src.SatelliteCoverage.config import *
 from shapely.ops import transform
 import os
+
+from tqdm import tqdm
 
 # IGNORING WARNINGS, COMMENT IF YOU WANT TO SEE THEM
 import warnings
@@ -157,7 +161,7 @@ def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_l
 
     return new_lat, new_lon
 
-def plot_deformations(path:str):
+def plot_deformations(path=None, data_in=None):
     """
     This function plots deformations from a netCDF file using matplotlib's ax.tripcolor.
     The function assumes that the netCDF was generated from src/SeaIceDeformation's M01_d03_compute_deformations.py.
@@ -170,7 +174,12 @@ def plot_deformations(path:str):
     """
 
     # Loading data from netcdf as a dictionary
-    data = load_netcdf(path)
+    if path != None and data_in == None :
+        data = load_netcdf(path)
+    elif path == None and data_in != None :
+        data = data_in
+    elif path == None and data_in == None or path != None and data != None :
+        print('You need to give at least one path or data to plot and not both ')
 
     """
     Preamble
@@ -203,7 +212,7 @@ def plot_deformations(path:str):
     print('--- Creating sea-ice deformation figures ---')
 
     # Iterating over all files (Unique triangulations)
-    for i in np.unique(data['no']):
+    for i in tqdm(np.unique(data['no'])):
 
         # Obtaining number of rows corresponding to triangles in given file that will be iterated over
         file_length = np.count_nonzero(data['no'] == i)
@@ -211,40 +220,58 @@ def plot_deformations(path:str):
         # Setting maximum index
         min_index = np.where(data['no'] == i)[0][0]
         max_index = np.where(data['no'] == i)[0][-1]+1
-        print(i,file_length,min_index,max_index)
 
         # Arranging triangle vertices in array for use in ax.tripcolor
-        triangles = np.stack((data['id_start_lat1'][min_index:max_index], data['id_start_lat2'][min_index:max_index],
-                    data['id_start_lat3'][min_index:max_index]), axis=-1)
+        triangles = np.stack((data['idx1'][min_index:max_index], data['idx2'][min_index:max_index],
+                    data['idx3'][min_index:max_index]), axis=-1)
 
         # Filtering data range to that of the current "file"
-        start_lat1_temp, start_lat2_temp, start_lat3_temp = data['start_lats'][0][min_index:max_index], \
-            data['start_lats'][1][min_index:max_index], data['start_lats'][2][min_index:max_index]
+        start_lat1_temp, start_lat2_temp, start_lat3_temp = data['start_lat1'][min_index:max_index], \
+            data['start_lat2'][min_index:max_index], data['start_lat3'][min_index:max_index]
 
-        start_lon1_temp, start_lon2_temp, start_lon3_temp = data['start_lons'][0][min_index:max_index], \
-            data['start_lons'][1][min_index:max_index], data['start_lons'][2][min_index:max_index]
+        start_lon1_temp, start_lon2_temp, start_lon3_temp = data['start_lon1'][min_index:max_index], \
+            data['start_lon2'][min_index:max_index], data['start_lon3'][min_index:max_index]
 
         start_lat, start_lon = recreate_coordinates(start_lat1_temp, start_lat2_temp, start_lat3_temp,
                                                         start_lon1_temp, start_lon2_temp, start_lon3_temp,
-                                                        data['start_id1'][min_index:max_index],
-                                                        data['start_id2'][min_index:max_index],
-                                                        data['start_id3'][min_index:max_index])
+                                                        data['idx1'][min_index:max_index],
+                                                        data['idx2'][min_index:max_index],
+                                                        data['idx3'][min_index:max_index])
 
         # Extracting deformation data
         div_colours = data['div'][min_index:max_index]
         shr_colours = data['shr'][min_index:max_index]
         vrt_colours = data['vrt'][min_index:max_index]
 
+        # tranform the coordinates already to improve the plot efficiency
+        new_coords = ax_div.projection.transform_points(trans, np.array(start_lon), np.array(start_lat))
+
+        # create one triangulation object
+        tria = tri.Triangulation(new_coords[:,0], new_coords[:,1], triangles=triangles)
+
         if len(triangles) != 0:
         # Plotting
-            cb_div = ax_div.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=div_colours, cmap='coolwarm', vmin=-0.04, vmax=0.04)
-            cb_shr = ax_shr.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=shr_colours, cmap='plasma', vmin=0, vmax=0.1)
-            cb_vrt = ax_vrt.tripcolor(start_lon, start_lat, triangles, transform=trans, facecolors=vrt_colours, cmap='coolwarm', vmin=-0.1, vmax=0.1)
+            cb_div = ax_div.tripcolor(tria, facecolors=div_colours, cmap='coolwarm', vmin=-0.04, vmax=0.04)
+            cb_shr = ax_shr.tripcolor(tria, facecolors=shr_colours, cmap='plasma', vmin=0, vmax=0.1)
+            cb_vrt = ax_vrt.tripcolor(tria, facecolors=vrt_colours, cmap='coolwarm', vmin=-0.1, vmax=0.1)
 
 
     # Create a list of colorbars and titles to be iterated over
     cb_list = [cb_div, cb_shr, cb_vrt]
-    title_list = ['Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Rotation Rate $(Days^{-1})$']
+    title_list = ['Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Vorticity $(Days^{-1})$']
+
+    Date_options = SID_config.config['Date_options']
+    start_year   = Date_options['start_year']
+    end_year   = Date_options['end_year']
+    start_month  = Date_options['start_month']
+    end_month  = Date_options['end_month']
+    start_day    = Date_options['start_day']
+    end_day    = Date_options['end_day']
+    timestep     = Date_options['timestep']
+
+    IO            = SID_config.config['IO']
+    output_folder = IO['output_folder']
+    exp           = IO['exp']
 
     # Iterate through all axes
     for ax, title, cb in zip(ax_list, title_list, cb_list):
@@ -272,13 +299,15 @@ def plot_deformations(path:str):
     # Create the directory if it does not exist already
     os.makedirs(figsPath, exist_ok=True)
 
+    itr = data.icetracker
+    tol = data.tolerance
     # Create a prefix for the figure filenames
-    prefix = data['icetracker'] + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
+    prefix = itr + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tol)
 
     # Create the figure filenames
     div_path   = figsPath + prefix + '_div.png'
     shr_path = figsPath + prefix + '_shr.png'
-    rot_path   = figsPath + prefix + '_rot.png'
+    rot_path   = figsPath + prefix + '_vrt.png'
 
 
     for fig, fig_path in zip([fig_div, fig_shr, fig_vrt], [div_path, shr_path, rot_path]):
@@ -289,6 +318,8 @@ def plot_deformations(path:str):
 
         # Save the new figures
         fig.savefig(fig_path, bbox_inches='tight', dpi=600)
+
+    return None
 
 def write_netcdf(path:str, output_folder:str):
     # !!! THIS FUNCTION SEEMS LIKE IT WRITES THE EXACT SAME NETCDF FILE AS THE ONE IT OPENS...

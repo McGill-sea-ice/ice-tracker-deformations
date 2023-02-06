@@ -478,15 +478,15 @@ def load_netcdf(path:str):
     shr = (ds.variables['shr'][:])[time_indices]
     vrt = (ds.variables['vrt'][:])[time_indices]
 
-    # DR: issue #11: This is not needed as idX is the same as id_start_latX
-    # idx1 = (ds.variables['idx1'][:])[time_indices]
-    # idx2 = (ds.variables['idx2'][:])[time_indices]
-    # idx3 = (ds.variables['idx3'][:])[time_indices]
+    idx1 = (ds.variables['idx1'][:])[time_indices]
+    idx2 = (ds.variables['idx2'][:])[time_indices]
+    idx3 = (ds.variables['idx3'][:])[time_indices]
     no   = (ds.variables['no'][:])[time_indices]
 
-    id_start_lat1 = (ds.variables['id_start_lat1'][:])[time_indices]
-    id_start_lat2 = (ds.variables['id_start_lat2'][:])[time_indices]
-    id_start_lat3 = (ds.variables['id_start_lat3'][:])[time_indices]
+    # DR: issue #11: This is not needed as idX is the same as id_start_latX
+    # id_start_lat1 = (ds.variables['id_start_lat1'][:])[time_indices]
+    # id_start_lat2 = (ds.variables['id_start_lat2'][:])[time_indices]
+    # id_start_lat3 = (ds.variables['id_start_lat3'][:])[time_indices]
 
     dudx = (ds.variables['dudx'][:])[time_indices]
     dudy = (ds.variables['dudy'][:])[time_indices]
@@ -497,12 +497,12 @@ def load_netcdf(path:str):
     max_date = seconds_to_date(path,np.max(end_time))
     print(f"Earliest/latest start/end dates of data included in deformation map: {min_date} to {max_date}")
 
-
     # Compressing coordinates into arrays of arrays
-    start_lats = np.array([start_lat1, start_lat2, start_lat3])
-    start_lons = np.array([start_lon1, start_lon2, start_lon3])
-    end_lats = np.array([end_lat1, end_lat2, end_lat3])
-    end_lons = np.array([end_lon1, end_lon2, end_lon3])
+    # DR compression is not practical since it is not compressed in the NETcdf
+    # start_lats = np.array([start_lat1, start_lat2, start_lat3])
+    # start_lons = np.array([start_lon1, start_lon2, start_lon3])
+    # end_lats = np.array([end_lat1, end_lat2, end_lat3])
+    # end_lons = np.array([end_lon1, end_lon2, end_lon3])
 
     reftime = ds.getncattr('referenceTime')
     icetracker = ds.getncattr('iceTracker')
@@ -519,24 +519,33 @@ def load_netcdf(path:str):
         start_time = start_time[area_indices]
         end_time = end_time[area_indices]
 
-        start_lats = np.array([start_lat1[area_indices], start_lat2[area_indices], start_lat3[area_indices]])
-        start_lons = np.array([start_lon1[area_indices], start_lon2[area_indices], start_lon3[area_indices]])
-        end_lats = np.array([end_lat1[area_indices], end_lat2[area_indices], end_lat3[area_indices]])
-        end_lons = np.array([end_lon1[area_indices], start_lon2[area_indices], end_lon3[area_indices]])
+        start_lat1 = start_lat1[area_indices]
+        start_lat2 = start_lat2[area_indices]
+        start_lat3 = start_lat3[area_indices]
+        start_lon1 = start_lon1[area_indices]
+        start_lon2 = start_lon2[area_indices]
+        start_lon3 = start_lon3[area_indices]
+
+        end_lat1 = end_lat1[area_indices]
+        end_lat2 = end_lat2[area_indices]
+        end_lat3 = end_lat3[area_indices]
+        end_lon1 = end_lon1[area_indices]
+        end_lon2 = end_lon2[area_indices]
+        end_lon3 = end_lon3[area_indices]
 
         div = div[area_indices]
         shr = shr[area_indices]
         vrt = vrt[area_indices]
 
-        # DR: issue #11: This is not needed as idX is the same as id_start_latX
-        # idx1 = idx1[area_indices]
-        # idx2 = idx2[area_indices]
-        # idx3 = idx3[area_indices]
+        idx1 = idx1[area_indices]
+        idx2 = idx2[area_indices]
+        idx3 = idx3[area_indices]
         no   = no[area_indices]
 
-        id_start_lat1 = id_start_lat1[area_indices]
-        id_start_lat2 = id_start_lat2[area_indices]
-        id_start_lat3 = id_start_lat3[area_indices]
+        # DR: issue #11: This is not needed as idX is the same as id_start_latX
+        # id_start_lat1 = id_start_lat1[area_indices]
+        # id_start_lat2 = id_start_lat2[area_indices]
+        # id_start_lat3 = id_start_lat3[area_indices]
 
         dudx = dudx[area_indices]
         dudy = dudy[area_indices]
@@ -546,11 +555,13 @@ def load_netcdf(path:str):
     # Closing dataset
     ds.close()
 
-    return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons,
+    return {'start_lat1': start_lat1, 'start_lon1': start_lon1, 'end_lats': end_lat1, 'end_lons': end_lon,
+            'start_lat2': start_lat2, 'start_lon2': start_lon2, 'end_lats': end_lat2, 'end_lons': end_lon2,
+            'start_lat3': start_lat3, 'start_lon3': start_lon3, 'end_lats': end_lat3, 'end_lons': end_lon3,
             'div': div, 'shr': shr, 'vrt': vrt,
             'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices,
             'reftime': reftime, 'icetracker': icetracker, 'timestep': timestep,'tolerance': tolerance,
             'trackingerror': trackingerror,
             'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no,
-            'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3,
+            # 'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3,
             'dudx': dudx, 'dudy': dudy, 'dvdx': dvdx, 'dvdy': dvdy}
