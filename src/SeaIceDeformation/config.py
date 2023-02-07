@@ -119,7 +119,7 @@ def filter_data(config=None):
     summer_months = [6, 7, 8, 9, 10]
 
     date_path = IO['data_folder']
-    satellite = Metadata['ice_tracker']
+    satellite = Metadata['icetracker']
 
     if satellite == 'RCMS1':
         sat_list = ['rcm/','s1/']
@@ -181,7 +181,7 @@ def filter_data(config=None):
 
 
 def get_datapaths(config=None):
-    # def get_datapaths(raw_paths, output_path, exp, start_year, start_month, start_day, ice_tracker):
+    # def get_datapaths(raw_paths, output_path, exp, start_year, start_month, start_day, icetracker):
     ''' (str, str, str, str) -> dict[str, Any]
 
     Function that creates lists that store data file paths for every dataset
@@ -218,7 +218,7 @@ def get_datapaths(config=None):
     start_year  -- starting year of the raw datasets listed in raw_paths \\
     start_month -- starting month of the raw datasets listed in raw_paths \\
     start_day   -- starting day of the raw datasets listed in raw_paths \\
-    ice_tracker -- sea-ice motion tracker used for calculations \\
+    icetracker -- sea-ice motion tracker used for calculations \\
     '''
 
     raw_paths = config['raw_paths']

@@ -299,7 +299,7 @@ def compute_deformations(config=None):
 
     # Add metadata
     Metadata = config['Metadata']
-    output_ds.icetracker = Metadata['ice_tracker']
+    output_ds.icetracker = Metadata['icetracker']
     output_ds.referenceTime = YYYY + '-' + MM + '-' + DD + ' 00:00:00'
     output_ds.trackingError = Metadata['tracking_error'] + ' m'
     output_ds.timestep = Date_options['timestep'] + ' hours'
@@ -334,11 +334,6 @@ def compute_deformations(config=None):
     id2        = output_ds.createVariable('idx2', 'u4', 'x')
     id3        = output_ds.createVariable('idx3', 'u4', 'x')
     idtri      = output_ds.createVariable('no', 'u4', 'x')
-
-    # DR: issue #11: This is not needed as idX is the same as id_start_latX
-    # id_start_lat1  = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
-    # id_start_lat2  = output_ds.createVariable('id_start_lat2', 'u4', 'x')
-    # id_start_lat3  = output_ds.createVariable('id_start_lat3', 'u4', 'x')
 
     dux        = output_ds.createVariable('dudx', 'f8', 'x') # Strain rates
     duy        = output_ds.createVariable('dudy', 'f8', 'x')
@@ -398,11 +393,6 @@ def compute_deformations(config=None):
     id2[:]        = idx2
     id3[:]        = idx3
     idtri[:]      = no
-
-    # DR: issue #11: This is not needed as idX is the same as id_start_latX
-    # id_start_lat1[:] = idx_sLat1
-    # id_start_lat2[:] = idx_sLat2
-    # id_start_lat3[:] = idx_sLat3
 
     dux[:]       = dudx_l
     duy[:]       = dudy_l

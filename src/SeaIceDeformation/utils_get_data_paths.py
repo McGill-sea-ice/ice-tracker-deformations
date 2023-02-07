@@ -135,7 +135,7 @@ def get_output_nc_path(IO, Date_options, Metadata):
 
     output_path = IO['output_folder']
     exp = IO['exp']
-    satellite = Metadata['ice_tracker']
+    satellite = Metadata['icetracker']
     start_year  = str(Date_options['start_year'])
     start_month = str(Date_options['start_month'])
     start_day   = str(Date_options['start_day'])

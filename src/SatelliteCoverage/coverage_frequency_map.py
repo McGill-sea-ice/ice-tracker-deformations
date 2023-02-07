@@ -9,6 +9,9 @@ Tools for analysing raw data files
 This file contains functions for analysing raw data files' spatial and temporal coverage.
 """
 
+import sys
+sys.path.insert(0, '/aos/home/dringeisen/code/ice-tracker-deformations/')
+
 import os
 from time import strftime
 
@@ -24,10 +27,13 @@ import math
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from config import *
+from utils import *
+
+from netcdf_tools import plot_deformations
 
 # IGNORING WARNINGS, COMMENT IF YOU WANT TO SEE THEM
-import warnings
-warnings.filterwarnings("ignore")
+# import warnings
+# warnings.filterwarnings("ignore")
 
 # Generate map x/y bins that will be used to compute frequency at each cell on map
 def get_map_bins(xy, options=None):
@@ -39,15 +45,6 @@ def get_map_bins(xy, options=None):
     uyextent = 2500000
     lyextent = -1900000
 
-    # Show lat/lon grid
-    ax.gridlines(draw_labels=True)
-
-    # Hide datapoints over land
-    ax.add_feature(cfeature.LAND, zorder=100, edgecolor='k')
-
-    """
-    Data
-    """
     # Grid resolution calculations
     xscale = uxextent - lxextent
     yscale = uyextent - lyextent
@@ -155,7 +152,7 @@ def coverage_timeseries(interval_list, resolution, date_pairs, xbins_map, ybins_
     os.makedirs(figsPath, exist_ok=True)
 
     # Title
-    title = tracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + '_coverage_area_timeseries'+ '.png'
+    title = icetracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + '_coverage_area_timeseries'+ '.png'
 
     # Saving figure
     plt.savefig(figsPath + title, bbox_inches='tight')
@@ -218,12 +215,13 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, Date_opt
     fig = plt.figure(figsize=(6.5, 5.5), )
     ax = fig.add_axes([0.1, 0.1, 0.8, 0.8],projection = proj)
 
-    out_proj = pyproj.Proj(init='epsg:4326')
-    in_proj = pyproj.Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
+    out_proj = pyproj.CRS('epsg:4326')
+    in_proj = pyproj.CRS('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
 
     xx, yy = np.meshgrid(xbins_map, ybins_map)
 
-    binslon,binslat = pyproj.transform(in_proj,out_proj,xx,yy)
+    binslat, binslon = pyproj.Transformer.from_crs(in_proj,out_proj).transform(yy,xx)
+
     H[H==0.0] = np.nan
     H = H*100.0
 
@@ -277,13 +275,13 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, Date_opt
 
     # if/elif for title creation, for grammatical correctness
     if timestep != '0':
-        ax.set_title(f'Percent coverage ({interval}h intervals), {tracker}, \n {sDate_title} - {eDate_title}, {timestep} \u00B1 {tolerance} h pairs')
+        ax.set_title(f'Percent coverage ({interval}h intervals), {icetracker}, \n {sDate_title} - {eDate_title}, {timestep} \u00B1 {tolerance} h pairs')
 
     elif timestep == '0':
         ax.set_title(f'{tracker}, {sDate_title} to {eDate_title}, all timesteps, {resolution} km, {interval} hr intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_timestep_tolerance_resolution_'res'_tracker_freq.png
-    prefix = tracker + '_'+ sDate_str + '_' + eDate_str + '_dt' + timestep + '_tol' + tolerance + '_res' + resolution + '_' + interval
+    prefix = icetracker + '_'+ sDate_str + '_' + eDate_str + '_dt' + timestep + '_tol' + tolerance + '_res' + resolution + '_' + interval
     plt.savefig(figsPath + prefix + '_' + 'intervalfreq.png')
 
     print(f'Saved as {prefix}_intervalfreq.png')
@@ -302,7 +300,7 @@ if __name__ == '__main__':
 
     data_path = IO['data_folder']
     output = IO['output_folder']
-    tracker = meta['ice_tracker']
+    icetracker = meta['icetracker']
 
     start_year = Date_options['start_year']
     start_month = Date_options['start_month']
@@ -323,7 +321,7 @@ if __name__ == '__main__':
     print(len(raw_list))
 
     # Dividing data into intervals if the user desires
-    if coverage_frequency['visualise_timeseries'] == 'True' or coverage_frequency['visualise_interval'] == True:
+    if coverage_frequency['visualise_timeseries'] == 'True' or coverage_frequency['visualise_interval'] == 'True':
         interval_list, date_pairs = divide_intervals(raw_list, Date_options, options)
 
     # Compiling master dataframe
@@ -343,3 +341,6 @@ if __name__ == '__main__':
     if coverage_frequency['visualise_interval'] == 'True':
         # Plotting coverage heat map in % of intervals with data
         interval_frequency_histogram2d(interval_list, xbins, ybins, Date_options)
+
+    if config['netcdf_tools']['plot_deformation'] == 'True':
+        plot_deformations(path=IO['netcdf_path'],config=config)

@@ -10,6 +10,9 @@ This file contains functions for analysing and processing netCDF files.
 
 """
 
+import sys
+sys.path.insert(0, '/aos/home/dringeisen/code/ice-tracker-deformations/')
+
 from lib2to3.pytree import convert
 from time import strftime
 
@@ -22,7 +25,8 @@ import numpy as np
 import pyproj
 import math
 from netCDF4 import Dataset
-from src.SatelliteCoverage.utils import convert_to_grid
+from src.SatelliteCoverage.utils import *
+from src.SatelliteCoverage.config import read_config
 from shapely.ops import transform
 import os
 
@@ -32,7 +36,7 @@ from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore")
 
-def plot_start_end_points(path:str):
+def plot_start_end_points(path=None, config=None):
     """
     Plots the start and end points of the triangle vertices on a map.
     Start points are blue, end points are red.
@@ -120,6 +124,198 @@ def plot_start_end_points(path:str):
     # Saving figure
     plt.savefig(fig_path, bbox_inches='tight', dpi=600)
 
+# Filters netCDF data by area
+def filter_area(centre_lat, centre_lon, radius, start_lats, start_lons):
+    """
+    This function filters data read from a netCDF (Stored as NumPy arrays) by area.
+    The user specifies a centre point in WGS 84 (Lat/Lon) and a radius in km, which are then
+    combined to create a mask, leaving only data *radius* kilometres from the centre point.
+    Only triangles with all three vertices within this circle will be loaded.
+
+    INPUTS:
+    centre_lat -- Latitude of the centre point {float}
+    centre_lon -- Longitude of the centre point {float}
+    radius -- Radius of the circle (mask) in kilometres {float}
+    start_lats -- Starting latitudes of the triangles in the format
+                  [[Latitudes (1)], [Latitudes (2)], [Latitudes (3)]] {NumPy array}
+    start_lons -- Starting latitudes of the triangles in the format
+                  [[Longitudes (1)], [Longitudes (2)], [Longitudes (3)]] {NumPy array}
+
+    OUTPUTS:
+    indices -- List of indices of triangles located within the area {list}
+    """
+
+    print('--- Filtering area ---')
+
+    # Turning inputs into floats if they aren't already
+    centre_lat, centre_lon, radius = float(centre_lat), float(centre_lon), float(radius)
+    centre_point = (centre_lat, centre_lon)
+
+    # Loading start lat/lon values
+    start_lat1, start_lat2, start_lat3 = start_lats[0], start_lats[1], start_lats[2]
+    start_lon1, start_lon2, start_lon3 = start_lons[0], start_lons[1], start_lons[2]
+
+    # List of 1s and 0s, 1 if the point is within the radius and 0 else
+    tf_list1, tf_list2, tf_list3 = ([] for i in range(3))
+
+    # Iterating over all lists
+    for coordinate in zip(start_lat1, start_lon1):
+        if hs.haversine(coordinate, centre_point) <= radius: # hs.haversine calculates the
+            tf_list1.append(1)                               # distance between two lats/lons
+        else:
+            tf_list1.append(0)
+
+    for coordinate in zip(start_lat2, start_lon2):
+        if hs.haversine(coordinate, centre_point) <= radius:
+            tf_list2.append(1)
+        else:
+            tf_list2.append(0)
+
+    for coordinate in zip(start_lat3, start_lon3):
+        if hs.haversine(coordinate, centre_point) <= radius:
+            tf_list3.append(1)
+        else:
+            tf_list3.append(0)
+
+    # Filtering indices where all three points (entire triangle) is within the radius
+    indices = [i for i in range(len(tf_list1)) if tf_list1[i] == tf_list2[i] == tf_list3[i] == 1]
+
+    return indices
+
+
+
+# Loads netCDF data
+def load_netcdf(path:str, config=None):
+    """
+    This function reads and loads data from a netCDF file in the same format as those output by the deformation
+    calculation script in src/SeaIceDeformation. The user is able to filter the data by time and area,
+    allowing for analytical tools to be applied to selected snippets of data.
+
+    INPUTS:
+    path -- String of path to the netCDF file the data will be read from {str}
+
+    OUTPUTS:
+    dictionary object -- Dictionary storing filtered data as NumPy arrays {dict}
+    """
+
+    print('--- Loading data (netcdf) ---')
+
+    # Reading config
+    Date_options = config['Date_options']
+    options = config['options']
+
+    # Reading user options
+    start_year, start_month, start_day = Date_options['start_year'], Date_options['start_month'], Date_options['start_day']
+    end_year, end_month, end_day = Date_options['end_year'], Date_options['end_month'], Date_options['end_day']
+    area_filter, centre_lat, centre_lon, radius = options['area_filter'], options['centre_lat'], options['centre_lon'], options['radius']
+
+    # Load netCDF as Dataset from *path*
+    ds = Dataset(path, mode='r')
+
+    # Get start / end times from user
+    start_time_s, end_time_s = date_to_seconds(path, start_year, start_month, start_day, end_year, end_month, end_day)
+
+    # Extracting time variables
+    start_time = ds.variables['start_time'][:]
+    end_time = ds.variables['end_time'][:]
+
+    # Indices of data in desired time frame
+    time_indices = np.where( ((start_time < end_time_s) & (end_time > start_time_s)))[0]
+    start_time = start_time[time_indices]
+    end_time = end_time[time_indices]
+
+    # Extracting data (Filtered by time only)
+    start_lat1 = (ds.variables['start_lat1'][:])[time_indices]
+    start_lat2 = (ds.variables['start_lat2'][:])[time_indices]
+    start_lat3 = (ds.variables['start_lat3'][:])[time_indices]
+
+    start_lon1 = (ds.variables['start_lon1'][:])[time_indices]
+    start_lon2 = (ds.variables['start_lon2'][:])[time_indices]
+    start_lon3 = (ds.variables['start_lon3'][:])[time_indices]
+
+    end_lat1 = (ds.variables['end_lat1'][:])[time_indices]
+    end_lat2 = (ds.variables['end_lat2'][:])[time_indices]
+    end_lat3 = (ds.variables['end_lat3'][:])[time_indices]
+
+    end_lon1 = (ds.variables['end_lon1'][:])[time_indices]
+    end_lon2 = (ds.variables['end_lon2'][:])[time_indices]
+    end_lon3 = (ds.variables['end_lon3'][:])[time_indices]
+
+    div = (ds.variables['div'][:])[time_indices]
+    shr = (ds.variables['shr'][:])[time_indices]
+    vrt = (ds.variables['vrt'][:])[time_indices]
+
+    idx1 = (ds.variables['idx1'][:])[time_indices]
+    idx2 = (ds.variables['idx2'][:])[time_indices]
+    idx3 = (ds.variables['idx3'][:])[time_indices]
+    no   = (ds.variables['no'][:])[time_indices]
+
+    dudx = (ds.variables['dudx'][:])[time_indices]
+    dudy = (ds.variables['dudy'][:])[time_indices]
+    dvdx = (ds.variables['dvdx'][:])[time_indices]
+    dvdy = (ds.variables['dvdy'][:])[time_indices]
+
+    min_date = seconds_to_date(path,np.min(start_time))
+    max_date = seconds_to_date(path,np.max(end_time))
+    print(f"Earliest/latest start/end dates of data included in deformation map: {min_date} to {max_date}")
+
+    reftime = ds.getncattr('referenceTime')
+    icetracker = ds.getncattr('icetracker')
+    timestep = ds.getncattr('timestep')
+    tolerance = ds.getncattr('tolerance')
+    trackingerror = ds.getncattr('trackingError')
+
+    if area_filter == 'True':
+        print('--- Filtering by area ---')
+        # Filtering by area
+        area_indices = filter_area(centre_lat, centre_lon, radius, start_lats, start_lons)
+
+        # Applying filter
+        start_time = start_time[area_indices]
+        end_time = end_time[area_indices]
+
+        start_lat1 = start_lat1[area_indices]
+        start_lat2 = start_lat2[area_indices]
+        start_lat3 = start_lat3[area_indices]
+        start_lon1 = start_lon1[area_indices]
+        start_lon2 = start_lon2[area_indices]
+        start_lon3 = start_lon3[area_indices]
+
+        end_lat1 = end_lat1[area_indices]
+        end_lat2 = end_lat2[area_indices]
+        end_lat3 = end_lat3[area_indices]
+        end_lon1 = end_lon1[area_indices]
+        end_lon2 = end_lon2[area_indices]
+        end_lon3 = end_lon3[area_indices]
+
+        div = div[area_indices]
+        shr = shr[area_indices]
+        vrt = vrt[area_indices]
+
+        idx1 = idx1[area_indices]
+        idx2 = idx2[area_indices]
+        idx3 = idx3[area_indices]
+        no   = no[area_indices]
+
+        dudx = dudx[area_indices]
+        dudy = dudy[area_indices]
+        dvdx = dvdx[area_indices]
+        dvdy = dvdy[area_indices]
+
+    # Closing dataset
+    ds.close()
+
+    return {'start_lat1': start_lat1, 'start_lon1': start_lon1, 'end_lats': end_lat1, 'end_lons': end_lon1,
+            'start_lat2': start_lat2, 'start_lon2': start_lon2, 'end_lats': end_lat2, 'end_lons': end_lon2,
+            'start_lat3': start_lat3, 'start_lon3': start_lon3, 'end_lats': end_lat3, 'end_lons': end_lon3,
+            'div': div, 'shr': shr, 'vrt': vrt,
+            'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices,
+            'reftime': reftime, 'icetracker': icetracker, 'timestep': timestep,'tolerance': tolerance,
+            'trackingerror': trackingerror,
+            'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no,
+            'dudx': dudx, 'dudy': dudy, 'dvdx': dvdx, 'dvdy': dvdy}
+
+
 def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_lon2, start_lon3, start_id1, start_id2, start_id3):
     """
     This function takes in a list of start lats/lons and corresponding start lat/lon IDs (triangle vertices)
@@ -173,7 +369,7 @@ def plot_deformations(path=None, data_in=None, config=None):
 
     # Loading data from netcdf as a dictionary
     if path != None and data_in == None :
-        data = load_netcdf(path)
+        data = load_netcdf(path, config=config)
     elif path == None and data_in != None :
         data = data_in
     elif path == None and data_in == None or path != None and data != None :
@@ -266,6 +462,7 @@ def plot_deformations(path=None, data_in=None, config=None):
     start_day    = Date_options['start_day']
     end_day    = Date_options['end_day']
     timestep     = Date_options['timestep']
+    tolerance     = Date_options['tolerance']
 
     IO            = config['IO']
     output_folder = IO['output_folder']
@@ -297,10 +494,9 @@ def plot_deformations(path=None, data_in=None, config=None):
     # Create the directory if it does not exist already
     os.makedirs(figsPath, exist_ok=True)
 
-    itr = data.icetracker
-    tol = data.tolerance
+    itr = config['Metadata']['icetracker']
     # Create a prefix for the figure filenames
-    prefix = itr + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tol)
+    prefix = itr + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
 
     # Create the figure filenames
     div_path   = figsPath + prefix + '_div.png'
@@ -315,6 +511,7 @@ def plot_deformations(path=None, data_in=None, config=None):
             os.remove(fig_path)
 
         # Save the new figures
+        print('Saving figure at ',fig_path)
         fig.savefig(fig_path, bbox_inches='tight', dpi=600)
 
     return None
@@ -350,7 +547,7 @@ if __name__ == '__main__':
     radius = options['radius']
 
     if netcdf_tools['plot_start_end_points'] == 'True':
-        plot_start_end_points(path)
+        plot_start_end_points(path=path, config=config)
 
     if netcdf_tools['plot_deformation'] == 'True':
-        plot_deformations(path)
+        plot_deformations(path=path,config=config)
