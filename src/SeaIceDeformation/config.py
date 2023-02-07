@@ -54,10 +54,12 @@ def get_config_args():
     config.read(srcPath + '/namelist.ini')
 
     # Return a ConfigParser object
-    return config
+    config_dict = {sect: dict(config.items(sect)) for sect in config.sections()}
+
+    return config_dict
 
 
-def filter_data(Date_options = None, IO = None, Metadata = None):
+def filter_data(config=None):
     """
     Filters through the data files located in 'data_path' using the user
     options in 'options.ini'. Outputs a list of paths to data files which
@@ -85,6 +87,11 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
     OUTPUTS:
     raw_paths -- List of file paths {list}
     """
+
+    # Retrieve the IO and Date_options sections
+    IO = config['IO']
+    Date_options = config['Date_options']
+    Metadata = config['Metadata']
 
     start_year  = str(Date_options['start_year'])
     start_month = str(Date_options['start_month'])
@@ -173,7 +180,7 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
     return raw_paths
 
 
-def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
+def get_datapaths(config=None):
     # def get_datapaths(raw_paths, output_path, exp, start_year, start_month, start_day, ice_tracker):
     ''' (str, str, str, str) -> dict[str, Any]
 
@@ -214,6 +221,13 @@ def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
     ice_tracker -- sea-ice motion tracker used for calculations \\
     '''
 
+    raw_paths = config['raw_paths']
+
+    # Retrieve the IO and Date_options sections
+    IO = config['IO']
+    Date_options = config['Date_options']
+    Metadata = config['Metadata']
+
     # Raise an error if the input raw paths list is empty
     if raw_paths ==  []:
         raise datasetSelectionError('The list of raw datasets to process is empty.')
@@ -249,27 +263,21 @@ def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
 
     return data_paths
 
-
-
 '''
 _______________________________________________________________________
 PERFORM CONFIGURATION
 '''
 
-# Retrieve configuration arguments from namelist.ini
-config = get_config_args()
+def get_config():
 
-# Retrieve the IO and Date_options sections
-IO = config['IO']
-Date_options = config['Date_options']
-Exp_options = config['Metadata']
+    # Retrieve configuration arguments from namelist.ini
+    config = get_config_args()
 
-raw_paths = filter_data( Date_options = Date_options,
-                         IO           = IO,
-                         Metadata     = Exp_options           )
+    raw_paths = filter_data(config=config)
+    config['raw_paths'] = raw_paths
 
-# Get the paths to which data files of all stages of data processing will be stored
-data_paths = get_datapaths( raw_paths,
-                            Date_options = Date_options,
-                            IO           = IO,
-                            Metadata     = Exp_options)
+    # Get the paths to which data files of all stages of data processing will be stored
+    data_paths = get_datapaths(config=config)
+    config['data_paths'] = data_paths
+
+    return config

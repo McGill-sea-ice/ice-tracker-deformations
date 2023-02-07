@@ -62,13 +62,13 @@ from math import sqrt
 import numpy as np
 from netCDF4 import Dataset
 
-import config
+# import config
 import utils_datetime
 import utils_deformation_computations as deformation_comp
 import utils_load_data as load_data
 from tqdm import tqdm
 
-def compute_deformations():
+def compute_deformations(config=None):
     '''
     _________________________________________________________________________________________
     INITIALIZE OUTPUT NETCDF VARIABLES
@@ -84,7 +84,7 @@ def compute_deformations():
         = ([] for i in range(28))
 
     # Retrieve the starting date common to all processed datasets (from namelist.ini)
-    Date_options = config.config['Date_options']
+    Date_options = config['Date_options']
     YYYY = Date_options['start_year']
     MM = Date_options['start_month']
     DD = Date_options['start_day']
@@ -103,7 +103,9 @@ def compute_deformations():
     nbfb = 0
     nbfg = 0
     nbpg = 0
-    for raw_path, triangulated_path, calculations_path in zip(tqdm(config.data_paths['raw']), config.data_paths['triangulated'], config.data_paths['calculations']):
+    print('--- Computing sea-ice deformations ---')
+    dp = config['data_paths']
+    for raw_path, triangulated_path, calculations_path in zip(tqdm(dp['raw']), dp['triangulated'], dp['calculations']):
 
         '''
         _________________________________________________________________________________________
@@ -287,7 +289,7 @@ def compute_deformations():
     WRITE ALL RESULTS COMBINED TO A NETCDF FILE
     '''
     # Find absolute path in which the output netcdf file is to be stored
-    nc_output_path = config.data_paths['nc_output']
+    nc_output_path = config['data_paths']['nc_output']
 
     # Create a directory to store the output netcdf file if it does not exist already
     os.makedirs(os.path.dirname(nc_output_path), exist_ok=True)
@@ -296,7 +298,7 @@ def compute_deformations():
     output_ds = Dataset(nc_output_path, 'w', format = 'NETCDF4')
 
     # Add metadata
-    Metadata = config.config['Metadata']
+    Metadata = config['Metadata']
     output_ds.icetracker = Metadata['ice_tracker']
     output_ds.referenceTime = YYYY + '-' + MM + '-' + DD + ' 00:00:00'
     output_ds.trackingError = Metadata['tracking_error'] + ' m'

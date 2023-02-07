@@ -83,33 +83,6 @@ def compile_data(raw_paths):
 
     return df
 
-# Converts lat/lon to the north pole stereographic projection (EPSG 3413)
-def convert_to_grid(lon, lat):
-    """
-    WARNING: INPUT IS LON, LAT (X, Y), AND THE OUTPUT IS ALSO X, Y
-
-    Takes in a point in EPSG 4326 (Lat/Lon) and transforms said point to
-    a polar stereographic projection (EPSG 3413).
-
-    lon, lat {float} -> x, y {float}
-
-    INPUTS:
-    lat, lon -- Float values representing a point in WGS 84
-
-    OUTPUTS:
-    x, y -- Float values representing the transformed point in EPSG 3413
-    """
-
-    # Input projection (lat/lon)
-    in_proj = pyproj.Proj(init='epsg:4326')
-
-    # Output projection (EPSG 3413, Polar Stereographic)
-    out_proj = pyproj.Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
-
-    # Transform function
-    x, y = np.array(pyproj.transform(in_proj, out_proj, lon, lat))
-    return x, y
-
 # Divides raw data into intervals specified by the user
 # def divide_intervals(raw_paths, max_date, min_date, interval):
 def divide_intervals(raw_paths, Date_options = None, Options = None):
@@ -179,6 +152,7 @@ def divide_intervals(raw_paths, Date_options = None, Options = None):
         interval_list.append(temp_list)
 
     return interval_list, date_pairs
+
 
 # Filters raw data based on user set parameters
 def filter_data(Date_options = None, IO = None, Metadata = None):

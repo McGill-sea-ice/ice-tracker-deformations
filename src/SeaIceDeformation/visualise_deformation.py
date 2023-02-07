@@ -21,9 +21,6 @@ import numpy as np
 import config
 import utils_load_data as load_data
 from tqdm import tqdm
-from timeit import default_timer as dt
-
-
 
 def visualise_deformations():
 
@@ -55,8 +52,9 @@ def visualise_deformations():
         # Set the map extent in order to see the entire region of interest
         ax.set_extent((-4400000, 2500000, 3500000, -2500000), ccrs.NorthPolarStereo())
 
+    dp = config['data_paths']
     # Iterate through data files in config
-    for raw_path, triangulated_path, calculated_path in zip(tqdm(config.data_paths['raw']), config.data_paths['triangulated'], config.data_paths['calculations']):
+    for raw_path, triangulated_path, calculated_path in zip(tqdm(dp['raw']), dp['triangulated'], dp['calculations']):
 
         try:
             '''

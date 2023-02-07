@@ -22,9 +22,7 @@ import numpy as np
 import pyproj
 import math
 from netCDF4 import Dataset
-import src.SeaIceDeformation.config as SID_config
-# from src.SatelliteCoverage.config import convert_to_grid
-from src.SatelliteCoverage.config import *
+from src.SatelliteCoverage.utils import convert_to_grid
 from shapely.ops import transform
 import os
 
@@ -161,7 +159,7 @@ def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_l
 
     return new_lat, new_lon
 
-def plot_deformations(path=None, data_in=None):
+def plot_deformations(path=None, data_in=None, config=None):
     """
     This function plots deformations from a netCDF file using matplotlib's ax.tripcolor.
     The function assumes that the netCDF was generated from src/SeaIceDeformation's M01_d03_compute_deformations.py.
@@ -260,7 +258,7 @@ def plot_deformations(path=None, data_in=None):
     cb_list = [cb_div, cb_shr, cb_vrt]
     title_list = ['Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Vorticity $(Days^{-1})$']
 
-    Date_options = SID_config.config['Date_options']
+    Date_options = config['Date_options']
     start_year   = Date_options['start_year']
     end_year   = Date_options['end_year']
     start_month  = Date_options['start_month']
@@ -269,7 +267,7 @@ def plot_deformations(path=None, data_in=None):
     end_day    = Date_options['end_day']
     timestep     = Date_options['timestep']
 
-    IO            = SID_config.config['IO']
+    IO            = config['IO']
     output_folder = IO['output_folder']
     exp           = IO['exp']
 
@@ -294,7 +292,7 @@ def plot_deformations(path=None, data_in=None):
         '''
 
     # Set a directory to store figures for the current experiment
-    figsPath =  output_folder + '/' + '/figs/'
+    figsPath =  output_folder + '/' + exp + '/figs/'
 
     # Create the directory if it does not exist already
     os.makedirs(figsPath, exist_ok=True)
@@ -320,138 +318,6 @@ def plot_deformations(path=None, data_in=None):
         fig.savefig(fig_path, bbox_inches='tight', dpi=600)
 
     return None
-
-def write_netcdf(path:str, output_folder:str):
-    # !!! THIS FUNCTION SEEMS LIKE IT WRITES THE EXACT SAME NETCDF FILE AS THE ONE IT OPENS...
-    # !!! IT DOES NOT SEEM NECESSARY.... KILL?
-
-    # Load data
-    data = load_netcdf(path)
-
-    '''
-    _________________________________________________________________________________________
-    WRITE ALL RESULTS COMBINED TO A NETCDF FILE
-    '''
-    # Find absolute path in which the output netcdf file is to be stored
-    output_path = output_folder + '/' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + timestep + '_filtered_dx.nc'
-
-    # Create a directory to store the output netcdf file if it does not exist already
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    # Create an output netcdf file and dataset
-    output_ds = Dataset(output_path, 'w', format = 'NETCDF4')
-
-    # Add metadata
-    output_ds.iceTracker    = data['icetracker']
-    output_ds.referenceTime = data['reftime']
-    output_ds.trackingError = data['trackingerror']
-
-    # Create x array to store output data
-    x = output_ds.createDimension('x', len(data['start_time']))
-
-    # Create variables for netcdf data set
-    start_time = output_ds.createVariable('start_time', 'u4', 'x') # Start and end times
-    end_time   = output_ds.createVariable('end_time', 'u4', 'x')
-
-    start_lat1 = output_ds.createVariable('start_lat1', 'f8', 'x') # Starting Lat/Lon triangle vertices
-    start_lat2 = output_ds.createVariable('start_lat2', 'f8', 'x')
-    start_lat3 = output_ds.createVariable('start_lat3', 'f8', 'x')
-    start_lon1 = output_ds.createVariable('start_lon1', 'f8', 'x')
-    start_lon2 = output_ds.createVariable('start_lon2', 'f8', 'x')
-    start_lon3 = output_ds.createVariable('start_lon3', 'f8', 'x')
-
-    end_lat1   = output_ds.createVariable('end_lat1', 'f8', 'x') # Ending Lat/Lon triangle vertices
-    end_lat2   = output_ds.createVariable('end_lat2', 'f8', 'x')
-    end_lat3   = output_ds.createVariable('end_lat3', 'f8', 'x')
-    end_lon1   = output_ds.createVariable('end_lon1', 'f8', 'x')
-    end_lon2   = output_ds.createVariable('end_lon2', 'f8', 'x')
-    end_lon3   = output_ds.createVariable('end_lon3', 'f8', 'x')
-
-    d          = output_ds.createVariable('div', 'f8', 'x') # Divergence and shear strain and vorticity rates
-    s          = output_ds.createVariable('shr', 'f8', 'x')
-    v          = output_ds.createVariable('vrt', 'f8', 'x')
-
-    # DR: issue #11: This is not needed as idX is the same as id_start_latX
-    # id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices
-    # id2        = output_ds.createVariable('idx2', 'u4', 'x')
-    # id3        = output_ds.createVariable('idx3', 'u4', 'x')
-    idtri      = output_ds.createVariable('no', 'u4', 'x')
-
-    id_start_lat1 = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
-    id_start_lat2 = output_ds.createVariable('id_start_lat2', 'u4', 'x')
-    id_start_lat3 = output_ds.createVariable('id_start_lat3', 'u4', 'x')
-
-    dux        = output_ds.createVariable('dudx', 'f8', 'x') # Strain rates
-    duy        = output_ds.createVariable('dudy', 'f8', 'x')
-    dvx        = output_ds.createVariable('dvdx', 'f8', 'x')
-    dvy        = output_ds.createVariable('dvdy', 'f8', 'x')
-
-    # Specify units for each variable
-    start_time.units = 'seconds since the reference time'
-    end_time.units   = 'seconds since the reference time'
-
-    start_lat1.units = 'degrees North'
-    start_lat2.units = 'degrees North'
-    start_lat3.units = 'degrees North'
-    start_lon1.units = 'degrees East'
-    start_lon2.units = 'degrees East'
-    start_lon3.units = 'degrees East'
-
-    end_lat1.units   = 'degrees North'
-    end_lat2.units   = 'degrees North'
-    end_lat3.units   = 'degrees North'
-    end_lon1.units   = 'degrees East'
-    end_lon2.units   = 'degrees East'
-    end_lon3.units   = 'degrees East'
-
-    d.units          = '1/days'
-    s.units          = '1/days'
-    v.units          = '1/days'
-
-    dux.units        = '1/days'
-    duy.units        = '1/days'
-    dvx.units        = '1/days'
-    dvy.units        = '1/days'
-
-    # Attribute data arrays to each variable
-    start_time[:] = data['start_time']
-    end_time[:]   = data['end_time']
-
-    start_lat1[:] = data['start_lats'][0]
-    start_lat2[:] = data['start_lats'][1]
-    start_lat3[:] = data['start_lats'][2]
-    start_lon1[:] = data['start_lons'][0]
-    start_lon2[:] = data['start_lons'][1]
-    start_lon3[:] = data['start_lons'][2]
-
-    end_lat1[:]   = data['end_lats'][0]
-    end_lat2[:]   = data['end_lats'][1]
-    end_lat3[:]   = data['end_lats'][2]
-    end_lon1[:]   = data['end_lons'][0]
-    end_lon2[:]   = data['end_lons'][1]
-    end_lon3[:]   = data['end_lons'][2]
-
-    d[:]          = data['div']
-    s[:]          = data['shr']
-    v[:]          = data['vrt']
-
-    # DR: issue #11: This is not needed as idX is the same as id_start_latX
-    # id1[:]        = data['idx1']
-    # id2[:]        = data['idx2']
-    # id3[:]        = data['idx3']
-    idtri[:]      = data['no']
-
-    id_start_lat1[:] = data['start_id1']
-    id_start_lat2[:] = data['start_id2']
-    id_start_lat3[:] = data['start_id3']
-
-    dux[:]       = data['dudx']
-    duy[:]       = data['dudy']
-    dvx[:]       = data['dvdx']
-    dvy[:]       = data['dvdy']
-
-    # Close dataset
-    output_ds.close()
 
 if __name__ == '__main__':
     # Reading config

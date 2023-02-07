@@ -23,21 +23,29 @@ import os
 
 from scipy.spatial import Delaunay
 
-import config
 import utils_grid_coord_system as grid_coord_system
 import utils_load_data as load_data
 from tqdm import tqdm
 
-def delaunay_triangulation():
+def stb(s):
+    if s in ['yes','Yes','true','True']:
+         return True
+    elif s in ['no','False','No','false']:
+         return False
+    else:
+         raise ValueError
+
+def delaunay_triangulation(config=None):
 
     # Retrieve data_paths from config arguments
-    dp = config.data_paths
+    dp = config['data_paths']
 
     # Iterate through all raw and triangulated data file paths listed in config
     empty_files = list(['# Files without data in them'])
     nbfb = 0
     nbfg = 0
     nbpg = 0
+    print('--- Performing a Delaunay triangulation ---')
     for raw_path, triangulated_path, calculations_path in zip(tqdm(dp['raw']), dp['triangulated'], dp['calculations']):
         '''
         _________________________________________________________________________________________
@@ -47,7 +55,7 @@ def delaunay_triangulation():
         # If the triangulated file already exists and overwrite (in config) is set to 'no',
         # go to the next iteration.
         # Else, process the raw file and write the triangulated file.
-        if os.path.exists(triangulated_path) and not config.config['Processing_options'].getboolean('overwrite'):
+        if os.path.exists(triangulated_path) and not stb(config['Processing_options']['overwrite']):
             continue
 
         # Load the raw data set. If an error is encountered (no or not enough data points),
