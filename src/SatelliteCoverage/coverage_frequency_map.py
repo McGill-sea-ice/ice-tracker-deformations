@@ -10,28 +10,24 @@ This file contains functions for analysing raw data files' spatial and temporal 
 """
 
 import os
-from time import strftime
+import sys
+parent = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0,parent)
 
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-from matplotlib.colors import Normalize
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from datetime import datetime
-import numpy as np
-import pandas as pd
-import math
-
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+import time
 from config import *
-
-# IGNORING WARNINGS, COMMENT IF YOU WANT TO SEE THEM
-import warnings
-warnings.filterwarnings("ignore")
+from utils import *
+import math
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import matplotlib as mpl
+import cartopy.feature as cfeature
 
 # Generate map x/y bins that will be used to compute frequency at each cell on map
-def get_map_bins(xy, options=None):
-    resolution = float(options['resolution'])
+def get_map_bins(xy, config=None):
+
+    resolution = float(config['options']['resolution'])
 
     # Upper (u) and lower (l) extents of map_x, map_y (metres)
     lxextent = -3100000
@@ -84,7 +80,7 @@ def coverage_histogram2d(xy, xbins_map, ybins_map):
 
 
 # Plots timeseries of spatial coverage
-def coverage_timeseries(interval_list, resolution, date_pairs, xbins_map, ybins_map):
+def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=None):
     """
     Plots a time series of the area coverage (in % of the Arctic ocean) for a given list of lists containing
     data file paths [interval_list], where each list of files defines a user-set interval (i.e. interval of 72hrs)
@@ -104,6 +100,9 @@ def coverage_timeseries(interval_list, resolution, date_pairs, xbins_map, ybins_
     """
     print('--- Plotting coverage time series ---')
 
+    resolution = config['options']['resolution']
+    interval = config['options']['interval']
+
     # Setting constants (Adjusting ocean area to units of histogram grid)
     arctic_ocean_area = 15558000 # Square kilometres
     arctic_ocean_area = arctic_ocean_area / int(resolution) ** 2
@@ -112,11 +111,11 @@ def coverage_timeseries(interval_list, resolution, date_pairs, xbins_map, ybins_
     df = pd.DataFrame(columns=['percentage', 'start_date', 'end_date'])
 
     # Iterating over each interval
-    for i in range(len(interval_list)):
+    for i in tqdm(range(len(interval_list)), position=0, leave=True):
         # Loads data and converts to x/y for each interval
-        interval_df = compile_data(interval_list[i])
+        interval_df = compile_data(raw_paths=interval_list[i])
 
-            # Skips empty lists
+        # Skips empty lists
         try:
             xy = convert_to_grid(interval_df['lon'], interval_df['lat'])
         except KeyError:
@@ -139,23 +138,40 @@ def coverage_timeseries(interval_list, resolution, date_pairs, xbins_map, ybins_
     # Plotting timeseries
     df.plot(x='start_date', y='percentage', kind='line')
 
+    output_folder = config['IO']['output_folder']
+    exp = config['IO']['exp']
+    icetracker = config['Metadata']['icetracker']
+    Date_options = config['Date_options']
+    # Converting dates for title and file name purposes
+    start_year  = str(Date_options['start_year'])
+    start_month = str(Date_options['start_month'])
+    start_day   = str(Date_options['start_day'])
+    end_year    = str(Date_options['end_year'])
+    end_month   = str(Date_options['end_month'])
+    end_day     = str(Date_options['end_day'])
+    timestep    = str(Date_options['timestep'])
+    tolerance   = str(Date_options['tolerance'])
+
     # Set a directory to store figures
-    figsPath =  output + '/' + '/figs/'
+    figsPath =  output_folder + '/' + exp + '/figs/'
 
     # Create directory if it doesn't exist
     os.makedirs(figsPath, exist_ok=True)
 
-    # Title
-    title = tracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + '_coverage_area_timeseries'+ '.png'
+    # prefix
+    prefix = icetracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + '_int' + interval + '_coverage_area_timeseries'
 
     # Saving figure
-    plt.savefig(figsPath + title, bbox_inches='tight')
+    print('Saving coverage timeserie figure at ' + figsPath + prefix + '.png')
+    plt.savefig(figsPath + prefix + '.png', bbox_inches='tight')
 
-    print('Saved as ' + figsPath)
+    # save the time serie in pickle format
+    print('Saving coverage timeserie data at ' + figsPath + prefix + '.pkl')
+    df.to_pickle(figsPath + prefix + '.pkl')
 
 
 # Visualises coverage as a heatmap, split between user-set intervals
-def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, Date_options=None):
+def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=None):
     """
     Plots a heatmap showing data availaibility (in % of time intervals covered) in a specified range of times.
 
@@ -171,11 +187,13 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, Date_opt
     """
     print('--- Plotting interval frequency histogram ---')
 
+    Date_options = config['Date_options']
+
     # Initializing empty numpy array (2D histogram)
     H = np.array([])
 
     # Iterating over each interval
-    for i in range(len(interval_list)):
+    for i in tqdm(range(len(interval_list)), position=0, leave=True):
         # Loads data and converts to x/y for each interval
         interval_df = compile_data(interval_list[i])
 
@@ -205,16 +223,18 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, Date_opt
     Land and projection
     """
     proj = ccrs.NorthPolarStereo(central_longitude=0)
+    trans = ccrs.Geodetic()
 
     fig = plt.figure(figsize=(6.5, 5.5), )
     ax = fig.add_axes([0.1, 0.1, 0.8, 0.8],projection = proj)
 
-    out_proj = pyproj.Proj(init='epsg:4326')
-    in_proj = pyproj.Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
+    # out_proj = pyproj.CRS('epsg:4326')
+    # in_proj = pyproj.CRS('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
 
     xx, yy = np.meshgrid(xbins_map, ybins_map)
 
-    binslon,binslat = pyproj.transform(in_proj,out_proj,xx,yy)
+    binslat, binslon = convert_from_grid(xx, yy)
+
     H[H==0.0] = np.nan
     H = H*100.0
 
@@ -224,10 +244,10 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, Date_opt
     cmap1 = mpl.colormaps['plasma']
     cmap1.set_bad('w')
 
-    im = ax.pcolormesh(binslon,binslat,H/len(interval_list),
-                           transform=ccrs.PlateCarree(),
-                           vmin=0,vmax=100.0,
-                           cmap=cmap1)
+    new_coords = ax.projection.transform_points(trans, binslon, binslat)
+
+    im = ax.pcolormesh(new_coords[:,:,0], new_coords[:,:,1], H/len(interval_list), vmin=0, vmax=100.0, cmap=cmap1)
+    # im = ax.pcolormesh(xx, yy, H/len(interval_list), vmin=0, vmax=100.0, cmap=cmap1)
 
     #divider = make_axes_locatable(ax)
     #cax = divider.append_axes("right", size="5%",pad=0.2)
@@ -250,6 +270,11 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, Date_opt
     end_year    = str(Date_options['end_year'])
     end_month   = str(Date_options['end_month'])
     end_day     = str(Date_options['end_day'])
+    timestep    = str(Date_options['timestep'])
+    tolerance   = str(Date_options['tolerance'])
+    resolution  = str(config['options']['resolution'])
+    interval    = str(config['options']['interval'])
+    icetracker  = str(config['Metadata']['icetracker'])
 
     # Concatenate start and end dates
     sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
@@ -260,77 +285,63 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, Date_opt
     eDate_str = eDate.strftime("%Y%m%d")
     sDate_str = sDate.strftime("%Y%m%d")
 
+    output_folder = config['IO']['output_folder']
+    exp = config['IO']['exp']
     # Set a directory to store figures
-    figsPath =  output + '/' + '/figs/'
+    figsPath =  output_folder + '/' + exp + '/figs/'
 
     # Create directory if it doesn't exist
     os.makedirs(figsPath, exist_ok=True)
 
     # if/elif for title creation, for grammatical correctness
     if timestep != '0':
-        ax.set_title(f'Percent coverage ({interval}h intervals), {tracker}, \n {sDate_title} - {eDate_title}, {timestep} \u00B1 {tolerance} h pairs')
+        ax.set_title(f'Percent coverage ({interval}h intervals), {icetracker}, \n {sDate_title} - {eDate_title}, {timestep} \u00B1 {tolerance} h pairs')
 
     elif timestep == '0':
         ax.set_title(f'{tracker}, {sDate_title} to {eDate_title}, all timesteps, {resolution} km, {interval} hr intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_timestep_tolerance_resolution_'res'_tracker_freq.png
-    prefix = tracker + '_'+ sDate_str + '_' + eDate_str + '_dt' + timestep + '_tol' + tolerance + '_res' + resolution + '_' + interval
-    plt.savefig(figsPath + prefix + '_' + 'intervalfreq.png')
-
-    print(f'Saved as {prefix}_intervalfreq.png')
-
+    prefix = icetracker + '_'+ sDate_str + '_' + eDate_str + '_dt' + timestep + '_tol' + tolerance + '_res' + resolution + '_int' +  interval
+    fig_name = figsPath + prefix + '_' + 'intervalfreq.png'
+    print('Saving coverage 2D histogram figure at ' + fig_name)
+    plt.savefig(fig_name, dpi=600)
 
 
 if __name__ == '__main__':
+
+    # Retrieve the starting time
+    start_time = time.time()
+
     config = read_config()
 
-    # Initializing more specific ConfigParser objects
-    IO = config['IO']
-    Date_options = config['Date_options']
-    options = config['options']
-    meta = config['Metadata']
-    coverage_frequency = config['coverage_frequency']
-
-    data_path = IO['data_folder']
-    output = IO['output_folder']
-    tracker = meta['ice_tracker']
-
-    start_year = Date_options['start_year']
-    start_month = Date_options['start_month']
-    start_day = Date_options['start_day']
-
-    end_year = Date_options['end_year']
-    end_month = Date_options['end_month']
-    end_day = Date_options['end_day']
-
-    timestep = Date_options['timestep']
-    tolerance = Date_options['tolerance']
-
-    resolution = options['resolution']
-    interval = options['interval']
+    # load options from config
+    viz_ts = config['coverage_frequency']['visualise_timeseries'] == 'True'
+    viz_cf = config['coverage_frequency']['visualise_interval'] == 'True'
 
     # Fetching filter information
-    raw_list = filter_data(Date_options = Date_options, IO = IO, Metadata = meta)
-    print(len(raw_list))
+    raw_list = filter_data(config=config)
+    config['raw_list'] = raw_list
 
     # Dividing data into intervals if the user desires
-    if coverage_frequency['visualise_timeseries'] == 'True' or coverage_frequency['visualise_interval'] == True:
-        interval_list, date_pairs = divide_intervals(raw_list, Date_options, options)
+    if viz_ts or viz_cf:
+        interval_list, date_pairs = divide_intervals(config=config)
 
-    # Compiling master dataframe
-    df = compile_data(raw_list)
+        # Compiling master dataframe
+        df = compile_data(raw_paths=config['raw_list'])
 
-    # Converting points from lat/lon to EPSG 3413
-    xy = convert_to_grid(df['lon'], df['lat'])
+        # Converting points from lat/lon to EPSG 3413
+        xy = convert_to_grid(df['lon'], df['lat'])
 
-    # Plotting coverage heat map
-    # xbins, ybins = visualise_coverage_histogram2d(xy, Date_options)
-    xbins, ybins = get_map_bins(xy, options)
+        # Plotting coverage heat map
+        xbins, ybins = get_map_bins(xy, config=config)
 
-    if coverage_frequency['visualise_timeseries'] == 'True':
-        # Plotting time series of coverage in % of total Arctic Ocean area
-        coverage_timeseries(interval_list, resolution, date_pairs, xbins, ybins)
+        if viz_ts:
+            # Plotting time series of coverage in % of total Arctic Ocean area
+            coverage_timeseries(interval_list, date_pairs, xbins, ybins, config=config)
 
-    if coverage_frequency['visualise_interval'] == 'True':
-        # Plotting coverage heat map in % of intervals with data
-        interval_frequency_histogram2d(interval_list, xbins, ybins, Date_options)
+        if viz_cf:
+            # Plotting coverage heat map in % of intervals with data
+            interval_frequency_histogram2d(interval_list, xbins, ybins, config=config)
+
+    # Display the run time
+    print("--- %s seconds ---" % (time.time() - start_time))

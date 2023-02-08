@@ -8,19 +8,32 @@ Main script for data processing
 Script that executes all steps towards the calculation of sea-ice deformations and displays the execution time.
 
 '''
+import os
+import sys
+parent = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0,parent)
 
 import time
 
-import config
+from config import get_config
 
-import utils_delaunay_triangulation as delaunay_triangulation
-import utils_compute_deformations as compute_deformations
+from utils_delaunay_triangulation import stb, delaunay_triangulation
+from utils_compute_deformations import compute_deformations
 
-import visualise_deformation
+from visualise_deformation import visualise_deformations
+
+from SatelliteCoverage.netcdf_tools import plot_deformations
 
 # Retrieve the starting time
 start_time = time.time()
 
+'''
+0) Configuration extraction
+
+Read the namelist.ini file
+
+'''
+config = get_config()
 
 '''
 1) Triangulation
@@ -29,9 +42,7 @@ Perform a Delaunay triangulation and store the results in a .csv file
 
 '''
 
-print('--- Performing a Delaunay triangulation ---')
-
-delaunay_triangulation.delaunay_triangulation()
+delaunay_triangulation(config=config)
 
 
 '''
@@ -41,21 +52,24 @@ Compute sea-ice deformations rates using the X/Y triangulations results
 
 '''
 
-print('--- Computing sea-ice deformations ---')
-
-compute_deformations.compute_deformations()
+dataset = compute_deformations(config=config)
 
 
 '''
 3) Visualise Deformations
 '''
 
-if config.config['Processing_options'].getboolean('visualise'):
+if stb(config['Processing_options']['visualise']):
 
-    print('--- Creating sea-ice deformation figures ---')
+    # Ploting using csv file
+    # visualise_deformations(config=config)
 
-    visualise_deformation.visualise_deformations()
+    # Plotting using the netCDF dataset
+    plot_deformations(data_in=dataset, config=config)
 
+
+# Close netCDF dataset
+dataset.close()
 
 # Display the run time
 print("--- %s seconds ---" % (time.time() - start_time))

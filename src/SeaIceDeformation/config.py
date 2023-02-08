@@ -53,11 +53,13 @@ def get_config_args():
     config = configparser.ConfigParser()
     config.read(srcPath + '/namelist.ini')
 
-    # Return a ConfigParser object
-    return config
+    # Return a dictionnary object
+    config_dict = {sect: dict(config.items(sect)) for sect in config.sections()}
+
+    return config_dict
 
 
-def filter_data(Date_options = None, IO = None, Metadata = None):
+def filter_data(config=None):
     """
     Filters through the data files located in 'data_path' using the user
     options in 'options.ini'. Outputs a list of paths to data files which
@@ -86,6 +88,11 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
     raw_paths -- List of file paths {list}
     """
 
+    # Retrieve the IO and Date_options sections
+    IO = config['IO']
+    Date_options = config['Date_options']
+    Metadata = config['Metadata']
+
     start_year  = str(Date_options['start_year'])
     start_month = str(Date_options['start_month'])
     start_day   = str(Date_options['start_day'])
@@ -112,7 +119,7 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
     summer_months = [6, 7, 8, 9, 10]
 
     date_path = IO['data_folder']
-    satellite = Metadata['ice_tracker']
+    satellite = Metadata['icetracker']
 
     if satellite == 'RCMS1':
         sat_list = ['rcm/','s1/']
@@ -173,8 +180,7 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
     return raw_paths
 
 
-def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
-    # def get_datapaths(raw_paths, output_path, exp, start_year, start_month, start_day, ice_tracker):
+def get_datapaths(config=None):
     ''' (str, str, str, str) -> dict[str, Any]
 
     Function that creates lists that store data file paths for every dataset
@@ -211,8 +217,15 @@ def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
     start_year  -- starting year of the raw datasets listed in raw_paths \\
     start_month -- starting month of the raw datasets listed in raw_paths \\
     start_day   -- starting day of the raw datasets listed in raw_paths \\
-    ice_tracker -- sea-ice motion tracker used for calculations \\
+    icetracker -- sea-ice motion tracker used for calculations \\
     '''
+
+    raw_paths = config['raw_paths']
+
+    # Retrieve the IO and Date_options sections
+    IO = config['IO']
+    Date_options = config['Date_options']
+    Metadata = config['Metadata']
 
     # Raise an error if the input raw paths list is empty
     if raw_paths ==  []:
@@ -244,31 +257,26 @@ def get_datapaths(raw_paths, Date_options = None, IO = None, Metadata = None):
     data_paths =  { 'raw': raw_paths,
                     'triangulated': triangulated_paths,
                     'calculations': calculations_paths,
-                    'nc_output': nc_output_path }
+                    'nc_output': nc_output_path,
+                    'output_folder': IO['output_folder']+IO['exp']}
 
     return data_paths
-
-
 
 '''
 _______________________________________________________________________
 PERFORM CONFIGURATION
 '''
 
-# Retrieve configuration arguments from namelist.ini
-config = get_config_args()
+def get_config():
 
-# Retrieve the IO and Date_options sections
-IO = config['IO']
-Date_options = config['Date_options']
-Exp_options = config['Metadata']
+    # Retrieve configuration arguments from namelist.ini
+    config = get_config_args()
 
-raw_paths = filter_data( Date_options = Date_options,
-                         IO           = IO,
-                         Metadata     = Exp_options           )
+    raw_paths = filter_data(config=config)
+    config['raw_paths'] = raw_paths
 
-# Get the paths to which data files of all stages of data processing will be stored
-data_paths = get_datapaths( raw_paths,
-                            Date_options = Date_options,
-                            IO           = IO,
-                            Metadata     = Exp_options)
+    # Get the paths to which data files of all stages of data processing will be stored
+    data_paths = get_datapaths(config=config)
+    config['data_paths'] = data_paths
+
+    return config

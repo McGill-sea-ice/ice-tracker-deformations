@@ -15,11 +15,12 @@ import os
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
+import matplotlib.tri as tri
 import numpy as np
 
 import config
 import utils_load_data as load_data
-
+from tqdm import tqdm
 
 def visualise_deformations():
 
@@ -29,7 +30,7 @@ def visualise_deformations():
     '''
 
     # Set the matplotlib projection and transform
-    proj = ccrs.AzimuthalEquidistant(central_longitude=0,central_latitude=90)
+    proj = ccrs.NorthPolarStereo(central_longitude=0)
     trans = ccrs.Geodetic()
 
     # Initialize figures for total deformation (tot), divergence (I) and shear (II)
@@ -49,10 +50,11 @@ def visualise_deformations():
 
     for ax in ax_list:
         # Set the map extent in order to see the entire region of interest
-        ax.set_extent((-3000000, 4000000, 8500000, 11500000), ccrs.AzimuthalEquidistant())
+        ax.set_extent((-4400000, 2500000, 3500000, -2500000), ccrs.NorthPolarStereo())
 
+    dp = config['data_paths']
     # Iterate through data files in config
-    for raw_path, triangulated_path, calculated_path in zip(config.data_paths['raw'], config.data_paths['triangulated'], config.data_paths['calculations']):
+    for raw_path, triangulated_path, calculated_path in zip(tqdm(dp['raw']), dp['triangulated'], dp['calculations']):
 
         try:
             '''
@@ -91,11 +93,17 @@ def visualise_deformations():
         # Stack the 3 vertices index arrays
         triangles = np.stack((vertice_idx1, vertice_idx2, vertice_idx3), axis=-1)
 
+        # tranform the coordinates already to improve the plot efficiency
+        new_coords = proj.transform_points(trans, np.array(s_lon), np.array(s_lat))
+
+        # create one triangulation object
+        tria = tri.Triangulation(new_coords[:,0], new_coords[:,0], triangles=triangles)
+
         # Plot total deformations, divergence and shear
-        cb_tot = ax_tot.tripcolor( sLon, sLat, triangles, facecolors=eps_tot, transform=trans, cmap='plasma', vmin=0, vmax=0.1 )
-        cb_I   = ax_I.tripcolor( sLon, sLat, triangles, facecolors=eps_I, transform=trans, cmap='coolwarm', vmin=-0.04, vmax=0.04 )
-        cb_II  = ax_II.tripcolor( sLon, sLat, triangles, facecolors=eps_II, transform=trans, cmap='plasma', vmin=0, vmax=0.1 )
-        cb_rot = ax_rot.tripcolor( sLon, sLat, triangles, facecolors=rot, transform=trans, cmap='coolwarm', vmin=-0.1, vmax=0.1 )
+        cb_tot = ax_tot.tripcolor( tria, facecolors=eps_tot, cmap='plasma', vmin=0, vmax=0.1 )
+        cb_I   = ax_I.tripcolor( tria, facecolors=eps_I, cmap='coolwarm', vmin=-0.04, vmax=0.04 )
+        cb_II  = ax_II.tripcolor( tria, facecolors=eps_II, cmap='plasma', vmin=0, vmax=0.1 )
+        cb_rot = ax_rot.tripcolor( tria, facecolors=rot, cmap='coolwarm', vmin=-0.1, vmax=0.1 )
 
     '''
     _________________________________________________________________________________________
@@ -130,7 +138,7 @@ def visualise_deformations():
         title_list = ['Total Deformation Rate $(Days^{-1})$', 'Divergence Rate $(Days^{-1})$', 'Shear Rate $(Days^{-1})$', 'Rotation Rate $(Days^{-1})$']
 
         # Iterate through all axes
-        for ax, title, cb in zip(ax_list, title_list, cb_list):
+        for ax, title, cb in zip(tqdm(ax_list), title_list, cb_list):
             # Add a colorbar
             plt.colorbar(cb, ax=ax)
 

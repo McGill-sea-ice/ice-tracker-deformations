@@ -62,13 +62,12 @@ from math import sqrt
 import numpy as np
 from netCDF4 import Dataset
 
-import config
 import utils_datetime
 import utils_deformation_computations as deformation_comp
 import utils_load_data as load_data
+from tqdm import tqdm
 
-
-def compute_deformations():
+def compute_deformations(config=None):
     '''
     _________________________________________________________________________________________
     INITIALIZE OUTPUT NETCDF VARIABLES
@@ -84,7 +83,7 @@ def compute_deformations():
         = ([] for i in range(28))
 
     # Retrieve the starting date common to all processed datasets (from namelist.ini)
-    Date_options = config.config['Date_options']
+    Date_options = config['Date_options']
     YYYY = Date_options['start_year']
     MM = Date_options['start_month']
     DD = Date_options['start_day']
@@ -99,7 +98,13 @@ def compute_deformations():
     file_num = 0
 
     # Iterate through all raw, triangulated and calculations data files listed in config
-    for raw_path, triangulated_path, calculations_path in zip(config.data_paths['raw'], config.data_paths['triangulated'], config.data_paths['calculations']):
+    empty_files_list = []
+    nbfb = 0
+    nbfg = 0
+    nbpg = 0
+    print('--- Computing sea-ice deformations ---')
+    dp = config['data_paths']
+    for raw_path, triangulated_path, calculations_path in zip(tqdm(dp['raw']), dp['triangulated'], dp['calculations']):
 
         '''
         _________________________________________________________________________________________
@@ -115,7 +120,7 @@ def compute_deformations():
         # Load the raw data set. If an error is encountered (no or not enough data points),
         # go to the next dataset.
         try:
-            raw_data = load_data.load_raw( raw_path )
+            raw_data, nbfb, empty_files_list, nbfg, nbpg = load_data.load_raw( raw_path, nbfb, empty_files_list, nbfg, nbpg )
             startX  = raw_data['startX']  # Starting X positions (px)
             startY  = raw_data['startY']  # Starting Y positions (px)
             endX    = raw_data['endX']    # Ending X positions (px)
@@ -263,28 +268,27 @@ def compute_deformations():
 
         '''
         _________________________________________________________________________________________
-        WRITE THE CURRENT DATASET'S RESULTS TO A CSV FILE
+        WRITE THE CURRENT DATASET'S RESULTS TO A CSV FILE (DEPRECATED)
         '''
         # If the calculations file already exists and overwrite (in namelist.ini) is set to 'no',
         # do not write the calculations csv file
-        if not ( os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite')):
+        # if not ( os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite')):
             # Create a directory to store the calculations csv path if it does not exist already
-            os.makedirs(os.path.dirname(calculations_path), exist_ok=True)
+            # os.makedirs(os.path.dirname(calculations_path), exist_ok=True)
 
             # Write the results in the calculations_csv_path file path
-            with open(calculations_path, 'w', encoding='UTF8', newline='') as f:
-                writer = csv.writer(f)
+            # with open(calculations_path, 'w', encoding='UTF8', newline='') as f:
+                # writer = csv.writer(f)
 
                 # Write the data rows to the csv file
-                writer.writerows(row_list)
-
+                # writer.writerows(row_list)
 
     '''
     _________________________________________________________________________________________
     WRITE ALL RESULTS COMBINED TO A NETCDF FILE
     '''
     # Find absolute path in which the output netcdf file is to be stored
-    nc_output_path = config.data_paths['nc_output']
+    nc_output_path = config['data_paths']['nc_output']
 
     # Create a directory to store the output netcdf file if it does not exist already
     os.makedirs(os.path.dirname(nc_output_path), exist_ok=True)
@@ -293,8 +297,8 @@ def compute_deformations():
     output_ds = Dataset(nc_output_path, 'w', format = 'NETCDF4')
 
     # Add metadata
-    Metadata = config.config['Metadata']
-    output_ds.iceTracker = Metadata['ice_tracker']
+    Metadata = config['Metadata']
+    output_ds.icetracker = Metadata['icetracker']
     output_ds.referenceTime = YYYY + '-' + MM + '-' + DD + ' 00:00:00'
     output_ds.trackingError = Metadata['tracking_error'] + ' m'
     output_ds.timestep = Date_options['timestep'] + ' hours'
@@ -329,10 +333,6 @@ def compute_deformations():
     id2        = output_ds.createVariable('idx2', 'u4', 'x')
     id3        = output_ds.createVariable('idx3', 'u4', 'x')
     idtri      = output_ds.createVariable('no', 'u4', 'x')
-
-    id_start_lat1  = output_ds.createVariable('id_start_lat1', 'u4', 'x') # Original coordinate indices
-    id_start_lat2  = output_ds.createVariable('id_start_lat2', 'u4', 'x')
-    id_start_lat3  = output_ds.createVariable('id_start_lat3', 'u4', 'x')
 
     dux        = output_ds.createVariable('dudx', 'f8', 'x') # Strain rates
     duy        = output_ds.createVariable('dudy', 'f8', 'x')
@@ -393,18 +393,15 @@ def compute_deformations():
     id3[:]        = idx3
     idtri[:]      = no
 
-    id_start_lat1[:] = idx_sLat1
-    id_start_lat2[:] = idx_sLat2
-    id_start_lat3[:] = idx_sLat3
-
     dux[:]       = dudx_l
     duy[:]       = dudy_l
     dvx[:]       = dvdx_l
     dvy[:]       = dvdy_l
 
-    # Close dataset
-    output_ds.close()
+    return output_ds
 
+    # # Close dataset
+    # output_ds.close()
 
 if __name__ == '__main__':
     compute_deformations()
