@@ -459,7 +459,7 @@ def plot_deformations(data_in=None, config=None):
         vrt_colours = data['vrt'][min_index:max_index]
 
         # tranform the coordinates already to improve the plot efficiency
-        new_coords = ax_div.projection.transform_points(trans, np.array(start_lon), np.array(start_lat))
+        new_coords = proj.transform_points(trans, np.array(start_lon), np.array(start_lat))
 
         # create one triangulation object
         tria = tri.Triangulation(new_coords[:,0], new_coords[:,1], triangles=triangles)
