@@ -9,16 +9,11 @@ Configuration file for data / netCDF analysis tools
 This file contains functions for loading and processing user options, raw data, and netCDF files.
 """
 
-import configparser
 import os
-import sys
+import configparser
 from datetime import datetime, timedelta
-import numpy as np
-from netCDF4 import Dataset
-import haversine as hs
 import pandas as pd
-import pyproj
-from tqdm import tqdm
+
 
 # Loading config file
 def read_config():

@@ -12,32 +12,15 @@ This file contains functions for analysing raw data files' spatial and temporal 
 import sys
 sys.path.insert(0, '/aos/home/dringeisen/code/ice-tracker-deformations/')
 
-import os
-from time import strftime
-
 import time
-
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-from matplotlib.colors import Normalize
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from datetime import datetime
-import numpy as np
-import pandas as pd
-import math
-
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from config import *
 from utils import *
-
+import math
 from tqdm import tqdm
-
-from netcdf_tools import plot_deformations
-
-# IGNORING WARNINGS, COMMENT IF YOU WANT TO SEE THEM
-# import warnings
-# warnings.filterwarnings("ignore")
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import matplotlib as mpl
+import cartopy.feature as cfeature
 
 # Generate map x/y bins that will be used to compute frequency at each cell on map
 def get_map_bins(xy, config=None):
@@ -155,6 +138,18 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
 
     output_folder = config['IO']['output_folder']
     exp = config['IO']['exp']
+    icetracker = config['Metadata']['icetracker']
+    Date_options = config['Date_options']
+    # Converting dates for title and file name purposes
+    start_year  = str(Date_options['start_year'])
+    start_month = str(Date_options['start_month'])
+    start_day   = str(Date_options['start_day'])
+    end_year    = str(Date_options['end_year'])
+    end_month   = str(Date_options['end_month'])
+    end_day     = str(Date_options['end_day'])
+    timestep    = str(Date_options['timestep'])
+    tolerance   = str(Date_options['tolerance'])
+
     # Set a directory to store figures
     figsPath =  output_folder + '/' + exp + '/figs/'
 
@@ -166,11 +161,11 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
 
     # Saving figure
     print('Saving coverage timeserie figure at ' + figsPath + prefix + '.png')
-    plt.savefig(figsPath + fig_name + '.png', bbox_inches='tight')
+    plt.savefig(figsPath + prefix + '.png', bbox_inches='tight')
 
     # save the time serie in pickle format
     print('Saving coverage timeserie data at ' + figsPath + prefix + '.pkl')
-    df.to_pickle(figsPath + file_name + '.pkl')
+    df.to_pickle(figsPath + prefix + '.pkl')
 
 
 # Visualises coverage as a heatmap, split between user-set intervals
@@ -273,6 +268,11 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
     end_year    = str(Date_options['end_year'])
     end_month   = str(Date_options['end_month'])
     end_day     = str(Date_options['end_day'])
+    timestep    = str(Date_options['timestep'])
+    tolerance   = str(Date_options['tolerance'])
+    resolution  = str(config['options']['resolution'])
+    interval    = str(config['options']['interval'])
+    icetracker  = str(config['Metadata']['icetracker'])
 
     # Concatenate start and end dates
     sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
@@ -312,61 +312,35 @@ if __name__ == '__main__':
 
     config = read_config()
 
-    # Initializing more specific ConfigParser objects
-    IO = config['IO']
-    Date_options = config['Date_options']
-    options = config['options']
-    Metadata = config['Metadata']
-    coverage_frequency = config['coverage_frequency']
-
-    data_path = IO['data_folder']
-    output = IO['output_folder']
-    icetracker = Metadata['icetracker']
-
-    start_year = Date_options['start_year']
-    start_month = Date_options['start_month']
-    start_day = Date_options['start_day']
-
-    end_year = Date_options['end_year']
-    end_month = Date_options['end_month']
-    end_day = Date_options['end_day']
-
-    timestep = Date_options['timestep']
-    tolerance = Date_options['tolerance']
-
-    resolution = options['resolution']
-    interval = options['interval']
+    # load options from config
+    viz_ts = config['coverage_frequency']['visualise_timeseries'] == 'True'
+    viz_cf = config['coverage_frequency']['visualise_interval'] == 'True'
 
     # Fetching filter information
-    # raw_list = filter_data(Date_options = Date_options, IO = IO, Metadata = Metadata)
     raw_list = filter_data(config=config)
     config['raw_list'] = raw_list
 
     # Dividing data into intervals if the user desires
-    if coverage_frequency['visualise_timeseries'] == 'True' or coverage_frequency['visualise_interval'] == 'True':
-        # interval_list, date_pairs = divide_intervals(raw_list, Date_options, options)
+    if viz_ts or viz_cf:
         interval_list, date_pairs = divide_intervals(config=config)
 
-    # Compiling master dataframe
-    df = compile_data(raw_paths=config['raw_list'])
+        # Compiling master dataframe
+        df = compile_data(raw_paths=config['raw_list'])
 
-    # Converting points from lat/lon to EPSG 3413
-    xy = convert_to_grid(df['lon'], df['lat'])
+        # Converting points from lat/lon to EPSG 3413
+        xy = convert_to_grid(df['lon'], df['lat'])
 
-    # Plotting coverage heat map
-    # xbins, ybins = visualise_coverage_histogram2d(xy, Date_options)
-    xbins, ybins = get_map_bins(xy, config=config)
+        # Plotting coverage heat map
+        # xbins, ybins = visualise_coverage_histogram2d(xy, Date_options)
+        xbins, ybins = get_map_bins(xy, config=config)
 
-    if coverage_frequency['visualise_timeseries'] == 'True':
-        # Plotting time series of coverage in % of total Arctic Ocean area
-        coverage_timeseries(interval_list, date_pairs, xbins, ybins, config=config)
+        if viz_ts:
+            # Plotting time series of coverage in % of total Arctic Ocean area
+            coverage_timeseries(interval_list, date_pairs, xbins, ybins, config=config)
 
-    if coverage_frequency['visualise_interval'] == 'True':
-        # Plotting coverage heat map in % of intervals with data
-        interval_frequency_histogram2d(interval_list, xbins, ybins, config=config)
-
-    if config['netcdf_tools']['plot_deformation'] == 'True':
-        plot_deformations(path=IO['netcdf_path'],config=config)
+        if viz_cf:
+            # Plotting coverage heat map in % of intervals with data
+            interval_frequency_histogram2d(interval_list, xbins, ybins, config=config)
 
     # Display the run time
     print("--- %s seconds ---" % (time.time() - start_time))

@@ -9,25 +9,10 @@ Configuration file for data / netCDF analysis tools
 This file contains functions for loading and processing user options, raw data, and netCDF files.
 """
 
-import configparser
-import os
-import sys
-from datetime import datetime, timedelta
-import numpy as np
 from netCDF4 import Dataset
-import haversine as hs
-import pandas as pd
+from datetime import datetime, timedelta
 import pyproj
-
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-from matplotlib.colors import Normalize
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from datetime import datetime
 import numpy as np
-import pandas as pd
-import math
 
 def stb(s):
     if s in ['yes','Yes','true','True']:

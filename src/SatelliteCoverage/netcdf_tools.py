@@ -13,31 +13,20 @@ This file contains functions for analysing and processing netCDF files.
 import sys
 sys.path.insert(0, '/aos/home/dringeisen/code/ice-tracker-deformations/')
 
-# from lib2to3.pytree import convert
 from time import strftime
 import time
-
+from src.SatelliteCoverage.config import read_config
+from netCDF4 import Dataset
+from utils import date_to_seconds, seconds_to_date, convert_to_grid
+import numpy as np
 import cartopy.crs as ccrs
 import matplotlib.tri as tri
-import cartopy.feature as cfeature
-import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
-import pyproj
-import math
-from netCDF4 import Dataset
-from src.SatelliteCoverage.utils import *
-from src.SatelliteCoverage.config import read_config
-from shapely.ops import transform
+import cartopy.feature as cfeature
 import os
-
 from tqdm import tqdm
 
-# IGNORING WARNINGS, COMMENT IF YOU WANT TO SEE THEM
-import warnings
-warnings.filterwarnings("ignore")
-
-def plot_start_end_points(path=None, config=None):
+def plot_start_end_points(config=None):
     """
     Plots the start and end points of the triangle vertices on a map.
     Start points are blue, end points are red.
@@ -52,16 +41,27 @@ def plot_start_end_points(path=None, config=None):
     print('--- Plotting start and end points ---')
 
     # Load data from netCDF file
-    data = load_netcdf(path=path, config=config)
+    data = load_netcdf(config=config)
 
     icetracker = data['icetracker']
+
+    # Reading user options
+    Date_options = config['Date_options']
+    start_year, start_month, start_day = Date_options['start_year'], Date_options['start_month'], Date_options['start_day']
+    end_year, end_month, end_day = Date_options['end_year'], Date_options['end_month'], Date_options['end_day']
+    timestep, tolerance = Date_options['timestep'], Date_options['tolerance']
+
+    options = config['options']
+    area_filter, centre_lat, centre_lon, radius = options['area_filter'], options['centre_lat'], options['centre_lon'], options['radius']
 
     start_lats = [data['start_lat1'],data['start_lat2'],data['start_lat3']]
     start_lons = [data['start_lon1'], data['start_lon2'], data['start_lon3']]
     end_lats = [data['end_lat1'], data['end_lat2'], data['end_lat3']]
     end_lons = [data['end_lon1'], data['end_lon2'], data['end_lon3']]
 
-    exp = config['IO']['exp']
+    IO            = config['IO']
+    output_folder = IO['output_folder']
+    exp           = IO['exp']
 
     """
     Plot Preamble
@@ -193,7 +193,7 @@ def filter_area(centre_lat, centre_lon, radius, start_lats, start_lons):
 
 
 # Loads netCDF data
-def load_netcdf(path:str, config=None):
+def load_netcdf(config=None):
     """
     This function reads and loads data from a netCDF file in the same format as those output by the deformation
     calculation script in src/SeaIceDeformation. The user is able to filter the data by time and area,
@@ -208,9 +208,18 @@ def load_netcdf(path:str, config=None):
 
     print('--- Loading data (netcdf) ---')
 
+    path = config['IO']['netcdf_path']
+
     # Reading config
     Date_options = config['Date_options']
     options = config['options']
+
+    # Converting dates for title and file name purposes
+    timestep    = Date_options['timestep']
+    tolerance   = Date_options['tolerance']
+    resolution  = config['options']['resolution']
+    interval    = config['options']['interval']
+    icetracker  = config['Metadata']['icetracker']
 
     # Reading user options
     start_year, start_month, start_day = Date_options['start_year'], Date_options['start_month'], Date_options['start_day']
@@ -364,7 +373,7 @@ def recreate_coordinates(start_lat1, start_lat2, start_lat3, start_lon1, start_l
 
     return new_lat, new_lon
 
-def plot_deformations(path=None, data_in=None, config=None):
+def plot_deformations(data_in=None, config=None):
     """
     This function plots deformations from a netCDF file using matplotlib's ax.tripcolor.
     The function assumes that the netCDF was generated from src/SeaIceDeformation's M01_d03_compute_deformations.py.
@@ -375,10 +384,14 @@ def plot_deformations(path=None, data_in=None, config=None):
     OUTPUTS:
     None -- Saves divergence, shear, and vorticity plots to the output directory
     """
+    try:
+        path = config['IO']['netcdf_path']
+    except:
+        path = None
 
     # Loading data from netcdf as a dictionary
     if path != None and data_in == None :
-        data = load_netcdf(path, config=config)
+        data = load_netcdf(config=config)
     elif path == None and data_in != None :
         data = data_in
     elif path == None and data_in == None or path != None and data != None :
@@ -533,37 +546,11 @@ if __name__ == '__main__':
     # Reading config
     config = read_config()
 
-    # Initializing more specific ConfigParser objects
-    IO = config['IO']
-    Date_options = config['Date_options']
-    options = config['options']
-    meta = config['Metadata']
-    netcdf_tools = config['netcdf_tools']
+    if config['netcdf_tools']['plot_start_end_points'] == 'True':
+        plot_start_end_points(config=config)
 
-    path = IO['netcdf_path']
-    output_folder = IO['output_folder']
-
-    start_year = Date_options['start_year']
-    start_month = Date_options['start_month']
-    start_day = Date_options['start_day']
-
-    end_year = Date_options['end_year']
-    end_month = Date_options['end_month']
-    end_day = Date_options['end_day']
-
-    timestep = Date_options['timestep']
-    tolerance = Date_options['tolerance']
-
-    area_filter = options['area_filter']
-    centre_lat = options['centre_lat']
-    centre_lon = options['centre_lon']
-    radius = options['radius']
-
-    if netcdf_tools['plot_start_end_points'] == 'True':
-        plot_start_end_points(path=path, config=config)
-
-    if netcdf_tools['plot_deformation'] == 'True':
-        plot_deformations(path=path,config=config)
+    if config['netcdf_tools']['plot_deformation'] == 'True':
+        plot_deformations(config=config)
 
     # Display the run time
     print("--- %s seconds ---" % (time.time() - start_time))
