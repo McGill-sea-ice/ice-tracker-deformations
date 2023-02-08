@@ -62,7 +62,35 @@ def convert_to_grid(lon, lat):
 
     # Transform function
     y, x = np.array(pyproj.Transformer.from_crs(in_proj, out_proj).transform(lat, lon))
-    return x, y
+    return y, x
+
+# Converts lat/lon to the north pole stereographic projection (EPSG 3413)
+def convert_from_grid(x, y):
+    """
+    WARNING: INPUT IS LON, LAT (X, Y), AND THE OUTPUT IS ALSO X, Y
+
+    Takes in a point in polar stereographic  and transforms said point to
+    a projection EPSG 4326 (Lat/Lon) .
+
+    x, y {float} -> lon, lat {float}
+
+    INPUTS:
+    x, y -- Float values representing the transformed point in EPSG 3413
+
+    OUTPUTS:
+    lat, lon -- Float values representing a point in WGS 84
+
+    """
+
+    # output projection (lat/lon)
+    out_proj = pyproj.CRS('epsg:4326')
+
+    # input projection (EPSG 3413, Polar Stereographic)
+    in_proj = pyproj.CRS('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
+
+    # Transform function
+    lat, lon = np.array(pyproj.Transformer.from_crs(in_proj, out_proj).transform(x, y))
+    return lat, lon
 
 """
 netCDF Analysis

@@ -13,8 +13,9 @@ This file contains functions for analysing and processing netCDF files.
 import sys
 sys.path.insert(0, '/aos/home/dringeisen/code/ice-tracker-deformations/')
 
-from lib2to3.pytree import convert
+# from lib2to3.pytree import convert
 from time import strftime
+import time
 
 import cartopy.crs as ccrs
 import matplotlib.tri as tri
@@ -51,13 +52,16 @@ def plot_start_end_points(path=None, config=None):
     print('--- Plotting start and end points ---')
 
     # Load data from netCDF file
-    data = load_netcdf(path)
+    data = load_netcdf(path=path, config=config)
 
-    satellite = data['icetracker']
-    start_lats = data['start_lats']
-    start_lons = data['start_lons']
-    end_lats = data['end_lats']
-    end_lons = data['end_lons']
+    icetracker = data['icetracker']
+
+    start_lats = [data['start_lat1'],data['start_lat2'],data['start_lat3']]
+    start_lons = [data['start_lon1'], data['start_lon2'], data['start_lon3']]
+    end_lats = [data['end_lat1'], data['end_lat2'], data['end_lat3']]
+    end_lons = [data['end_lon1'], data['end_lon2'], data['end_lon3']]
+
+    exp = config['IO']['exp']
 
     """
     Plot Preamble
@@ -90,29 +94,32 @@ def plot_start_end_points(path=None, config=None):
     """
 
     # Iterating plotting thrice to plot all three points of the triangles
-    for i in range(2):
+    for i in range(3):
 
         # Converting start/end lat/lons to x/y (North pole stereographic)
         start_x, start_y = convert_to_grid(start_lons[i], start_lats[i])
+        # start_xy = ax.projection.transform_points(trans, np.array(start_lons[i]), np.array(start_lats[i]))
+
         end_x, end_y = convert_to_grid(end_lons[i], end_lats[i])
+        # end_xy = ax.projection.transform_points(trans, np.array(start_lons[i]), np.array(start_lats[i]))
 
         # Plotting start points (Blue)
-        ax.scatter(start_x, start_y, color = 'blue', s = 0.01)
+        ax.scatter(start_x, start_y, color = 'blue', s = 0.1, marker='x')
 
         # Plotting end points (Red)
-        ax.scatter(end_x, end_y, color = 'red', s = 0.01)
+        ax.scatter(end_x, end_y, color = 'red', s = 0.1, marker='+')
 
     # Set title
     ax.set_title(f'Start and End points, {start_year}-{start_month}-{start_day}, {end_year}-{end_month}-{end_day}')
 
     # Set a directory to store figures
-    figsPath =  output_folder + '/' + '/figs/'
+    figsPath =  output_folder + '/' + exp + '/figs/'
 
     # Create directory if it doesn't exist
     os.makedirs(figsPath, exist_ok=True)
 
     # Set prefix for filename
-    prefix = satellite + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
+    prefix = icetracker + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
 
     # Full path of figure
     fig_path = figsPath + prefix + '_start_end_points.png'
@@ -122,6 +129,7 @@ def plot_start_end_points(path=None, config=None):
             os.remove(fig_path)
 
     # Saving figure
+    print('Saving start and end points figure at ',fig_path)
     plt.savefig(fig_path, bbox_inches='tight', dpi=600)
 
 # Filters netCDF data by area
@@ -210,6 +218,7 @@ def load_netcdf(path:str, config=None):
     area_filter, centre_lat, centre_lon, radius = options['area_filter'], options['centre_lat'], options['centre_lon'], options['radius']
 
     # Load netCDF as Dataset from *path*
+    print('loading file: ', path)
     ds = Dataset(path, mode='r')
 
     # Get start / end times from user
@@ -305,9 +314,9 @@ def load_netcdf(path:str, config=None):
     # Closing dataset
     ds.close()
 
-    return {'start_lat1': start_lat1, 'start_lon1': start_lon1, 'end_lats': end_lat1, 'end_lons': end_lon1,
-            'start_lat2': start_lat2, 'start_lon2': start_lon2, 'end_lats': end_lat2, 'end_lons': end_lon2,
-            'start_lat3': start_lat3, 'start_lon3': start_lon3, 'end_lats': end_lat3, 'end_lons': end_lon3,
+    return {'start_lat1': start_lat1, 'start_lon1': start_lon1, 'end_lat1': end_lat1, 'end_lon1': end_lon1,
+            'start_lat2': start_lat2, 'start_lon2': start_lon2, 'end_lat2': end_lat2, 'end_lon2': end_lon2,
+            'start_lat3': start_lat3, 'start_lon3': start_lon3, 'end_lat3': end_lat3, 'end_lon3': end_lon3,
             'div': div, 'shr': shr, 'vrt': vrt,
             'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices,
             'reftime': reftime, 'icetracker': icetracker, 'timestep': timestep,'tolerance': tolerance,
@@ -511,12 +520,16 @@ def plot_deformations(path=None, data_in=None, config=None):
             os.remove(fig_path)
 
         # Save the new figures
-        print('Saving figure at ',fig_path)
+        print('Saving deformation figure at ',fig_path)
         fig.savefig(fig_path, bbox_inches='tight', dpi=600)
 
     return None
 
 if __name__ == '__main__':
+
+    # Retrieve the starting time
+    start_time = time.time()
+
     # Reading config
     config = read_config()
 
@@ -551,3 +564,6 @@ if __name__ == '__main__':
 
     if netcdf_tools['plot_deformation'] == 'True':
         plot_deformations(path=path,config=config)
+
+    # Display the run time
+    print("--- %s seconds ---" % (time.time() - start_time))

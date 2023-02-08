@@ -18,6 +18,7 @@ from netCDF4 import Dataset
 import haversine as hs
 import pandas as pd
 import pyproj
+from tqdm import tqdm
 
 # Loading config file
 def read_config():
@@ -38,13 +39,15 @@ def read_config():
     config.read(cwd + '/options.ini')
 
     # Return a ConfigParser object
-    return config
+    config_dict = {sect: dict(config.items(sect)) for sect in config.sections()}
+
+    return config_dict
 
 """
 Raw Data
 """
 # Compiles raw data into pandas dataframe
-def compile_data(raw_paths):
+def compile_data(raw_paths=None):
 
     """
     Compiles all data points in the list of data files (raw_paths) into a dataframe (df)
@@ -85,7 +88,7 @@ def compile_data(raw_paths):
 
 # Divides raw data into intervals specified by the user
 # def divide_intervals(raw_paths, max_date, min_date, interval):
-def divide_intervals(raw_paths, Date_options = None, Options = None):
+def divide_intervals(config):
     """
     Divides delta-t filtered data into chunks (intervals) of *interval* hours for
     processing.
@@ -104,13 +107,19 @@ def divide_intervals(raw_paths, Date_options = None, Options = None):
                   objects in tuples, all in a list)
 
     """
+
+    raw_paths = config['raw_list']
+    Date_options = config['Date_options']
+    options = config['options']
+
+
     start_year  = str(Date_options['start_year'])
     start_month = str(Date_options['start_month'])
     start_day   = str(Date_options['start_day'])
     end_year    = str(Date_options['end_year'])
     end_month   = str(Date_options['end_month'])
     end_day     = str(Date_options['end_day'])
-    interval    = Options['interval']
+    interval    = options['interval']
 
     # Concatenate start and end dates
     sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
@@ -155,7 +164,7 @@ def divide_intervals(raw_paths, Date_options = None, Options = None):
 
 
 # Filters raw data based on user set parameters
-def filter_data(Date_options = None, IO = None, Metadata = None):
+def filter_data(config=None):
     """
     Filters through the data files located in 'data_path' using the user
     options in 'options.ini'. Outputs a list of paths to data files which
@@ -173,6 +182,10 @@ def filter_data(Date_options = None, IO = None, Metadata = None):
     OUTPUTS:
     raw_paths -- List of file paths {list}
     """
+
+    IO = config['IO']
+    Date_options = config['Date_options']
+    Metadata = config['Metadata']
 
     start_year  = str(Date_options['start_year'])
     start_month = str(Date_options['start_month'])

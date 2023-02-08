@@ -53,7 +53,7 @@ def get_config_args():
     config = configparser.ConfigParser()
     config.read(srcPath + '/namelist.ini')
 
-    # Return a ConfigParser object
+    # Return a dictionnary object
     config_dict = {sect: dict(config.items(sect)) for sect in config.sections()}
 
     return config_dict
