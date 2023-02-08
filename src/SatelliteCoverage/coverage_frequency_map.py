@@ -116,6 +116,7 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     print('--- Plotting coverage time series ---')
 
     resolution = config['options']['resolution']
+    interval = config['options']['interval']
 
     # Setting constants (Adjusting ocean area to units of histogram grid)
     arctic_ocean_area = 15558000 # Square kilometres
@@ -160,13 +161,16 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     # Create directory if it doesn't exist
     os.makedirs(figsPath, exist_ok=True)
 
-    # Title
-    title = icetracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + '_coverage_area_timeseries'+ '.png'
+    # prefix
+    prefix = icetracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + 'int' + interval + '_coverage_area_timeseries'
 
     # Saving figure
-    plt.savefig(figsPath + title, bbox_inches='tight')
+    print('Saving coverage timeserie figure at ' + figsPath + prefix + '.png')
+    plt.savefig(figsPath + fig_name + '.png', bbox_inches='tight')
 
-    print('Saved as ' + figsPath)
+    # save the time serie in pickle format
+    print('Saving coverage timeserie data at ' + figsPath + prefix + '.pkl')
+    df.to_pickle(figsPath + file_name + '.pkl')
 
 
 # Visualises coverage as a heatmap, split between user-set intervals
@@ -296,10 +300,9 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
 
     # Saving figure as YYYYMMDD_YYYYMMDD_timestep_tolerance_resolution_'res'_tracker_freq.png
     prefix = icetracker + '_'+ sDate_str + '_' + eDate_str + '_dt' + timestep + '_tol' + tolerance + '_res' + resolution + '_' + interval
-    plt.savefig(figsPath + prefix + '_' + 'intervalfreq.png', dpi=600)
-
-    print(f'Saved as {prefix}_intervalfreq.png')
-
+    fig_name = figsPath + prefix + '_' + 'intervalfreq.png'
+    print('Saving coverage 2D histogram figure at ' + fig_name)
+    plt.savefig(fig_name, dpi=600)
 
 
 if __name__ == '__main__':
