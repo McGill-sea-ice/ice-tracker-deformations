@@ -13,6 +13,7 @@ import os
 import configparser
 from datetime import datetime, timedelta
 import pandas as pd
+from tqdm import tqdm
 
 
 # Loading config file
@@ -63,7 +64,7 @@ def compile_data(raw_paths=None):
     i = 0
 
     # Appending each file's datapoints to the dataframe
-    for filepath in raw_paths:
+    for filepath in tqdm(raw_paths, position=1, leave=False):
 
         # Initialize temporary dataframe
         temp_df = pd.DataFrame()

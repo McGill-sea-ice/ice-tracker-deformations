@@ -109,7 +109,7 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     df = pd.DataFrame(columns=['percentage', 'start_date', 'end_date'])
 
     # Iterating over each interval
-    for i in tqdm(range(len(interval_list))):
+    for i in tqdm(range(len(interval_list)), position=0, leave=True):
         # Loads data and converts to x/y for each interval
         interval_df = compile_data(raw_paths=interval_list[i])
 
@@ -191,7 +191,7 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
     H = np.array([])
 
     # Iterating over each interval
-    for i in tqdm(range(len(interval_list))):
+    for i in tqdm(range(len(interval_list)), position=0, leave=True):
         # Loads data and converts to x/y for each interval
         interval_df = compile_data(interval_list[i])
 
