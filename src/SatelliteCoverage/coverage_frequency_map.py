@@ -157,7 +157,7 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     os.makedirs(figsPath, exist_ok=True)
 
     # prefix
-    prefix = icetracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + 'int' + interval + '_coverage_area_timeseries'
+    prefix = icetracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + '_int' + interval + '_coverage_area_timeseries'
 
     # Saving figure
     print('Saving coverage timeserie figure at ' + figsPath + prefix + '.png')
@@ -299,7 +299,7 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
         ax.set_title(f'{tracker}, {sDate_title} to {eDate_title}, all timesteps, {resolution} km, {interval} hr intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_timestep_tolerance_resolution_'res'_tracker_freq.png
-    prefix = icetracker + '_'+ sDate_str + '_' + eDate_str + '_dt' + timestep + '_tol' + tolerance + '_res' + resolution + '_' + interval
+    prefix = icetracker + '_'+ sDate_str + '_' + eDate_str + '_dt' + timestep + '_tol' + tolerance + '_res' + resolution + '_int' +  interval
     fig_name = figsPath + prefix + '_' + 'intervalfreq.png'
     print('Saving coverage 2D histogram figure at ' + fig_name)
     plt.savefig(fig_name, dpi=600)
