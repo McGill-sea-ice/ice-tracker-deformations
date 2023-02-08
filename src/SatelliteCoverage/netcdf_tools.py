@@ -286,7 +286,7 @@ def load_netcdf(config=None):
     tolerance = ds.getncattr('tolerance')
     trackingerror = ds.getncattr('trackingError')
 
-    if area_filter == 'True':
+    if area_filter:
         print('--- Filtering by area ---')
         # Filtering by area
         start_lats = [start_lat1, start_lat2, start_lat3]
@@ -551,10 +551,10 @@ if __name__ == '__main__':
     # Reading config
     config = read_config()
 
-    if config['netcdf_tools']['plot_start_end_points'] == 'True':
+    if config['netcdf_tools']['plot_start_end_points']:
         plot_start_end_points(config=config)
 
-    if config['netcdf_tools']['plot_deformation'] == 'True':
+    if config['netcdf_tools']['plot_deformation']:
         plot_deformations(config=config)
 
     # Display the run time

@@ -315,8 +315,8 @@ if __name__ == '__main__':
     config = read_config()
 
     # load options from config
-    viz_ts = config['coverage_frequency']['visualise_timeseries'] == 'True'
-    viz_cf = config['coverage_frequency']['visualise_interval'] == 'True'
+    viz_ts = config['coverage_frequency']['visualise_timeseries']
+    viz_cf = config['coverage_frequency']['visualise_interval']
 
     # Fetching filter information
     raw_list = filter_data(config=config)

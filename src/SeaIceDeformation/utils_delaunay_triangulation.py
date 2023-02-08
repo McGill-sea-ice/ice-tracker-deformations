@@ -26,14 +26,7 @@ from scipy.spatial import Delaunay
 import utils_grid_coord_system as grid_coord_system
 import utils_load_data as load_data
 from tqdm import tqdm
-
-def stb(s):
-    if s in ['yes','Yes','true','True']:
-         return True
-    elif s in ['no','False','No','false']:
-         return False
-    else:
-         raise ValueError
+from config import stb
 
 def delaunay_triangulation(config=None):
 

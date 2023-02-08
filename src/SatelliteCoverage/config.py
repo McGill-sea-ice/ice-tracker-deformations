@@ -14,7 +14,7 @@ import configparser
 from datetime import datetime, timedelta
 import pandas as pd
 from tqdm import tqdm
-
+from utils import stb
 
 # Loading config file
 def read_config():
@@ -36,6 +36,15 @@ def read_config():
 
     # Return a ConfigParser object
     config_dict = {sect: dict(config.items(sect)) for sect in config.sections()}
+
+    # Iterate through the dictionnary to change strings to bools
+    for key in config_dict:
+        if isinstance(config_dict[key], dict):
+            for keyy in config_dict[key]:
+                if isinstance(config_dict[key][keyy], str):
+                    config_dict[key][keyy] = stb(config_dict[key][keyy])
+        elif isinstance(config_dict[key], str):
+            config_dict[key] = stb(config_dict[key])
 
     return config_dict
 

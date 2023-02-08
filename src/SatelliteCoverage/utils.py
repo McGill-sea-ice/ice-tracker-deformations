@@ -14,13 +14,14 @@ from datetime import datetime, timedelta
 import pyproj
 import numpy as np
 
+# Function to change strings to bools
 def stb(s):
     if s in ['yes','Yes','true','True']:
          return True
     elif s in ['no','False','No','false']:
          return False
     else:
-         raise ValueError
+         return s
 
 # Converts lat/lon to the north pole stereographic projection (EPSG 3413)
 def convert_to_grid(lon, lat):
