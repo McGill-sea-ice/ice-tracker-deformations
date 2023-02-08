@@ -84,7 +84,7 @@ def compile_data(raw_paths=None):
 
 # Divides raw data into intervals specified by the user
 # def divide_intervals(raw_paths, max_date, min_date, interval):
-def divide_intervals(config):
+def divide_intervals(config=None):
     """
     Divides delta-t filtered data into chunks (intervals) of *interval* hours for
     processing.
