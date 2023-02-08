@@ -136,7 +136,7 @@ def delaunay_triangulation(config=None):
                 writer.writerows(row_list)
 
         # Else, and if we are overwriting, delete the existing triangulation file and subsequent calculations file
-        elif config.config['Processing_options'].getboolean('overwrite'):
+        elif stb(config['Processing_options']['overwrite']):
 
             try:
                 os.remove(triangulated_path)

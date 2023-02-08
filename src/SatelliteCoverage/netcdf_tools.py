@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 import cartopy.feature as cfeature
 import os
 from tqdm import tqdm
+import haversine as hs
 
 def plot_start_end_points(config=None):
     """
@@ -132,7 +133,7 @@ def plot_start_end_points(config=None):
     plt.savefig(fig_path, bbox_inches='tight', dpi=600)
 
 # Filters netCDF data by area
-def filter_area(centre_lat, centre_lon, radius, start_lats, start_lons):
+def filter_area(start_lats=None, start_lons=None, config=None):
     """
     This function filters data read from a netCDF (Stored as NumPy arrays) by area.
     The user specifies a centre point in WGS 84 (Lat/Lon) and a radius in km, which are then
@@ -153,6 +154,9 @@ def filter_area(centre_lat, centre_lon, radius, start_lats, start_lons):
     """
 
     print('--- Filtering area ---')
+
+    options = config['options']
+    centre_lat, centre_lon, radius = options['centre_lat'], options['centre_lon'], options['radius']
 
     # Turning inputs into floats if they aren't already
     centre_lat, centre_lon, radius = float(centre_lat), float(centre_lon), float(radius)
@@ -223,7 +227,7 @@ def load_netcdf(config=None):
     # Reading user options
     start_year, start_month, start_day = Date_options['start_year'], Date_options['start_month'], Date_options['start_day']
     end_year, end_month, end_day = Date_options['end_year'], Date_options['end_month'], Date_options['end_day']
-    area_filter, centre_lat, centre_lon, radius = options['area_filter'], options['centre_lat'], options['centre_lon'], options['radius']
+    area_filter= options['area_filter']
 
     # Load netCDF as Dataset from *path*
     print('loading file: ', path)
@@ -285,7 +289,9 @@ def load_netcdf(config=None):
     if area_filter == 'True':
         print('--- Filtering by area ---')
         # Filtering by area
-        area_indices = filter_area(centre_lat, centre_lon, radius, start_lats, start_lons)
+        start_lats = [start_lat1, start_lat2, start_lat3]
+        start_lons = [start_lon1, start_lon2, start_lon3]
+        area_indices = filter_area(start_lats=start_lats, start_lons=start_lons, config=config)
 
         # Applying filter
         start_time = start_time[area_indices]
