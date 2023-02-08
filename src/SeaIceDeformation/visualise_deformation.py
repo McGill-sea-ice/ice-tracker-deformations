@@ -94,7 +94,7 @@ def visualise_deformations():
         triangles = np.stack((vertice_idx1, vertice_idx2, vertice_idx3), axis=-1)
 
         # tranform the coordinates already to improve the plot efficiency
-        new_coords = ax_div.projection.transform_points(trans, np.array(s_lon), np.array(s_lat))
+        new_coords = proj.transform_points(trans, np.array(s_lon), np.array(s_lat))
 
         # create one triangulation object
         tria = tri.Triangulation(new_coords[:,0], new_coords[:,0], triangles=triangles)
