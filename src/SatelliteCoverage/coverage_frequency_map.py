@@ -9,8 +9,10 @@ Tools for analysing raw data files
 This file contains functions for analysing raw data files' spatial and temporal coverage.
 """
 
+import os
 import sys
-sys.path.insert(0, '/aos/home/dringeisen/code/ice-tracker-deformations/')
+parent = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0,parent)
 
 import time
 from config import *
@@ -331,7 +333,6 @@ if __name__ == '__main__':
         xy = convert_to_grid(df['lon'], df['lat'])
 
         # Plotting coverage heat map
-        # xbins, ybins = visualise_coverage_histogram2d(xy, Date_options)
         xbins, ybins = get_map_bins(xy, config=config)
 
         if viz_ts:

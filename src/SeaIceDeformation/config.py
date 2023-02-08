@@ -181,7 +181,6 @@ def filter_data(config=None):
 
 
 def get_datapaths(config=None):
-    # def get_datapaths(raw_paths, output_path, exp, start_year, start_month, start_day, icetracker):
     ''' (str, str, str, str) -> dict[str, Any]
 
     Function that creates lists that store data file paths for every dataset

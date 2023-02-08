@@ -62,7 +62,6 @@ from math import sqrt
 import numpy as np
 from netCDF4 import Dataset
 
-# import config
 import utils_datetime
 import utils_deformation_computations as deformation_comp
 import utils_load_data as load_data

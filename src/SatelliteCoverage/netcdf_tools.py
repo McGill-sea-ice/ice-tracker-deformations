@@ -10,14 +10,16 @@ This file contains functions for analysing and processing netCDF files.
 
 """
 
+import os
 import sys
-sys.path.insert(0, '/aos/home/dringeisen/code/ice-tracker-deformations/')
+parent = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0,parent)
 
 from time import strftime
 import time
-from src.SatelliteCoverage.config import read_config
+from SatelliteCoverage.config import read_config
 from netCDF4 import Dataset
-from utils import date_to_seconds, seconds_to_date, convert_to_grid
+from SatelliteCoverage.utils import date_to_seconds, seconds_to_date, convert_to_grid
 import numpy as np
 import cartopy.crs as ccrs
 import matplotlib.tri as tri
@@ -98,10 +100,7 @@ def plot_start_end_points(config=None):
 
         # Converting start/end lat/lons to x/y (North pole stereographic)
         start_x, start_y = convert_to_grid(start_lons[i], start_lats[i])
-        # start_xy = ax.projection.transform_points(trans, np.array(start_lons[i]), np.array(start_lats[i]))
-
         end_x, end_y = convert_to_grid(end_lons[i], end_lats[i])
-        # end_xy = ax.projection.transform_points(trans, np.array(start_lons[i]), np.array(start_lats[i]))
 
         # Plotting start points (Blue)
         ax.scatter(start_x, start_y, color = 'blue', s = 0.1, marker='x')
