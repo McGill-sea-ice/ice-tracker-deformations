@@ -105,6 +105,7 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     land_10m = cfeature.NaturalEarthFeature('physical', 'land', '10m')
     land_polygons = list(land_10m.geometries())
 
+    # !!!!!!!!! CHANGE THIS FOR CONVERT_TO/FROM_GRID FUNCTION....!!!!!!!!!!!!!
     out_proj = pyproj.Proj(init='epsg:4326')
     in_proj = pyproj.Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
     dxi = (1000*float(resolution))
@@ -365,7 +366,7 @@ if __name__ == '__main__':
             # Plotting time series of coverage in % of total ocean area above
             # a given 'ref_lat', or of covered area in km^2 above a 'ref_lat'
             # Note: if 'ref_lat' is equal to zero, it takes all available data.
-            coverage_timeseries(interval_list, date_pairs, xbins, ybins, config=config, percentage=False, ref_lat=0)
+            coverage_timeseries(interval_list, date_pairs, xbins, ybins, config=config, percentage=True, ref_lat=70)
 
         if viz_cf:
             # Plotting coverage heat map in % of intervals with data
