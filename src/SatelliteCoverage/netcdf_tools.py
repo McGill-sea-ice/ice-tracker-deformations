@@ -28,6 +28,7 @@ import cartopy.feature as cfeature
 import os
 from tqdm import tqdm
 import haversine as hs
+from utils import get_prefix
 
 def plot_start_end_points(config=None):
     """
@@ -119,7 +120,7 @@ def plot_start_end_points(config=None):
     os.makedirs(figsPath, exist_ok=True)
 
     # Set prefix for filename
-    prefix = icetracker + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
+    prefix = get_prefix(config=config)
 
     # Full path of figure
     fig_path = figsPath + prefix + '_start_end_points.png'
@@ -502,7 +503,7 @@ def plot_deformations(data_in=None, config=None):
 
         # Add a title
         ax.set_title(title + '\n' + start_year + '-' + start_month + '-' + start_day + ' to ' +
-                        end_year + '-' + end_month + '-' + end_day + ', ' + timestep + 'hr')
+                        end_year + '-' + end_month + '-' + end_day + ', ' + timestep + 'hr +- ' + tolerance )
 
         # Add gridlines
         ax.gridlines()
@@ -523,7 +524,7 @@ def plot_deformations(data_in=None, config=None):
 
     itr = config['Metadata']['icetracker']
     # Create a prefix for the figure filenames
-    prefix = itr + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
+    prefix = get_prefix(config = config)
 
     # Create the figure filenames
     div_path   = figsPath + prefix + '_div.png'

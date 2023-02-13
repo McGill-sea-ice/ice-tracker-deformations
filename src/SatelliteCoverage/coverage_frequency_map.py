@@ -159,15 +159,18 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     os.makedirs(figsPath, exist_ok=True)
 
     # prefix
-    prefix = icetracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + '_int' + interval + '_coverage_area_timeseries'
+    prefix = get_prefix(config=config)
+
+    # figname
+    figname = prefix + '_res' + resolution  + '_int' + interval + '_coverage_area_timeseries'
 
     # Saving figure
-    print('Saving coverage timeserie figure at ' + figsPath + prefix + '.png')
-    plt.savefig(figsPath + prefix + '.png', bbox_inches='tight')
+    print('Saving coverage timeserie figure at ' + figsPath + figname + '.png')
+    plt.savefig(figsPath + figname + '.png', bbox_inches='tight')
 
     # save the time serie in pickle format
-    print('Saving coverage timeserie data at ' + figsPath + prefix + '.pkl')
-    df.to_pickle(figsPath + prefix + '.pkl')
+    print('Saving coverage timeserie data at ' + figsPath + figname + '.pkl')
+    df.to_pickle(figsPath + figname + '.pkl')
 
 
 # Visualises coverage as a heatmap, split between user-set intervals
@@ -301,8 +304,9 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
         ax.set_title(f'{tracker}, {sDate_title} to {eDate_title}, all timesteps, {resolution} km, {interval} hr intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_timestep_tolerance_resolution_'res'_tracker_freq.png
-    prefix = icetracker + '_'+ sDate_str + '_' + eDate_str + '_dt' + timestep + '_tol' + tolerance + '_res' + resolution + '_int' +  interval
-    fig_name = figsPath + prefix + '_' + 'intervalfreq.png'
+    prefix = get_prefix(config=config)
+
+    fig_name = figsPath + prefix + '_res' + resolution  + '_int' + interval + 'intervalfreq.png'
     print('Saving coverage 2D histogram figure at ' + fig_name)
     plt.savefig(fig_name, dpi=600)
 

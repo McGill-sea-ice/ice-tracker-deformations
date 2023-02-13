@@ -144,3 +144,26 @@ def seconds_to_date(path:str, date_sec_in):
 
     return date_out
 
+def get_prefix(config=None):
+
+    Date_options = config['Date_options']
+    sy = str(Date_options['start_year'])
+    ey = str(Date_options['end_year'])
+    sm = str(Date_options['start_month'])
+    em = str(Date_options['end_month'])
+    sd = str(Date_options['start_day'])
+    ed = str(Date_options['end_day'])
+    ts = str(Date_options['timestep'])
+    to = str(Date_options['tolerance'])
+    it = str(config['Metadata']['icetracker'])
+
+    prefix = it + '_' + sy + sm + sd + '_' + ey + em + ed + '_dt' + ts + '_tol' + to
+
+    if config['options']['area_filter'] :
+        cla = str(config['options']['centre_lat'])
+        clo = str(config['options']['centre_lon'])
+        rad = str(config['options']['radius'])
+
+        prefix = prefix + '_filt_lat'+ str(cla) + '_lon' + str(clo) + '_rad' + str(rad)
+
+    return prefix
