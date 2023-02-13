@@ -142,17 +142,6 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
 
     output_folder = config['IO']['output_folder']
     exp = config['IO']['exp']
-    icetracker = config['Metadata']['icetracker']
-    Date_options = config['Date_options']
-    # Converting dates for title and file name purposes
-    start_year  = str(Date_options['start_year'])
-    start_month = str(Date_options['start_month'])
-    start_day   = str(Date_options['start_day'])
-    end_year    = str(Date_options['end_year'])
-    end_month   = str(Date_options['end_month'])
-    end_day     = str(Date_options['end_day'])
-    timestep    = str(Date_options['timestep'])
-    tolerance   = str(Date_options['tolerance'])
 
     # Set a directory to store figures
     figsPath =  output_folder + '/' + exp + '/figs/'
