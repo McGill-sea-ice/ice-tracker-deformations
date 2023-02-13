@@ -10,11 +10,11 @@ This file contains functions for analysing and processing netCDF files.
 
 """
 
+# Loading from default packages
 import os
 import sys
 parent = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0,parent)
-
 from time import strftime
 import time
 from netCDF4 import Dataset
@@ -23,7 +23,6 @@ import cartopy.crs as ccrs
 import matplotlib.tri as tri
 import matplotlib.pyplot as plt
 import cartopy.feature as cfeature
-import os
 from tqdm import tqdm
 import haversine as hs
 

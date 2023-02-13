@@ -9,9 +9,8 @@ Code that provides a function that loads the project RIOPS grid.
 
 '''
 
-
+# Loading from default packages
 from netCDF4 import Dataset
-
 
 def load_grid(cropped_grid):
     ''' (str) -> dict[str, array]

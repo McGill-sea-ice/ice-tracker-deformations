@@ -11,13 +11,14 @@ Configuration script for data processing
 
 '''
 
+# Loading from default packages
 import configparser
 import os
 import re
 import sys
 from datetime import datetime, timedelta
 
-import utils_datetime
+# Loading from other files
 import utils_get_data_paths as get_data_paths
 
 

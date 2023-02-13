@@ -9,9 +9,9 @@ Visualisation tools for netcdf RIOPS grid data.
 
 '''
 
+# Loading from default packages
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
-
 
 def show_distCoast(LAT, LON, DIST):
     ''' (float(j,i), float(j,i), float(j,i)) -> none

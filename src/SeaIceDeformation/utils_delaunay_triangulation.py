@@ -18,15 +18,16 @@ Module that performs a Delaunay triangulation on a set of X/Y data points and st
 
 '''
 
+# Loading from default packages
 import csv
 import os
-
 from scipy.spatial import Delaunay
-
-import utils_grid_coord_system as grid_coord_system
-import utils_load_data as load_data
 from tqdm import tqdm
-from config import stb
+
+# Loading from other files
+import SeaIceDeformation.utils_grid_coord_system as grid_coord_system
+import SeaIceDeformation.utils_load_data as load_data
+from SeaIceDeformation.config import stb
 
 def delaunay_triangulation(config=None):
 

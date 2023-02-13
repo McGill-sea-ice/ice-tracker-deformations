@@ -9,6 +9,7 @@ Configuration file for data / netCDF analysis tools
 This file contains functions for loading and processing user options, raw data, and netCDF files.
 """
 
+# Loading from default packages
 from netCDF4 import Dataset
 from datetime import datetime, timedelta
 import pyproj

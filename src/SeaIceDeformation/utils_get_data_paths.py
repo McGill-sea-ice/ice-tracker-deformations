@@ -11,7 +11,6 @@ output folder, an experiment name, and a starting date.
 
 '''
 
-
 def get_triangulated_csv_path(raw_filename, output_path, exp):
     ''' (str, str, str) -> str
 

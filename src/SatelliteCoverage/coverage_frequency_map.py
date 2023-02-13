@@ -9,20 +9,22 @@ Tools for analysing raw data files
 This file contains functions for analysing raw data files' spatial and temporal coverage.
 """
 
+# Loading from default packages
 import os
 import sys
 parent = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0,parent)
-
 import time
-from config import *
-from utils import *
 import math
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import matplotlib as mpl
 import cartopy.feature as cfeature
+
+# Loading from other files
+from SatelliteCoverage.config import *
+from SatelliteCoverage.utils import *
 
 # Generate map x/y bins that will be used to compute frequency at each cell on map
 def get_map_bins(xy, config=None):
