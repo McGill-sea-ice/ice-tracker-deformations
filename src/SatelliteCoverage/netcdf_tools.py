@@ -503,7 +503,7 @@ def plot_deformations(data_in=None, config=None):
 
         # Add a title
         ax.set_title(title + '\n' + start_year + '-' + start_month + '-' + start_day + ' to ' +
-                        end_year + '-' + end_month + '-' + end_day + ', ' + timestep + 'hr +- ' + tolerance )
+                        end_year + '-' + end_month + '-' + end_day + ', ' + timestep + 'hr \u00B1 ' + tolerance )
 
         # Add gridlines
         ax.gridlines()
