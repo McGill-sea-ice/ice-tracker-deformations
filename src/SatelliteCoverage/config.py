@@ -42,7 +42,8 @@ def read_config():
     if os.path.exists(cwd + usr_fname):
         fname = usr_fname
     elif os.path.exists(cwd + def_fname):
-        print('--- Using default parameters ---')
+        print('--- Using default parameters options.def ---')
+        print('--- Create the options.ini file to define user parameters ---')
         fname = def_fname
     else:
         print('/!/ No config file found! /!/')

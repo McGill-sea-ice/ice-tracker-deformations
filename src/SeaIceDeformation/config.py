@@ -67,7 +67,8 @@ def get_config_args():
     if os.path.exists(srcPath + usr_fname):
         fname = usr_fname
     elif os.path.exists(srcPath + def_fname):
-        print('--- Using default parameters ---')
+        print('--- Using default parameters namelist.def ---')
+        print('--- Create the namelits.ini file to define user parameters ---')
         fname = def_fname
     else:
         print('/!/ No config file found! /!/')

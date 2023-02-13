@@ -26,3 +26,7 @@
 
 # Ignore .txt files
 *.txt
+
+# Ignore the user-defined option namelists
+src/SeaIceDeformation/namelist.ini
+src/SatelliteCoverage/options.ini
