@@ -59,7 +59,19 @@ def get_config_args():
 
     # Read the namelist.ini file using configparser
     config = configparser.ConfigParser()
-    config.read(srcPath + '/namelist.ini')
+
+    # Choose the default or user file
+    def_fname = '/namelist.def'
+    usr_fname = '/namelist.ini'
+    if os.path.exists(srcPath + usr_fname):
+        fname = usr_fname
+    elif os.path.exists(srcPath + def_fname):
+        print('--- Using default parameters ---')
+        fname = def_fname
+    else:
+        print('/!/ No config file found! /!/')
+
+    config.read(srcPath + fname)
 
     # Return a dictionnary object
     config_dict = {sect: dict(config.items(sect)) for sect in config.sections()}

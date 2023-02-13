@@ -1,0 +1,93 @@
+#
+#   Author: Beatrice Duval (bdu002)
+#
+# ______________________________________________________________________________________________
+# IO
+#
+#   data_folder:   Absolute path of the folder from which datasets are selected for processing.
+#
+#   output_folder: Absolute path of the folder in which the algorithm's outputs are stored.
+#
+#   exp:           Name of the current experience. Outputs will be stored under output_folder/exp/.
+#
+# ______________________________________________________________________________________________
+# Grid
+#
+#   riops_grid:   Absolute path of the netcdf file that stores the original RIOPS grid (used
+#                 in M00_d00_crop_grid module).
+#
+#   bathymetry:   Absolute path of the netcdf file that stores a bathymetry dataset (used in
+#                 M00_d00_crop_grid module).
+#
+#   cropped_grid: Absolute path of the netcdf file that stores the cropped RIOPS grid (created
+#                 in M00_d00_crop_grid module).
+#
+# ______________________________________________________________________________________________
+# Metadata
+#
+#   icetracker:    (S1/RCM) Sea-ice motion tracker
+#
+#   tracking_error: Resolution or tracking error (meters) of te sea-ice motion tracker.
+#
+#
+# ______________________________________________________________________________________________
+# Processing options
+#
+#   overwrite: (yes/no) When the overwrite argument is set to 'yes', all raw data sets that have
+#              already been processed will be re-processed and the resulting files for all stages
+#              of data processing will be overwritten. Otherwise, raw data sets that have already
+#              been processed will not be re-processed. In any case, an output NETCDF4 file is
+#              written with all datasets listed in config for which there is a calculations CSV file.
+#
+#   visualise: (yes/no) When the visualise argument is set to 'yes',  plots of total sea-ice de-
+#              formations, divergence and shear strain rates are created and saved under
+#              output_folder/exp/figs. These plots combine output data from all processed datasets.
+#
+# ______________________________________________________________________________________________
+# Date options
+#
+#   start_year:  (YYYY) Starting year of the datasets to process.
+#
+#   start_month: (MM) Starting month of the datasets to process.
+#
+#   start_day:   (DD) Starting day of the datasets to process.
+#
+#   end_year:    (YYYY) Ending year of the datasets to process.
+#
+#   end_month:   (MM) Ending month of the datasets to process.
+#
+#   end_day:     (DD) Ending day of the datasets to process.
+#
+#   timestep:     (int) Desired timestep of image pairs (0 for all timesteps) in hours
+#
+#   tolerance:   (int) Tolerance of timestep in hours
+
+[IO]
+data_folder = /storage/dringeisen/S1_RCM_tracked_pairs/
+output_folder = /storage/dringeisen/S1_RCM_tracked_pairs/outputs/
+exp = TESTING_dringeisen
+
+[Grid]
+riops_grid = /home/socn000/env_ubuntu-18.04-skylake-64/eccc-ppp4/datafiles/constants/oce/repository/master/CONCEPTS/creg012pe/grid/coordinates_CREG12_ext.nc
+bathymetry = /home/socn000/env_ubuntu-18.04-skylake-64/eccc-ppp4/datafiles/constants/oce/repository/master/CONCEPTS/creg012pe/grid/bathy_creg12_ext_mask.nc
+cropped_grid = ./data/00_grid/cropped_grid.nc
+
+[Metadata]
+icetracker = RCMS1
+tracking_error = 200
+
+[Processing_options]
+overwrite = yes
+visualise = yes
+
+[Date_options]
+start_year = 2020
+start_month = 03
+start_day = 01
+
+end_year = 2020
+end_month = 03
+end_day = 31
+
+timestep = 72
+tolerance = 5

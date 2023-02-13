@@ -166,7 +166,7 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
 
     # Saving figure
     print('Saving coverage timeserie figure at ' + figsPath + figname + '.png')
-    plt.savefig(figsPath + figname + '.png', bbox_inches='tight')
+    plt.savefig(figsPath + figname + '.png', bbox_inches='tight', dpi=600)
 
     # save the time serie in pickle format
     print('Saving coverage timeserie data at ' + figsPath + figname + '.pkl')
@@ -306,9 +306,9 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
     # Saving figure as YYYYMMDD_YYYYMMDD_timestep_tolerance_resolution_'res'_tracker_freq.png
     prefix = get_prefix(config=config)
 
-    fig_name = figsPath + prefix + '_res' + resolution  + '_int' + interval + 'intervalfreq.png'
+    fig_name = figsPath + prefix + '_res' + resolution  + '_int' + interval + 'coverage_area_map.png'
     print('Saving coverage 2D histogram figure at ' + fig_name)
-    plt.savefig(fig_name, dpi=600)
+    plt.savefig(fig_name, dpi=600, bbox_inches='tight')
 
 
 if __name__ == '__main__':

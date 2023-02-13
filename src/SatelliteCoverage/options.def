@@ -1,0 +1,97 @@
+# Author: Lekima Yakuden
+# GitHub: LekiYak
+#
+# ----------------------------------
+# [IO]
+#   data_folder:    Absolute path to directory containing data files {str}
+#
+#   output_folder:  Absolute path to directory intended to store outputs {str}
+#
+#   netcdf_path:    Absolute path to netCDF file {str}
+#
+# [meta]
+#   icetracker:    Name of satellite(s) {str}
+#
+# [options]
+#   start_year:     Start year of analysis {int}
+#
+#   start_month:    Start month of analysis {int}
+#
+#   start_day:      Start day of analysis {int}
+#
+#   end_year:       End year of analysis {int}
+#
+#   end_month:      End month of analysis {int}
+#
+#   end_day:        End day of analysis {int}
+#
+#   timestep:       Desired timestep to investigate in hours {int}
+#
+#   tolerance:      Permitted "wiggleroom" on either side of *timestep* to be
+#                   investigated, in hours. i.e. timestep = 24 and tolerance = 3 will
+#                   force the program to consider all files with time intervals
+#                   of 24 +-3 hours (21~27 hours). {int}
+#
+#   interval:       Desired interval length in hours (Used in area coverage
+#                   timeseries and analysis) {int}
+#
+#   resolution:     Resolution of heatmap grid in km (per side). i.e.
+#                   resolution = 10 will plot the heatmap with 10x10 km grid cells. {float}
+#
+#   area_filter:    Boolean to turn the area filtering function on/off {bool}
+#
+#   centre_lat:     Latitude of centre of area filter {float}
+#
+#   centre_lon:     Longitude of centre of area filter {float}
+#
+#   radius:         Radius of area filter in km {float}
+#
+# [coverage_frequency]
+#   visualise_timeseries:   Boolean to turn the timeseries visualisation on/off {bool}
+#
+#   visualise_interval:     Boolean to turn the interval visualisation on/off {bool}
+#
+# [netcdf_tools]
+#   plot_start_end_points:  Boolean to turn the start/end point visualisation on/off {bool}
+#
+#   plot_deformation:       Boolean to turn the deformation visualisation on/off {bool}
+
+
+[IO]
+data_folder = /storage/dringeisen/S1_RCM_tracked_pairs/
+output_folder = /storage/dringeisen/S1_RCM_tracked_pairs/outputs/
+netcdf_path   = /storage/dringeisen/S1_RCM_tracked_pairs/outputs/TESTING_dringeisen/05_output/RCMS1SID_20200301_20200331_dt72_tol5_dx.nc
+exp = TESTING_dringeisen
+
+[Metadata]
+icetracker = RCMS1
+
+[Date_options]
+start_year  = 2020
+start_month = 03
+start_day   = 01
+
+end_year    = 2020
+end_month   = 03
+end_day     = 31
+
+timestep    = 72
+tolerance   = 5
+
+[options]
+interval    = 24
+resolution  = 10
+
+area_filter = True
+centre_lat  = 71
+centre_lon  = -160
+radius      = 700
+
+[coverage_frequency]
+# Coverage visualisation is on by default, the other functions rely on it
+visualise_timeseries = True
+visualise_interval   = True
+
+[netcdf_tools]
+plot_start_end_points = True
+plot_deformation      = True

@@ -159,11 +159,12 @@ def get_prefix(config=None):
 
     prefix = it + '_' + sy + sm + sd + '_' + ey + em + ed + '_dt' + ts + '_tol' + to
 
-    if config['options']['area_filter'] :
-        cla = str(config['options']['centre_lat'])
-        clo = str(config['options']['centre_lon'])
-        rad = str(config['options']['radius'])
+    if 'options' in config:
+        if config['options']['area_filter'] :
+            cla = str(config['options']['centre_lat'])
+            clo = str(config['options']['centre_lon'])
+            rad = str(config['options']['radius'])
 
-        prefix = prefix + '_filt_lat'+ str(cla) + '_lon' + str(clo) + '_rad' + str(rad)
+            prefix = prefix + '_filt_lat'+ str(cla) + '_lon' + str(clo) + '_rad' + str(rad)
 
     return prefix

@@ -17,9 +17,7 @@ sys.path.insert(0,parent)
 
 from time import strftime
 import time
-from SatelliteCoverage.config import read_config
 from netCDF4 import Dataset
-from SatelliteCoverage.utils import date_to_seconds, seconds_to_date, convert_to_grid
 import numpy as np
 import cartopy.crs as ccrs
 import matplotlib.tri as tri
@@ -28,7 +26,10 @@ import cartopy.feature as cfeature
 import os
 from tqdm import tqdm
 import haversine as hs
-from utils import get_prefix
+
+# Code from other files
+from SatelliteCoverage.config import read_config
+from SatelliteCoverage.utils import date_to_seconds, seconds_to_date, convert_to_grid, get_prefix
 
 def plot_start_end_points(config=None):
     """
