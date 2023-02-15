@@ -75,7 +75,7 @@ def coverage_histogram2d(xy, xbins_map, ybins_map):
 
 
 # Plots timeseries of spatial coverage
-def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=None, percentage=False, ref_lat=0):
+def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=None):
     """
     Plots a time series of the area coverage (in % of the Arctic ocean) for a given list of lists containing
     data file paths [interval_list], where each list of files defines a user-set interval (i.e. interval of 72hrs)
@@ -95,6 +95,8 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     """
     print('--- Plotting coverage time series ---')
 
+    percentage = stb(config['options']['percentage'])
+    ref_lat = float(config['options']['ref_lat'])
     resolution = config['options']['resolution']
     interval = config['options']['interval']
 
@@ -366,7 +368,7 @@ if __name__ == '__main__':
             # Plotting time series of coverage in % of total ocean area above
             # a given 'ref_lat', or of covered area in km^2 above a 'ref_lat'
             # Note: if 'ref_lat' is equal to zero, it takes all available data.
-            coverage_timeseries(interval_list, date_pairs, xbins, ybins, config=config, percentage=True, ref_lat=70)
+            coverage_timeseries(interval_list, date_pairs, xbins, ybins, config=config)
 
         if viz_cf:
             # Plotting coverage heat map in % of intervals with data

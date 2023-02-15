@@ -84,6 +84,9 @@ tolerance   = 8
 interval    = 24
 resolution  = 20
 
+percentage  = False
+ref_lat = 70
+
 area_filter = False
 centre_lat  = 71
 centre_lon  = -160
