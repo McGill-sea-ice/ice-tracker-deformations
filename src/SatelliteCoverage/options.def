@@ -58,31 +58,36 @@
 
 
 [IO]
-data_folder = /storage/dringeisen/S1_RCM_tracked_pairs/
-output_folder = /storage/dringeisen/S1_RCM_tracked_pairs/outputs/
-netcdf_path   = /storage/dringeisen/S1_RCM_tracked_pairs/outputs/TESTING_dringeisen/05_output/RCMS1SID_20200301_20200331_dt72_tol5_dx.nc
-exp = TESTING_dringeisen
+data_folder   = /storage2/common/S1_RCM_tracked_pairs/
+output_folder = /storage2/amelie/ice-tracker-deformations/outputs/
+#netcdf_path   = /storage2/common/S1_RCM_datasets/RCMS1SID_20171001_20220331_dt12_tol4_dx.nc
+netcdf_path   = /storage2/common/S1_RCM_datasets/RCMS1SID_20171001_20220331_dt24_tol8_dx.nc
+#netcdf_path   = /storage2/common/S1_RCM_datasets/RCMS1SID_20171001_20220331_dt72_tol24_dx.nc
+exp =
 
 [Metadata]
 icetracker = RCMS1
 
 [Date_options]
-start_year  = 2020
+start_year  = 2021
 start_month = 03
-start_day   = 01
+start_day   = 10
 
-end_year    = 2020
+end_year    = 2021
 end_month   = 03
-end_day     = 31
+end_day     = 12
 
-timestep    = 72
-tolerance   = 5
+timestep    = 24
+tolerance   = 8
 
 [options]
 interval    = 24
-resolution  = 10
+resolution  = 20
 
-area_filter = True
+percentage  = False
+ref_lat = 70
+
+area_filter = False
 centre_lat  = 71
 centre_lon  = -160
 radius      = 700
@@ -93,5 +98,5 @@ visualise_timeseries = True
 visualise_interval   = True
 
 [netcdf_tools]
-plot_start_end_points = True
+plot_start_end_points = False
 plot_deformation      = True

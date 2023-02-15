@@ -18,8 +18,12 @@ import time
 import math
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from matplotlib import dates as mdates
 import cartopy.crs as ccrs
 import matplotlib as mpl
+from shapely.geometry import Point
+from shapely.prepared import prep
+import pyproj
 import cartopy.feature as cfeature
 
 # Loading from other files
@@ -27,32 +31,22 @@ from SatelliteCoverage.config import *
 from SatelliteCoverage.utils import *
 
 # Generate map x/y bins that will be used to compute frequency at each cell on map
-def get_map_bins(xy, config=None):
+def get_map_bins(config=None):
 
     resolution = float(config['options']['resolution'])
 
     # Upper (u) and lower (l) extents of map_x, map_y (metres)
-    lxextent = -3100000
-    uxextent = 2500000
-    uyextent = 2500000
-    lyextent = -1900000
-
-    # Grid resolution calculations
-    xscale = uxextent - lxextent
-    yscale = uyextent - lyextent
-
-    xscale = math.floor(xscale / (1000 * float(resolution)))
-    yscale = math.floor(yscale / (1000 * float(resolution)))
-
-    # Extracting x and y coordinates of datapoints (Numpy arrays)
-    xi, yj = xy
+    lxextent = -4400000
+    uxextent =  2200000
+    uyextent =  2700000
+    lyextent = -2500000
 
     # Make bins vectors
-    dxi = (np.max(xi)-np.min(xi)) / xscale
-    dyj = (np.max(yj)-np.min(yj)) / yscale
+    dxi = (1000*float(resolution))
+    dyj = (1000*float(resolution))
 
-    xbins_out = np.arange(np.min(xi),np.max(xi)+dxi,dxi)
-    ybins_out = np.arange(np.min(yj),np.max(yj)+dyj,dyj)
+    xbins_out = np.arange(lxextent,uxextent+dxi,dxi)
+    ybins_out = np.arange(lyextent,uyextent+dyj,dyj)
 
     return xbins_out, ybins_out
 
@@ -102,15 +96,43 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     """
     print('--- Plotting coverage time series ---')
 
+    percentage = stb(config['options']['percentage'])
+    ref_lat = int(config['options']['ref_lat'])
     resolution = config['options']['resolution']
     interval = config['options']['interval']
 
-    # Setting constants (Adjusting ocean area to units of histogram grid)
-    arctic_ocean_area = 15558000 # Square kilometres
-    arctic_ocean_area = arctic_ocean_area / int(resolution) ** 2
+    # Default to plotting area if min_lat is lower than 50N.
+    if ref_lat < 50 :
+        ref_lat = 0
+        percentage = False
+
+    # Get land points and map cells center lat/lon
+    land_10m = cfeature.NaturalEarthFeature('physical', 'land', '10m')
+    land_polygons = list(land_10m.geometries())
+
+    dxi = (1000*float(resolution))
+    dyj = (1000*float(resolution))
+    xx_center, yy_center = np.meshgrid(xbins_map[0:-1]+0.5*dxi, ybins_map[0:-1]+0.5*dyj)
+    cell_center_lat,cell_center_lon = convert_from_grid(xx_center, yy_center)
+
+    # Check which map point is land
+    points = [Point(point) for point in zip(cell_center_lon.ravel(), cell_center_lat.ravel())]
+    land_polygons_prep = [prep(land_polygon) for land_polygon in land_polygons]
+    land_lon = []
+    land_lat = []
+    for land_polygon in land_polygons_prep:
+        land_lon.extend([point.coords[0][0] for point in filter(land_polygon.covers, points)])
+        land_lat.extend([point.coords[0][1] for point in filter(land_polygon.covers, points)])
+    land_lat = np.array(land_lat)
+    land_lon = np.array(land_lon)
+
+    # Compute reference area for percentage
+    n_pts_land = len(land_lat[land_lat >= ref_lat])
+    n_pts_tot = len(cell_center_lat[cell_center_lat >= ref_lat])
+    ref_area = (n_pts_tot-n_pts_land)*(int(resolution)** 2)
 
     # Initialising dataframe to store interval data
-    df = pd.DataFrame(columns=['percentage', 'start_date', 'end_date'])
+    df = pd.DataFrame(columns=['area','percentage', 'start_date', 'end_date'])
 
     # Iterating over each interval
     for i in tqdm(range(len(interval_list)), position=0, leave=True):
@@ -121,24 +143,38 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
         try:
             xy = convert_to_grid(interval_df['lon'], interval_df['lat'])
         except KeyError:
+            df.loc[len(df.index)] = [np.nan, np.nan, start_date, end_date]
             continue
 
         # Generates histogram (2d np array)
         histogram = coverage_histogram2d(xy, xbins_map, ybins_map)
+        histogram = histogram.T
+        histogram[histogram > 0] = 1
+        histogram[histogram < 1] = np.nan
 
         # Computing area of arctic ocean covered
-        covered_area = len((np.flatnonzero(histogram)))
-        covered_percentage = (covered_area / arctic_ocean_area) * 100
+        covered_area = (np.nansum(histogram[cell_center_lat >= ref_lat]))*(int(resolution)** 2)
+        covered_percentage = (covered_area / ref_area) * 100
 
         # Extracting dates
         start_date = date_pairs[i][0]
         end_date = date_pairs[i][1]
 
         # Appending to main dataframe
-        df.loc[len(df.index)] = [covered_percentage, start_date, end_date]
+        df.loc[len(df.index)] = [covered_area, covered_percentage, start_date, end_date]
+
 
     # Plotting timeseries
-    df.plot(x='start_date', y='percentage', kind='line')
+    f, ax = plt.subplots()
+    # ax.set_xlabel('Date')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    f.autofmt_xdate()
+    if percentage:
+        ax.plot(df['start_date'],df['percentage'],'-')
+        ax.set_ylabel('Coverage ( % of ocean points above ' + str(ref_lat) + '$^{\circ}$N)')
+    else:
+        ax.plot(df['start_date'],df['area']/(1e6),'-')
+        ax.set_ylabel('Coverage ' + ('above '+ str(ref_lat) + '$^{\circ}$N ')*(ref_lat > 0) + '(10$^{6}~$km$^2$)')
 
     output_folder = config['IO']['output_folder']
     exp = config['IO']['exp']
@@ -153,7 +189,7 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     prefix = get_prefix(config=config)
 
     # figname
-    figname = prefix + '_res' + resolution  + '_int' + interval + '_coverage_area_timeseries'
+    figname = prefix + '_res' + resolution  + '_int' + interval + (ref_lat > 0)*('_reflat' + str(ref_lat)) + '_coverage'+ percentage*'_percent' +'_area_timeseries'
 
     # Saving figure
     print('Saving coverage timeserie figure at ' + figsPath + figname + '.png')
@@ -162,6 +198,8 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     # save the time serie in pickle format
     print('Saving coverage timeserie data at ' + figsPath + figname + '.pkl')
     df.to_pickle(figsPath + figname + '.pkl')
+
+    return None
 
 
 # Visualises coverage as a heatmap, split between user-set intervals
@@ -321,22 +359,19 @@ if __name__ == '__main__':
     if viz_ts or viz_cf:
         interval_list, date_pairs = divide_intervals(config=config)
 
-        # Compiling master dataframe
-        df = compile_data(raw_paths=config['raw_list'])
-
-        # Converting points from lat/lon to EPSG 3413
-        xy = convert_to_grid(df['lon'], df['lat'])
-
-        # Plotting coverage heat map
-        xbins, ybins = get_map_bins(xy, config=config)
+        # Define map bins for coverage analysis
+        xbins, ybins = get_map_bins(config=config)
 
         if viz_ts:
-            # Plotting time series of coverage in % of total Arctic Ocean area
+            # Plotting time series of coverage in % of total ocean area above
+            # a given 'ref_lat', or of covered area in km^2 above a 'ref_lat'
+            # Note: if 'ref_lat' is equal to zero, it takes all available data.
             coverage_timeseries(interval_list, date_pairs, xbins, ybins, config=config)
 
         if viz_cf:
             # Plotting coverage heat map in % of intervals with data
             interval_frequency_histogram2d(interval_list, xbins, ybins, config=config)
+
 
     # Display the run time
     print("--- %s seconds ---" % (time.time() - start_time))
