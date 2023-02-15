@@ -10,7 +10,7 @@
 #   netcdf_path:    Absolute path to netCDF file {str}
 #
 # [meta]
-#   ice_tracker:    Name of satellite(s) {str}
+#   icetracker:    Name of satellite(s) {str}
 #
 # [options]
 #   start_year:     Start year of analysis {int}
