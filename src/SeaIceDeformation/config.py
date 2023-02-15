@@ -19,8 +19,8 @@ import sys
 from datetime import datetime, timedelta
 
 # Loading from other files
-import utils_get_data_paths as get_data_paths
-
+import SeaIceDeformation.utils_get_data_paths as get_data_paths
+from SatelliteCoverage.utils import stb
 
 '''
 _______________________________________________________________________
@@ -31,15 +31,6 @@ DEFINE ERROR CLASS
 # Create a class of errors for datasets selection
 class datasetSelectionError(Exception):
     pass
-
-# Function to change strings to bools
-def stb(s):
-    if s in ['yes','Yes','true','True']:
-         return True
-    elif s in ['no','False','No','false']:
-         return False
-    else:
-         return s
 
 '''
 _______________________________________________________________________
