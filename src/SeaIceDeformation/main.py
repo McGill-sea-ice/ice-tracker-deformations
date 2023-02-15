@@ -8,20 +8,19 @@ Main script for data processing
 Script that executes all steps towards the calculation of sea-ice deformations and displays the execution time.
 
 '''
+
+# Loading from default packages
 import os
 import sys
 parent = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0,parent)
-
 import time
 
+# Loading from other files
 from config import get_config
-
 from utils_delaunay_triangulation import stb, delaunay_triangulation
 from utils_compute_deformations import compute_deformations
-
 from visualise_deformation import visualise_deformations
-
 from SatelliteCoverage.netcdf_tools import plot_deformations
 
 # Retrieve the starting time

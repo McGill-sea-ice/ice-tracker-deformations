@@ -11,15 +11,16 @@ Configuration script for data processing
 
 '''
 
+# Loading from default packages
 import configparser
 import os
 import re
 import sys
 from datetime import datetime, timedelta
 
-import utils_datetime
-import utils_get_data_paths as get_data_paths
-
+# Loading from other files
+import SeaIceDeformation.utils_get_data_paths as get_data_paths
+from SatelliteCoverage.utils import stb
 
 '''
 _______________________________________________________________________
@@ -30,7 +31,6 @@ DEFINE ERROR CLASS
 # Create a class of errors for datasets selection
 class datasetSelectionError(Exception):
     pass
-
 
 '''
 _______________________________________________________________________
@@ -51,10 +51,32 @@ def get_config_args():
 
     # Read the namelist.ini file using configparser
     config = configparser.ConfigParser()
-    config.read(srcPath + '/namelist.ini')
+
+    # Choose the default or user file
+    def_fname = '/namelist.def'
+    usr_fname = '/namelist.ini'
+    if os.path.exists(srcPath + usr_fname):
+        fname = usr_fname
+    elif os.path.exists(srcPath + def_fname):
+        print('--- Using default parameters namelist.def ---')
+        print('--- Create the namelits.ini file to define user parameters ---')
+        fname = def_fname
+    else:
+        print('/!/ No config file found! /!/')
+
+    config.read(srcPath + fname)
 
     # Return a dictionnary object
     config_dict = {sect: dict(config.items(sect)) for sect in config.sections()}
+
+    # Iterate through the dictionnary to change strings to bools
+    for key in config_dict:
+        if isinstance(config_dict[key], dict):
+            for keyy in config_dict[key]:
+                if isinstance(config_dict[key][keyy], str):
+                    config_dict[key][keyy] = stb(config_dict[key][keyy])
+        elif isinstance(config_dict[key], str):
+            config_dict[key] = stb(config_dict[key])
 
     return config_dict
 

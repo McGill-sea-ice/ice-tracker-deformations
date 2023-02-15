@@ -9,12 +9,15 @@ Configuration file for data / netCDF analysis tools
 This file contains functions for loading and processing user options, raw data, and netCDF files.
 """
 
+# import from default packages
 import os
 import configparser
 from datetime import datetime, timedelta
 import pandas as pd
 from tqdm import tqdm
 
+# Imports from other files
+from SatelliteCoverage.utils import stb
 
 # Loading config file
 def read_config():
@@ -32,10 +35,33 @@ def read_config():
 
     # Reading options.ini
     config = configparser.ConfigParser()
-    config.read(cwd + '/options.ini')
+
+    # Choose the default or user file
+    def_fname = '/options.def'
+    usr_fname = '/options.ini'
+    if os.path.exists(cwd + usr_fname):
+        fname = usr_fname
+    elif os.path.exists(cwd + def_fname):
+        print('--- Using default parameters options.def ---')
+        print('--- Create the options.ini file to define user parameters ---')
+        fname = def_fname
+    else:
+        print('/!/ No config file found! /!/')
+
+    #opening the file
+    config.read(cwd + fname)
 
     # Return a ConfigParser object
     config_dict = {sect: dict(config.items(sect)) for sect in config.sections()}
+
+    # Iterate through the dictionnary to change strings to bools
+    for key in config_dict:
+        if isinstance(config_dict[key], dict):
+            for keyy in config_dict[key]:
+                if isinstance(config_dict[key][keyy], str):
+                    config_dict[key][keyy] = stb(config_dict[key][keyy])
+        elif isinstance(config_dict[key], str):
+            config_dict[key] = stb(config_dict[key])
 
     return config_dict
 

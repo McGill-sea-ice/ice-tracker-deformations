@@ -10,24 +10,25 @@ This file contains functions for analysing and processing netCDF files.
 
 """
 
+# Loading from default packages
 import os
 import sys
 parent = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0,parent)
-
 from time import strftime
 import time
-from SatelliteCoverage.config import read_config
 from netCDF4 import Dataset
-from SatelliteCoverage.utils import date_to_seconds, seconds_to_date, convert_to_grid
 import numpy as np
 import cartopy.crs as ccrs
 import matplotlib.tri as tri
 import matplotlib.pyplot as plt
 import cartopy.feature as cfeature
-import os
 from tqdm import tqdm
 import haversine as hs
+
+# Code from other files
+from SatelliteCoverage.config import read_config
+from SatelliteCoverage.utils import date_to_seconds, seconds_to_date, convert_to_grid, get_prefix
 
 def plot_start_end_points(config=None):
     """
@@ -119,7 +120,7 @@ def plot_start_end_points(config=None):
     os.makedirs(figsPath, exist_ok=True)
 
     # Set prefix for filename
-    prefix = icetracker + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
+    prefix = get_prefix(config=config)
 
     # Full path of figure
     fig_path = figsPath + prefix + '_start_end_points.png'
@@ -286,7 +287,7 @@ def load_netcdf(config=None):
     tolerance = ds.getncattr('tolerance')
     trackingerror = ds.getncattr('trackingError')
 
-    if area_filter == 'True':
+    if area_filter:
         print('--- Filtering by area ---')
         # Filtering by area
         start_lats = [start_lat1, start_lat2, start_lat3]
@@ -502,7 +503,7 @@ def plot_deformations(data_in=None, config=None):
 
         # Add a title
         ax.set_title(title + '\n' + start_year + '-' + start_month + '-' + start_day + ' to ' +
-                        end_year + '-' + end_month + '-' + end_day + ', ' + timestep + 'hr')
+                        end_year + '-' + end_month + '-' + end_day + ', ' + timestep + 'hr \u00B1 ' + tolerance )
 
         # Add gridlines
         ax.gridlines()
@@ -523,7 +524,7 @@ def plot_deformations(data_in=None, config=None):
 
     itr = config['Metadata']['icetracker']
     # Create a prefix for the figure filenames
-    prefix = itr + '_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + str(timestep) + '_tol' + str(tolerance)
+    prefix = get_prefix(config = config)
 
     # Create the figure filenames
     div_path   = figsPath + prefix + '_div.png'
@@ -551,10 +552,10 @@ if __name__ == '__main__':
     # Reading config
     config = read_config()
 
-    if config['netcdf_tools']['plot_start_end_points'] == 'True':
+    if config['netcdf_tools']['plot_start_end_points']:
         plot_start_end_points(config=config)
 
-    if config['netcdf_tools']['plot_deformation'] == 'True':
+    if config['netcdf_tools']['plot_deformation']:
         plot_deformations(config=config)
 
     # Display the run time

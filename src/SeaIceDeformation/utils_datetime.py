@@ -11,6 +11,7 @@ seconds between two Datetime objects.
 
 '''
 
+# Loading from default packages
 import datetime
 
 def dataDatetimes(p):

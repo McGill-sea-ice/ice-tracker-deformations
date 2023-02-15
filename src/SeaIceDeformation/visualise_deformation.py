@@ -10,17 +10,18 @@ using the datasets listed in a txt file (see config).
 
 '''
 
+# Loading from default packages
 import os
-
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import numpy as np
-
 import config
-import utils_load_data as load_data
 from tqdm import tqdm
+
+# Loading from other files
+import SeaIceDeformation.utils_load_data as load_data
 
 def visualise_deformations():
 

@@ -9,20 +9,22 @@ Tools for analysing raw data files
 This file contains functions for analysing raw data files' spatial and temporal coverage.
 """
 
+# Loading from default packages
 import os
 import sys
 parent = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0,parent)
-
 import time
-from config import *
-from utils import *
 import math
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import matplotlib as mpl
 import cartopy.feature as cfeature
+
+# Loading from other files
+from SatelliteCoverage.config import *
+from SatelliteCoverage.utils import *
 
 # Generate map x/y bins that will be used to compute frequency at each cell on map
 def get_map_bins(xy, config=None):
@@ -140,17 +142,6 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
 
     output_folder = config['IO']['output_folder']
     exp = config['IO']['exp']
-    icetracker = config['Metadata']['icetracker']
-    Date_options = config['Date_options']
-    # Converting dates for title and file name purposes
-    start_year  = str(Date_options['start_year'])
-    start_month = str(Date_options['start_month'])
-    start_day   = str(Date_options['start_day'])
-    end_year    = str(Date_options['end_year'])
-    end_month   = str(Date_options['end_month'])
-    end_day     = str(Date_options['end_day'])
-    timestep    = str(Date_options['timestep'])
-    tolerance   = str(Date_options['tolerance'])
 
     # Set a directory to store figures
     figsPath =  output_folder + '/' + exp + '/figs/'
@@ -159,15 +150,18 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     os.makedirs(figsPath, exist_ok=True)
 
     # prefix
-    prefix = icetracker + '_' + start_year + start_month + start_day + '_' +end_year + end_month + end_day + '_dt'+ timestep + '_tol' + tolerance + '_res' + resolution  + '_int' + interval + '_coverage_area_timeseries'
+    prefix = get_prefix(config=config)
+
+    # figname
+    figname = prefix + '_res' + resolution  + '_int' + interval + '_coverage_area_timeseries'
 
     # Saving figure
-    print('Saving coverage timeserie figure at ' + figsPath + prefix + '.png')
-    plt.savefig(figsPath + prefix + '.png', bbox_inches='tight')
+    print('Saving coverage timeserie figure at ' + figsPath + figname + '.png')
+    plt.savefig(figsPath + figname + '.png', bbox_inches='tight', dpi=600)
 
     # save the time serie in pickle format
-    print('Saving coverage timeserie data at ' + figsPath + prefix + '.pkl')
-    df.to_pickle(figsPath + prefix + '.pkl')
+    print('Saving coverage timeserie data at ' + figsPath + figname + '.pkl')
+    df.to_pickle(figsPath + figname + '.pkl')
 
 
 # Visualises coverage as a heatmap, split between user-set intervals
@@ -301,10 +295,11 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
         ax.set_title(f'{tracker}, {sDate_title} to {eDate_title}, all timesteps, {resolution} km, {interval} hr intervals')
 
     # Saving figure as YYYYMMDD_YYYYMMDD_timestep_tolerance_resolution_'res'_tracker_freq.png
-    prefix = icetracker + '_'+ sDate_str + '_' + eDate_str + '_dt' + timestep + '_tol' + tolerance + '_res' + resolution + '_int' +  interval
-    fig_name = figsPath + prefix + '_' + 'intervalfreq.png'
+    prefix = get_prefix(config=config)
+
+    fig_name = figsPath + prefix + '_res' + resolution  + '_int' + interval + '_coverage_area_map.png'
     print('Saving coverage 2D histogram figure at ' + fig_name)
-    plt.savefig(fig_name, dpi=600)
+    plt.savefig(fig_name, dpi=600, bbox_inches='tight')
 
 
 if __name__ == '__main__':
@@ -315,8 +310,8 @@ if __name__ == '__main__':
     config = read_config()
 
     # load options from config
-    viz_ts = config['coverage_frequency']['visualise_timeseries'] == 'True'
-    viz_cf = config['coverage_frequency']['visualise_interval'] == 'True'
+    viz_ts = config['coverage_frequency']['visualise_timeseries']
+    viz_cf = config['coverage_frequency']['visualise_interval']
 
     # Fetching filter information
     raw_list = filter_data(config=config)

@@ -9,18 +9,20 @@ Configuration file for data / netCDF analysis tools
 This file contains functions for loading and processing user options, raw data, and netCDF files.
 """
 
+# Loading from default packages
 from netCDF4 import Dataset
 from datetime import datetime, timedelta
 import pyproj
 import numpy as np
 
+# Function to change strings to bools
 def stb(s):
     if s in ['yes','Yes','true','True']:
          return True
     elif s in ['no','False','No','false']:
          return False
     else:
-         raise ValueError
+         return s
 
 # Converts lat/lon to the north pole stereographic projection (EPSG 3413)
 def convert_to_grid(lon, lat):
@@ -143,3 +145,27 @@ def seconds_to_date(path:str, date_sec_in):
 
     return date_out
 
+def get_prefix(config=None):
+
+    Date_options = config['Date_options']
+    sy = str(Date_options['start_year'])
+    ey = str(Date_options['end_year'])
+    sm = str(Date_options['start_month'])
+    em = str(Date_options['end_month'])
+    sd = str(Date_options['start_day'])
+    ed = str(Date_options['end_day'])
+    ts = str(Date_options['timestep'])
+    to = str(Date_options['tolerance'])
+    it = str(config['Metadata']['icetracker'])
+
+    prefix = it + '_' + sy + sm + sd + '_' + ey + em + ed + '_dt' + ts + '_tol' + to
+
+    if 'options' in config:
+        if config['options']['area_filter'] :
+            cla = str(config['options']['centre_lat'])
+            clo = str(config['options']['centre_lon'])
+            rad = str(config['options']['radius'])
+
+            prefix = prefix + '_filt_lat'+ str(cla) + '_lon' + str(clo) + '_rad' + str(rad)
+
+    return prefix
