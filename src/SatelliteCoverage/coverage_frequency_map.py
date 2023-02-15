@@ -18,6 +18,7 @@ import time
 import math
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from matplotlib import dates as mdates
 import cartopy.crs as ccrs
 import matplotlib as mpl
 from shapely.geometry import Point
@@ -96,27 +97,25 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     print('--- Plotting coverage time series ---')
 
     percentage = stb(config['options']['percentage'])
-    ref_lat = float(config['options']['ref_lat'])
+    ref_lat = int(config['options']['ref_lat'])
     resolution = config['options']['resolution']
     interval = config['options']['interval']
 
-    # Compute reference area for percentage
-    if percentage and (ref_lat == 0): # Default to plotting area if min_lat is zero.
+    # Default to plotting area if min_lat is lower than 50N.
+    if ref_lat < 50 :
+        ref_lat = 0
         percentage = False
 
+    # Get land points and map cells center lat/lon
     land_10m = cfeature.NaturalEarthFeature('physical', 'land', '10m')
     land_polygons = list(land_10m.geometries())
 
-    # !!!!!!!!! CHANGE THIS FOR CONVERT_TO/FROM_GRID FUNCTION....!!!!!!!!!!!!!
-    out_proj = pyproj.Proj(init='epsg:4326')
-    in_proj = pyproj.Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
     dxi = (1000*float(resolution))
     dyj = (1000*float(resolution))
     xx_center, yy_center = np.meshgrid(xbins_map[0:-1]+0.5*dxi, ybins_map[0:-1]+0.5*dyj)
-    cell_center_lon,cell_center_lat = pyproj.transform(in_proj,out_proj,xx_center,yy_center)
-    xx_corner, yy_corner = np.meshgrid(xbins_map[0:], ybins_map[0:])
-    cell_corner_lon,cell_corner_lat = pyproj.transform(in_proj,out_proj,xx_corner,yy_corner)
+    cell_center_lat,cell_center_lon = convert_from_grid(xx_center, yy_center)
 
+    # Check which map point is land
     points = [Point(point) for point in zip(cell_center_lon.ravel(), cell_center_lat.ravel())]
     land_polygons_prep = [prep(land_polygon) for land_polygon in land_polygons]
     land_lon = []
@@ -127,19 +126,10 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     land_lat = np.array(land_lat)
     land_lon = np.array(land_lon)
 
+    # Compute reference area for percentage
     n_pts_land = len(land_lat[land_lat >= ref_lat])
     n_pts_tot = len(cell_center_lat[cell_center_lat >= ref_lat])
     ref_area = (n_pts_tot-n_pts_land)*(int(resolution)** 2)
-
-    # fig2 = plt.figure(figsize=(8, 8))
-    # ax2 = fig2.add_axes([0, 0, 1, 1], projection=ccrs.NorthPolarStereo(central_longitude=0))
-    # ax2.add_feature(land_10m, zorder=0, edgecolor='black', facecolor='black')
-    # ax2.scatter(land_lon, land_lat, transform=ccrs.PlateCarree(),
-    #        s=12, marker='x', c='red', alpha=0.4, zorder=3)
-    # ax2.scatter(lon_cell, lat_cell, transform=ccrs.PlateCarree(),
-    #        s=12, marker='o', c='blue', alpha=0.4, zorder=2)
-    # ax2.gridlines(draw_labels=True)
-    # plt.show()
 
     # Initialising dataframe to store interval data
     df = pd.DataFrame(columns=['area','percentage', 'start_date', 'end_date'])
@@ -173,13 +163,18 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
         # Appending to main dataframe
         df.loc[len(df.index)] = [covered_area, covered_percentage, start_date, end_date]
 
-    print(len(df['start_date']), len(np.unique(df['start_date'])))
 
     # Plotting timeseries
+    f, ax = plt.subplots()
+    # ax.set_xlabel('Date')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    f.autofmt_xdate()
     if percentage:
-        df.plot(x='start_date', y='percentage', kind='line')
+        ax.plot(df['start_date'],df['percentage'],'-')
+        ax.set_ylabel('Coverage ( % of ocean points above ' + str(ref_lat) + '$^{\circ}$N)')
     else:
-        df.plot(x='start_date', y='area', kind='line')
+        ax.plot(df['start_date'],df['area']/(1e6),'-')
+        ax.set_ylabel('Coverage ' + ('above '+ str(ref_lat) + '$^{\circ}$N ')*(ref_lat > 0) + '(10$^{6}~$km$^2$)')
 
     output_folder = config['IO']['output_folder']
     exp = config['IO']['exp']
@@ -190,8 +185,11 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     # Create directory if it doesn't exist
     os.makedirs(figsPath, exist_ok=True)
 
+    # prefix
+    prefix = get_prefix(config=config)
+
     # figname
-    figname = prefix + '_res' + resolution  + '_int' + interval + '_reflat' + str(ref_lat) + '_coverage'+ percentage*'_percent' +'_area_timeseries'
+    figname = prefix + '_res' + resolution  + '_int' + interval + (ref_lat > 0)*('_reflat' + str(ref_lat)) + '_coverage'+ percentage*'_percent' +'_area_timeseries'
 
     # Saving figure
     print('Saving coverage timeserie figure at ' + figsPath + figname + '.png')
