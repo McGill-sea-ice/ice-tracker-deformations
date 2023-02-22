@@ -17,6 +17,8 @@ import os
 import re
 import sys
 from datetime import datetime, timedelta
+import pandas as pd
+import matplotlib.pyplot as plt
 
 # Loading from other files
 import SeaIceDeformation.utils_get_data_paths as get_data_paths
@@ -151,6 +153,43 @@ def filter_data(config=None):
         sat_list = ['rcm/']
     else:
         sys.exit("Oh, original, but satellite data other than RCM or S1 is not defined!!")
+
+    if config['Processing_options']['viz_tstp_dist']:
+        dens = True
+        step = 1
+        bins = range(0,100+step,step)
+        plt.figure()
+        interv={}
+        hist={}
+        interv['all'] =[]
+
+        # df = pd.DataFrame(columns=['bins', 'all'] + sat_list)
+
+        for sat in sat_list:
+            interv[sat]=[]
+            for year in range(int(2018), int(2022)+1): # all the years
+                if os.path.exists(date_path + sat + str(year) + '/'):
+                    data_path = date_path + sat + str(year) + '/'
+
+                    for filename in os.listdir(data_path):
+                        # Extracting initial and final dates from data file names
+                        iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
+                        fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
+                        diff = (fDate - iDate).total_seconds() / 3600.0
+                        # print(diff)
+                        interv[sat] += [float(diff)]
+
+            interv['all'] += interv[sat]
+            hist[sat] = plt.hist(interv[sat], bins=bins, density=dens, label=sat, histtype='step')
+        hist['all'] = plt.hist(interv['all'], bins=bins, density=dens, label='all', histtype='step')
+        # print(hist)
+        plt.legend()
+        plt.ylabel('PDF of the interval')
+        plt.xlabel('Interval length')
+
+        output_folder = config['IO']['output_folder']  + '/' + config['IO']['exp'] + '/figs/'
+        print('Saving timestep distribution figure at ' + output_folder + 'dt_hist.png')
+        plt.savefig(output_folder + 'dt_hist.png', bbox_inches='tight', dpi=600)
 
     for sat_type in sat_list:
         for year in range(int(start_year), int(end_year)+1):
