@@ -139,11 +139,14 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
         # Loads data and converts to x/y for each interval
         interval_df = compile_data(raw_paths=interval_list[i])
 
+        # Extracting dates
+        start_date = date_pairs[i][0]
+        end_date = date_pairs[i][1]
+
         # Skips empty lists
         try:
             xy = convert_to_grid(interval_df['lon'], interval_df['lat'])
         except KeyError:
-            df.loc[len(df.index)] = [np.nan, np.nan, start_date, end_date]
             continue
 
         # Generates histogram (2d np array)
@@ -155,10 +158,6 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
         # Computing area of arctic ocean covered
         covered_area = (np.nansum(histogram[cell_center_lat >= ref_lat]))*(int(resolution)** 2)
         covered_percentage = (covered_area / ref_area) * 100
-
-        # Extracting dates
-        start_date = date_pairs[i][0]
-        end_date = date_pairs[i][1]
 
         # Appending to main dataframe
         df.loc[len(df.index)] = [covered_area, covered_percentage, start_date, end_date]
@@ -240,7 +239,7 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
         histogram = coverage_histogram2d(xy, xbins_map, ybins_map)
         histogram[histogram > 0.0] = 1.0
         # Changing size of total histogram (only on first run)
-        if i == 0:
+        if H.shape == (0,):
             H.resize(histogram.shape)
 
 
