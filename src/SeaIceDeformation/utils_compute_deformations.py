@@ -79,8 +79,8 @@ def compute_deformations(config=None):
     sTime, eTime, \
         sLat1, sLat2, sLat3, sLon1, sLon2, sLon3, \
         eLat1, eLat2, eLat3, eLon1, eLon2, eLon3, \
-        div, shr, vrt, idx1, idx2, idx3, no, idx_sLat1, idx_sLat2, idx_sLat3, A_l, dudx_l, dudy_l, dvdx_l, dvdy_l \
-        = ([] for i in range(29))
+        div, shr, vrt, idx1, idx2, idx3, no, idx_sLat1, idx_sLat2, idx_sLat3, A_l, dudx_l, dudy_l, dvdx_l, dvdy_l, sat_l \
+        = ([] for i in range(30))
 
     # Retrieve the starting date common to all processed datasets (from namelist.ini)
     Date_options = config['Date_options']
@@ -129,6 +129,7 @@ def compute_deformations(config=None):
             sLon    = raw_data['sLon']    # Starting longitudes
             eLat    = raw_data['eLat']    # Ending latitudes
             eLon    = raw_data['eLon']    # Ending longitudes
+            sat     = (0)*('rcm' in raw_path)+(1)*('s1' in raw_path)
 
         except load_data.DataFileError as dfe:
             # The error has already been printed in the triangulation stage
@@ -145,7 +146,7 @@ def compute_deformations(config=None):
         dt = utils_datetime.dT( (start, end) ) / 86400
 
         # Create a header and a list of data rows that will be used to create the output csv file
-        header = ['no.', 'A', 'dudx', 'dudy', 'dvdx', 'dvdy', 'eps_I', 'eps_II', 'vrt', 'eps_tot']
+        header = ['no.', 'Sat',  'A', 'dudx', 'dudy', 'dvdx', 'dvdy', 'eps_I', 'eps_II', 'vrt', 'eps_tot']
         row_list = [header]
 
         # Get the number of triangles in the current dataset
@@ -213,13 +214,15 @@ def compute_deformations(config=None):
             '''
 
             # Add the data row corresponding to the current triangle to the list of data rows
-            row_list.append( [n, A, dudx, dudy, dvdx, dvdy, eps_I, eps_II, rot, eps_tot] )
+            row_list.append( [n, sat, A, dudx, dudy, dvdx, dvdy, eps_I, eps_II, rot, eps_tot] )
 
 
             '''
             _________________________________________________________________________________________
             POPULATE NETCDF ARRAYS
             '''
+            # Add the satellite to the netcdf lists
+            sat_l.append(sat)
 
             # Add the divergence and the shear strain rates to the netcdf lists
             div.append(eps_I)
@@ -312,6 +315,8 @@ def compute_deformations(config=None):
     start_time = output_ds.createVariable('start_time', 'u4', 'x') # Start and end times
     end_time   = output_ds.createVariable('end_time', 'u4', 'x')
 
+    satellite  = output_ds.createVariable('satellite', 'u4', 'x') # Satellite
+
     start_lat1 = output_ds.createVariable('start_lat1', 'f8', 'x') # Starting Lat/Lon triangle vertices
     start_lat2 = output_ds.createVariable('start_lat2', 'f8', 'x')
     start_lat3 = output_ds.createVariable('start_lat3', 'f8', 'x')
@@ -346,6 +351,8 @@ def compute_deformations(config=None):
     start_time.units = 'seconds since the reference time'
     end_time.units   = 'seconds since the reference time'
 
+    satellite.units   = '0: RCM; 1: S1'
+
     start_lat1.units = 'degrees North'
     start_lat2.units = 'degrees North'
     start_lat3.units = 'degrees North'
@@ -375,6 +382,8 @@ def compute_deformations(config=None):
     start_time[:] = sTime
     end_time[:]   = eTime
 
+    satellite[:]  = sat_l
+
     start_lat1[:] = sLat1
     start_lat2[:] = sLat2
     start_lat3[:] = sLat3
@@ -398,7 +407,7 @@ def compute_deformations(config=None):
     id3[:]        = idx3
     idtri[:]      = no
 
-    Aa[:]        = A_l*(int(Metadata['tracking_error'])**2.)
+    Aa[:]        = [Ai*(int(Metadata['tracking_error'])**2.) for Ai in A_l]
 
     dux[:]       = dudx_l
     duy[:]       = dudy_l
@@ -406,9 +415,6 @@ def compute_deformations(config=None):
     dvy[:]       = dvdy_l
 
     return output_ds
-
-    # # Close dataset
-    # output_ds.close()
 
 
 
