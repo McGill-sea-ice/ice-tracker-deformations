@@ -36,3 +36,9 @@ src/SeaIceDeformation/namelist.ini
 src/SatelliteCoverage/options.ini
 src/SeaIceDeformation/namelist.ini_bak
 src/SatelliteCoverage/options.ini_bak
+
+# Ignore temporary .save files
+*.save
+
+#Ignore outputs
+*outputs*
