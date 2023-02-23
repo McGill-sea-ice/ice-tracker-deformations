@@ -88,17 +88,29 @@ def compile_data(raw_paths=None):
     # Initialising progression counters
     num_files = len(raw_paths)
     i = 0
-
+    satellite = 'RCM_new'
     # Appending each file's datapoints to the dataframe
     for filepath in tqdm(raw_paths, position=1, leave=False):
 
-        # Initialize temporary dataframe
-        temp_df = pd.DataFrame()
+        if satellite == 'RCM_new':
+            # Initialize temporary dataframe
+            temp_df = pd.DataFrame()
+            with open(filepath) as fd:
+                headers = [ next(fd) for i in range(7) ]
+                temp_df = pd.read_csv(fd,engine='python',sep = '\s\s+', usecols = ['lat_beg','lon_beg'])
+            my_list = list(temp_df)
+            temp_df.drop([0], axis=0, inplace=True)
+            temp_df.rename(columns = {'lat_beg':'lat','lon_beg':'lon'}, inplace = True)
+            #print(temp_df)
+            #print(temp_df['lat_beg'][:])
+            #print(temp_df['lon_beg'][:])
+            #print(my_list)
+            #aasdfa
 
-        # Reading datapoints into temporary dataframe
-        temp_df = pd.read_csv(filepath, sep='\s\s+', engine='python', usecols = ['sLat','sLon'])
-
-        temp_df.rename(columns = {'sLat':'lat', 'sLon':'lon'}, inplace = True)
+        else:
+            # Reading datapoints into temporary dataframe
+            temp_df = pd.read_csv(filepath, sep='\s\s+', engine='python', usecols = ['sLat','sLon'])
+            temp_df.rename(columns = {'sLat':'lat', 'sLon':'lon'}, inplace = True)
 
         df = pd.concat([df,temp_df])
 
@@ -133,7 +145,7 @@ def divide_intervals(config=None):
     raw_paths = config['raw_list']
     Date_options = config['Date_options']
     options = config['options']
-
+    satellite = config['Metadata']['icetracker']
 
     start_year  = str(Date_options['start_year'])
     start_month = str(Date_options['start_month'])
@@ -142,6 +154,7 @@ def divide_intervals(config=None):
     end_month   = str(Date_options['end_month'])
     end_day     = str(Date_options['end_day'])
     interval    = options['interval']
+
 
     # Concatenate start and end dates
     sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
@@ -173,8 +186,15 @@ def divide_intervals(config=None):
 
         # Checking if date range of file overlaps with interval (if true, append)
         for filepath in raw_paths:
-            initial_date = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
-            final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')
+            if satellite == 'RCM_new':
+                txt = filepath.split('_')
+                print(txt)
+                print(txt[9],txt[10],txt[19],txt[20])
+                initial_date = datetime.strptime("%s%s" % (txt[9],txt[10]), '%Y%m%d%H%M%S')
+                final_date = datetime.strptime("%s%s" % (txt[19],txt[20]), '%Y%m%d%H%M%S')
+            else:
+                initial_date = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
+                final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')
 
             if (initial_date <= pair[1]) and (final_date >= pair[0]):
                 temp_list.append(filepath)
@@ -243,6 +263,8 @@ def filter_data(config=None):
         sat_list = ['s1/']
     elif satellite == 'RCM':
         sat_list = ['rcm/']
+    elif satellite == 'RCM_new':
+        sat_list = ['rcm_new/']
     else:
         raise Exception("Oh, original, but satellite data other than RCM or S1 is not defined!!")
 
@@ -263,8 +285,15 @@ def filter_data(config=None):
                 for filename in os.listdir(data_path):
 
                     # Extracting initial and final dates from data file names
-                    iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
-                    fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
+                    if satellite == 'RCM_new':
+                        txt = filename.split('_')
+                        print(filename)
+                        print(txt[5],txt[6],txt[15],txt[16])
+                        iDate = datetime.strptime("%s%s" % (txt[5],txt[6]), '%Y%m%d%H%M%S')
+                        fDate = datetime.strptime("%s%s" % (txt[15],txt[16]), '%Y%m%d%H%M%S')
+                    else:
+                        iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
+                        fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
 
                     # Checking if all files from iDate to fDate will be loaded (timestep == '0')
                     if timestep != '0':
