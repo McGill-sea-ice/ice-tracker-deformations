@@ -58,7 +58,7 @@ dataset = compute_deformations(config=config)
 3) Visualise Deformations
 '''
 
-if stb(config['Processing_options']['visualise']):
+if config['Processing_options']['visualise']:
 
     # Ploting using csv file
     # visualise_deformations(config=config)

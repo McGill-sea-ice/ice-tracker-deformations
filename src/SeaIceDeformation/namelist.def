@@ -79,6 +79,7 @@ tracking_error = 200
 [Processing_options]
 overwrite = yes
 visualise = yes
+viz_tstp_dist = True
 
 [Date_options]
 start_year = 2020

@@ -17,6 +17,8 @@ import os
 import re
 import sys
 from datetime import datetime, timedelta
+import pandas as pd
+import matplotlib.pyplot as plt
 
 # Loading from other files
 import SeaIceDeformation.utils_get_data_paths as get_data_paths
@@ -152,6 +154,77 @@ def filter_data(config=None):
     else:
         sys.exit("Oh, original, but satellite data other than RCM or S1 is not defined!!")
 
+    # Plotting the dt distribution for the images pair
+    if config['Processing_options']['viz_tstp_dist']:
+
+        # options (to have in the namelist?)
+        dens = False
+        log = False
+        bin_step = 1
+        ys = 2018
+        ye = 2021
+        alp = 0.5
+        hsty = 'stepfilled' # 'bar', 'barstacked', 'step', 'stepfilled'
+        bins = range(0,100+bin_step,bin_step) # bins initialization
+
+        # Dictionnaries initialization
+        interv={}
+        interv['all'] =[]
+
+        # figure initialization
+        plt.figure()
+
+        # Read the files names and create the data lists
+        for sat in sat_list:
+            interv[sat]=[]
+            for year in range(int(ys), int(ye)+1): # all the years
+                if os.path.exists(date_path + sat + str(year) + '/'):
+                    data_path = date_path + sat + str(year) + '/'
+
+                    for filename in os.listdir(data_path):
+                        # Extracting initial and final dates from data file names
+                        iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
+                        fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
+                        diff = (fDate - iDate).total_seconds() / 3600.0 # timesteps in hour
+                        interv[sat] += [float(diff)]
+
+            interv['all'] += interv[sat]
+
+        interv_list = [ interv[name] for name in sat_list ]
+        label_list = sat_list
+        if hsty != 'barstacked':
+            interv_list += [interv['all']]
+            label_list += ['all']
+        hist = plt.hist(interv_list, bins=bins, density=dens, label=label_list, histtype=hsty, alpha = alp, log=log)
+
+        # the figure bells and whistles
+        plt.legend()
+        if dens:
+            plt.ylabel('PDF of the intervals')
+        else :
+            plt.ylabel('Number of intervals')
+        plt.xlabel('Interval length [h]')
+        plt.xticks(range(0,100,12))
+        plt.title('Timestep between SAR images for S1 and RCM between {} and {} '.format(ys,ye))
+
+        # saving the figure
+        output_folder = config['IO']['output_folder']  + '/' + config['IO']['exp'] + '/figs/'
+        print('Saving timestep distribution figure at ' + output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.png'.format(ys,ye,bin_step))
+        plt.savefig(output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.png'.format(ys,ye,bin_step), bbox_inches='tight', dpi=600)
+
+        # Saving the data for after
+        data={}
+        data['bins_start'] = hist[1][:-1]
+        data['bins_end'] = hist[1][1:]
+        for i in range(len(sat_list)):
+            name = label_list[i]
+            data[name] = hist[0][i]
+        df = pd.DataFrame(data, columns=['bins_start','bins_end'] + label_list)
+        print('Saving timestep distribution data at ' + output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.pkl'.format(ys, ye, bin_step))
+        df.to_pickle(output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.pkl'.format(ys, ye, bin_step))
+        # df.to_csv(output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.csv'.format(ys, ye, bin_step), index=False)
+
+    # filter the data
     for sat_type in sat_list:
         for year in range(int(start_year), int(end_year)+1):
 
