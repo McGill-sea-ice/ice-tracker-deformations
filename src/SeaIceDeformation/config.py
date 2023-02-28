@@ -209,6 +209,7 @@ def filter_data(config=None):
 
         # saving the figure
         output_folder = config['IO']['output_folder']  + '/' + config['IO']['exp'] + '/figs/'
+        os.makedirs(output_folder, exist_ok=True)
         print('Saving timestep distribution figure at ' + output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.png'.format(ys,ye,bin_step))
         plt.savefig(output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.png'.format(ys,ye,bin_step), bbox_inches='tight', dpi=600)
 
