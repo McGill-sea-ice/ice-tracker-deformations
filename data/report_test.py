@@ -36,7 +36,7 @@ data_ref = pd.read_pickle(file_ref)
 data_test = pd.read_pickle(file_test)
 
 for var in data_ref:
-    if var un data_test:
+    if var in data_test:
         test = ( data_ref[var][:] == data_test[var][:] ).all()
         if test:
             print(var, ' PASS ')
