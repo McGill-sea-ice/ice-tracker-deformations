@@ -132,7 +132,7 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
     ref_area = (n_pts_tot-n_pts_land)*(int(resolution)** 2)
 
     # Initialising dataframe to store interval data
-    df = pd.DataFrame(columns=['area','percentage', 'start_date', 'end_date'])
+    df = pd.DataFrame(columns=['start_date', 'end_date', 'area','percentage'])
 
     # Iterating over each interval
     for i in tqdm(range(len(interval_list)), position=0, leave=True):
@@ -147,6 +147,7 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
         try:
             xy = convert_to_grid(interval_df['lon'], interval_df['lat'])
         except KeyError:
+            df.loc[len(df.index)] = [start_date, end_date, 10**30, 10**30]
             continue
 
         # Generates histogram (2d np array)
@@ -160,9 +161,11 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
         covered_percentage = (covered_area / ref_area) * 100
 
         # Appending to main dataframe
-        df.loc[len(df.index)] = [covered_area, covered_percentage, start_date, end_date]
+        df.loc[len(df.index)] = [start_date, end_date, covered_area, covered_percentage]
 
-
+    # Place nans where there is no coverage
+    df.loc[df['area'] >= 10**30,'area'] = np.nan
+    df.loc[df['percentage'] >= 10**30, 'percentage'] = np.nan
     # Plotting timeseries
     f, ax = plt.subplots()
     # ax.set_xlabel('Date')
