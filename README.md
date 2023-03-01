@@ -90,6 +90,8 @@ It will:
  - run `/src/SeaIceDeformation/netcdf_tools.py` with the `options.def` settings.
  - run `/data/report_test.py`
 
+A `PASS` should be obtained for all the variables 
+
 ## Documentation
 
 To generate PDF documentation for this project, start by accessing the `docs` folder (assuming we are already in the project folder):
