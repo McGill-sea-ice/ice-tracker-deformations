@@ -15,11 +15,14 @@ data_ref = Dataset(file_ref)
 data_test = Dataset(file_test)
 
 for var in data_ref.variables:
-    test = ( data_ref[var][:] == data_test[var][:] ).all()
-    if test:
-        print(var, ' PASS ')
-    elif not test:
-        print(var, ' FAILED')
+    if var in data_ref.variables:
+        test = ( data_ref[var][:] == data_test[var][:] ).all()
+        if test:
+            print(var, ' PASS ')
+        elif not test:
+            print(var, ' FAIL')
+    else:
+        print(var, ' is not present in the tested dataset')
 
 ## 2 test of the coverage frequency
 print(' ')
@@ -33,8 +36,11 @@ data_ref = pd.read_pickle(file_ref)
 data_test = pd.read_pickle(file_test)
 
 for var in data_ref:
-    test = ( data_ref[var][:] == data_test[var][:] ).all()
-    if test:
-        print(var, ' PASS ')
-    elif not test:
-        print(var, ' FAILED')
+    if var un data_test:
+        test = ( data_ref[var][:] == data_test[var][:] ).all()
+        if test:
+            print(var, ' PASS ')
+        elif not test:
+            print(var, ' FAIL')
+    else:
+        print(var, ' is not present in the tested dataset')
