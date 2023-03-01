@@ -79,7 +79,7 @@ timestep    = 24
 tolerance   = 24
 
 [options]
-interval    = 24
+interval    = 1
 resolution  = 20
 
 percentage  = False
