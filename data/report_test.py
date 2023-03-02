@@ -15,7 +15,7 @@ data_ref = Dataset(file_ref)
 data_test = Dataset(file_test)
 
 for var in data_ref.variables:
-    if var in data_ref.variables:
+    if var in data_test.variables:
         test = ( data_ref[var][:] == data_test[var][:] ).all()
         if test:
             print(var, ' PASS ')
