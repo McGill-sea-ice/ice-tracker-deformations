@@ -56,17 +56,16 @@ single output netcdf4 file that combines all processed datasets.
 
 # Loading from default packages
 import csv
-import datetime
 import os
 from math import sqrt
 import numpy as np
 from netCDF4 import Dataset
 from tqdm import tqdm
-
+#from datetime import datetime, date, time, timedelta
 # Loading from other files
 import SeaIceDeformation.utils_datetime as utils_datetime
 import SeaIceDeformation.utils_load_data as load_data
-
+import datetime
 def compute_deformations(config=None):
     '''
     _________________________________________________________________________________________
@@ -135,9 +134,9 @@ def compute_deformations(config=None):
             # The error has already been printed in the triangulation stage
             continue
 
-        print(raw_path)
-        print(triangulated_path)
-        print(len(startX))
+        #print(raw_path)
+        #print(triangulated_path)
+        #print(len(startX))
         # Load the triangulated dataset
         triangulated_data = load_data.load_triangulated( triangulated_path )
         vertice_idx1 = triangulated_data['vertice_idx1'] # Vertex indices in raw data file

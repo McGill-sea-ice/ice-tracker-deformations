@@ -15,7 +15,7 @@ import sys
 parent = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0,parent)
 import time
-
+import datetime
 # Loading from other files
 from config import get_config
 from utils_delaunay_triangulation import stb, delaunay_triangulation
