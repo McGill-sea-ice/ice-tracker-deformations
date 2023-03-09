@@ -60,7 +60,7 @@ def delaunay_triangulation(config=None):
             startY = raw_data['startY']
 
         except load_data.DataFileError as dfe:
-            # print(str(dfe) + 'It will not be processed.')
+            print(str(dfe) + 'It will not be processed.')
             continue
 
         '''

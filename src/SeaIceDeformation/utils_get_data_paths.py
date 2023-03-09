@@ -32,9 +32,12 @@ def get_triangulated_csv_path(raw_filename, output_path, exp):
     >>> print( get_triangulated_csv_path(raw_filename, output_path, exp) )
     /home/bdu002/outputs/2020_MarApr_S1/02_triangulated/tri_20200301002108_20200313002108_1.csv
     '''
-
-    # Create the triangulation stage data .csv filename using the raw filename
-    tri_filename = 'tri' + raw_filename[-36:]
+    if raw_filename[-3:]=="trk":
+        txt = raw_filename.split('_')
+        tri_filename = 'tri_%s%s_%s%s_S_%s%s_%s_E_%s%s_%s.csv' % (txt[5],txt[6],txt[15],txt[16],txt[1],txt[2],txt[3],txt[11],txt[12],txt[13])
+    else:
+        # Create the triangulation stage data .csv filename using the raw filename
+        tri_filename = 'tri' + raw_filename[-36:]
 
     # Get the directory in which the triangulated .csv file is to be stored
     tri_path = output_path + '/' + exp + '/02_triangulated/'  + tri_filename
@@ -66,7 +69,11 @@ def get_converted_csv_path(raw_filename, output_path, exp):
     '''
 
     # Create the conversion stage data .csv filename using the raw filename
-    conv_filename = 'conv' + raw_filename[-36:]
+    if raw_filename[-3:]=="trk":
+        txt = raw_filename.split('_')
+        conv_filename = 'conv_%s%s_%s%s_S_%s%s_%s_E_%s%s_%s.csv' % (txt[5],txt[6],txt[15],txt[16],txt[1],txt[2],txt[3],txt[11],txt[12],txt[13])
+    else:
+        conv_filename = 'conv' + raw_filename[-36:]
 
     # Get the directory in which the converted .csv file is to be stored
     conv_path = output_path + '/' + exp + '/03_converted/'  + conv_filename
@@ -98,7 +105,11 @@ def get_calculations_csv_path(raw_filename, output_path, exp):
     '''
 
     # Create the calculations stage data .csv filename using the raw filename
-    calc_filename = 'calc' + raw_filename[-36:]
+    if raw_filename[-3:]=="trk":
+        txt = raw_filename.split('_')
+        calc_filename = 'calc_%s%s_%s%s_S_%s%s_%s_E_%s%s_%s.csv' % (txt[5],txt[6],txt[15],txt[16],txt[1],txt[2],txt[3],txt[11],txt[12],txt[13])
+    else:
+        calc_filename = 'calc' + raw_filename[-36:]
 
     # Get the directory in which the calculated .csv file is to be stored
     calc_csv_path = output_path + '/' + exp + '/04_calculations/'  + calc_filename

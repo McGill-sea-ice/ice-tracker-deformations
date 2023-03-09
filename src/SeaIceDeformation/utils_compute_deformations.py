@@ -135,11 +135,15 @@ def compute_deformations(config=None):
             # The error has already been printed in the triangulation stage
             continue
 
+        print(raw_path)
+        print(triangulated_path)
+        print(len(startX))
         # Load the triangulated dataset
         triangulated_data = load_data.load_triangulated( triangulated_path )
         vertice_idx1 = triangulated_data['vertice_idx1'] # Vertex indices in raw data file
         vertice_idx2 = triangulated_data['vertice_idx2']
         vertice_idx3 = triangulated_data['vertice_idx3']
+        #print(vertice_idx1)
 
         # Retrieve the starting and ending times and compute the time interval (days)
         start, end = utils_datetime.dataDatetimes(raw_path)
@@ -297,6 +301,7 @@ def compute_deformations(config=None):
     # Create a directory to store the output netcdf file if it does not exist already
     os.makedirs(os.path.dirname(nc_output_path), exist_ok=True)
 
+    print("Printing the deformations in the netcdf: ", nc_output_path)
     # Create an output netcdf file and dataset
     output_ds = Dataset(nc_output_path, 'w', format = 'NETCDF4')
 

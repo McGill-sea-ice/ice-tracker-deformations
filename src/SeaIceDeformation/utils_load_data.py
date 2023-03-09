@@ -11,6 +11,7 @@ Helper code for loading files from all stages of data processing.
 # Loading from default packages
 import os
 import pandas as pd
+import numpy as np
 
 # Create a class of errors for csv loading and two subclasses
 class DataFileError(Exception):
@@ -41,45 +42,106 @@ def load_raw(path_raw, nbfb, empty_files, nbfg, nbpg):
     file_type = path_raw[-3:len(path_raw)]
 
     # If the file is not a .dat file, raise an error
-    if file_type != 'dat':
-        raise FileFormatError(os.path.basename(path_raw) + \
-                        ' is not a .dat file.')
+    if file_type == 'dat':
 
-    # Create a data frame
-    df = pd.read_csv(path_raw, sep='\s\s+', engine='python')
+        # Create a data frame
+        df = pd.read_csv(path_raw, sep='\s\s+', engine='python')
 
-    # Retrieve data points
-    sLat    = df['sLat']    # Starting latitudes
-    sLon    = df['sLon']    # Starting longitudes
-    eLat    = df['eLat']    # Ending latitudes
-    eLon    = df['eLon']    # Ending longitudes
-    startX  = df['startX']  # Starting X positions (px)
-    startY  = df['startY']  # Starting Y positions (px)
-    endX    = df['endX']    # Ending X positions (px)
-    endY    = df['endY']    # Ending Y positions (px)
-    dispX   = df['dispX']   # X displacement (px)
-    dispY   = df['dispY']   # Y displacement (px)
+        # Retrieve data points
+        sLat    = df['sLat']    # Starting latitudes
+        sLon    = df['sLon']    # Starting longitudes
+        eLat    = df['eLat']    # Ending latitudes
+        eLon    = df['eLon']    # Ending longitudes
+        startX  = df['startX']  # Starting X positions (px)
+        startY  = df['startY']  # Starting Y positions (px)
+        endX    = df['endX']    # Ending X positions (px)
+        endY    = df['endY']    # Ending Y positions (px)
+        dispX   = df['dispX']   # X displacement (px)
+        dispY   = df['dispY']   # Y displacement (px)
 
-    # Raise an error if the input raw csv file is empty or if it contains less than 3 data points
-    if ( len(sLon) < 4 ):
+        # Raise an error if the input raw csv file is empty or if it contains less than 3 data points
+        if ( len(sLon) < 4 ):
 
-        # Retrieve the raw filename and raise an error
-        filename_raw_csv  = os.path.basename( path_raw )
+            # Retrieve the raw filename and raise an error
+            filename_raw_csv  = os.path.basename( path_raw )
 
-        # raise DataError(filename_raw_csv  + " is empty or does not have enough data to perform a triangulation. ")
+            # raise DataError(filename_raw_csv  + " is empty or does not have enough data to perform a triangulation. ")
 
-        nbfb += 1
-        empty_files.append(filename_raw_csv)
+            nbfb += 1
+            empty_files.append(filename_raw_csv)
 
 
-    else: # print the name of the file and the number of data points in there
-        nbfg += 1
-        nbpg += len(sLon)
+        else: # print the name of the file and the number of data points in there
+            nbfg += 1
+            nbpg += len(sLon)
 
-    # Create a dictionnary of raw data and return it
-    raw_data = {'sLat': sLat, 'sLon': sLon, 'eLat': eLat, 'eLon': eLon,
+        # Create a dictionnary of raw data and return it
+        raw_data = {'sLat': sLat, 'sLon': sLon, 'eLat': eLat, 'eLon': eLon,
                         'startX': startX, 'startY': startY, 'endX': endX, 'endY': endY,
                         'dispX': dispX, 'dispY': dispY}
+
+    elif file_type == 'trk':
+
+        # Create a data frame
+        df = pd.DataFrame()
+        with open(path_raw) as fd:
+            headers = [ next(fd) for i in range(7) ]
+            df = pd.read_csv(fd,engine='python',sep = '\s\s+')
+        df.drop([0], axis=0, inplace=True)
+        nb = len(df.index)
+        df.reset_index(inplace=True)
+        #print(nb)
+
+        # Retrieve data points
+        sLat    = df['lat_beg']    # Starting latitudes
+        sLon    = df['lon_beg']    # Starting longitudes
+        eLat    = df['lat_end']    # Ending latitudes
+        eLon    = df['lon_end']    # Ending longitudes
+        startX  = df['pix']  # Starting X positions (px)
+        startY  = df['lin'] # Starting Y positions (px)
+        dispX   = df['dpix']   # X displacement (px)
+        dispY   = df['dlin']   # Y displacement (px)
+        endX    = startX.astype(float) + dispX.astype(float)    # Ending X positions (px)
+        endY    = startY.astype(float) + dispY.astype(float)    # Ending Y positions (px)
+
+        sLat = sLat.astype(float)
+        sLon = sLon.astype(float)
+        eLat = eLat.astype(float)
+        eLon = eLon.astype(float)
+        startX = startX.astype(float)
+        startY = startY.astype(float)
+        endX = endX.astype(float)
+        endY = endY.astype(float)
+
+
+        # Raise an error if the input raw csv file is empty or if it contains less than 3 data points
+        if ( len(sLon) < 4 ):
+
+            # Retrieve the raw filename and raise an error
+            filename_raw_csv  = os.path.basename( path_raw )
+
+            # raise DataError(filename_raw_csv  + " is empty or does not have enough data to perform a triangulation. ")
+
+            nbfb += 1
+            empty_files.append(filename_raw_csv)
+
+        else: # print the name of the file and the number of data points in there
+            nbfg += 1
+            nbpg += len(sLon)
+
+        # Create a dictionnary of raw data and return it
+        raw_data = {'sLat': sLat, 'sLon': sLon, 'eLat': eLat, 'eLon': eLon,
+                        'startX': startX, 'startY': startY, 'endX': endX, 'endY': endY,
+                        'dispX': dispX, 'dispY': dispY}
+
+
+
+
+
+
+    else:
+        raise FileFormatError(os.path.basename(path_raw) + \
+                        ' is not a .dat or .trk file.')
 
     return raw_data, nbfb, empty_files, nbfg, nbpg
 

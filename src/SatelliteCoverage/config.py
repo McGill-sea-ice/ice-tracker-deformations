@@ -88,7 +88,7 @@ def compile_data(raw_paths=None):
     # Initialising progression counters
     num_files = len(raw_paths)
     i = 0
-    satellite = 'RCM_new'
+    satellite = 'RCM'
     # Appending each file's datapoints to the dataframe
     for filepath in tqdm(raw_paths, position=1, leave=False):
 
@@ -101,11 +101,6 @@ def compile_data(raw_paths=None):
             my_list = list(temp_df)
             temp_df.drop([0], axis=0, inplace=True)
             temp_df.rename(columns = {'lat_beg':'lat','lon_beg':'lon'}, inplace = True)
-            #print(temp_df)
-            #print(temp_df['lat_beg'][:])
-            #print(temp_df['lon_beg'][:])
-            #print(my_list)
-            #aasdfa
 
         else:
             # Reading datapoints into temporary dataframe
@@ -188,8 +183,6 @@ def divide_intervals(config=None):
         for filepath in raw_paths:
             if satellite == 'RCM_new':
                 txt = filepath.split('_')
-                print(txt)
-                print(txt[9],txt[10],txt[19],txt[20])
                 initial_date = datetime.strptime("%s%s" % (txt[9],txt[10]), '%Y%m%d%H%M%S')
                 final_date = datetime.strptime("%s%s" % (txt[19],txt[20]), '%Y%m%d%H%M%S')
             else:
@@ -287,8 +280,6 @@ def filter_data(config=None):
                     # Extracting initial and final dates from data file names
                     if satellite == 'RCM_new':
                         txt = filename.split('_')
-                        print(filename)
-                        print(txt[5],txt[6],txt[15],txt[16])
                         iDate = datetime.strptime("%s%s" % (txt[5],txt[6]), '%Y%m%d%H%M%S')
                         fDate = datetime.strptime("%s%s" % (txt[15],txt[16]), '%Y%m%d%H%M%S')
                     else:
