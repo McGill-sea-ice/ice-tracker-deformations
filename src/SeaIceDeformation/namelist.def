@@ -63,9 +63,9 @@
 #   tolerance:   (int) Tolerance of timestep in hours
 
 [IO]
-data_folder = /storage/dringeisen/S1_RCM_tracked_pairs/
-output_folder = /storage/dringeisen/S1_RCM_tracked_pairs/outputs/
-exp = TESTING_dringeisen
+data_folder = ../../data/test_dat/
+output_folder = ../../data/test_out/
+exp = test
 
 [Grid]
 riops_grid = /home/socn000/env_ubuntu-18.04-skylake-64/eccc-ppp4/datafiles/constants/oce/repository/master/CONCEPTS/creg012pe/grid/coordinates_CREG12_ext.nc
@@ -77,18 +77,18 @@ icetracker = RCMS1
 tracking_error = 200
 
 [Processing_options]
-overwrite = yes
-visualise = yes
+overwrite = True
+visualise = True
 viz_tstp_dist = True
 
 [Date_options]
-start_year = 2020
-start_month = 03
+start_year = 2022
+start_month = 01
 start_day = 01
 
-end_year = 2020
-end_month = 03
-end_day = 31
+end_year = 2022
+end_month = 01
+end_day = 02
 
-timestep = 72
-tolerance = 5
+timestep = 24
+tolerance = 24

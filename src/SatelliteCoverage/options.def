@@ -58,30 +58,28 @@
 
 
 [IO]
-data_folder   = /storage2/common/S1_RCM_tracked_pairs/
-output_folder = /storage2/amelie/ice-tracker-deformations/outputs/
-#netcdf_path   = /storage2/common/S1_RCM_datasets/RCMS1SID_20171001_20220331_dt12_tol4_dx.nc
-netcdf_path   = /storage2/common/S1_RCM_datasets/RCMS1SID_20171001_20220331_dt24_tol8_dx.nc
-#netcdf_path   = /storage2/common/S1_RCM_datasets/RCMS1SID_20171001_20220331_dt72_tol24_dx.nc
-exp =
+data_folder = ../../data/test_dat/
+output_folder = ../../data/test_out/
+netcdf_path   = ../../data/test_out/test/05_output/RCMS1SID_20220101_20220102_dt24_tol24_dx.nc
+exp = test
 
 [Metadata]
 icetracker = RCMS1
 
 [Date_options]
-start_year  = 2021
-start_month = 03
-start_day   = 10
+start_year  = 2022
+start_month = 01
+start_day   = 01
 
-end_year    = 2021
-end_month   = 03
-end_day     = 12
+end_year    = 2022
+end_month   = 01
+end_day     = 02
 
 timestep    = 24
-tolerance   = 8
+tolerance   = 24
 
 [options]
-interval    = 24
+interval    = 1
 resolution  = 20
 
 percentage  = False
@@ -98,5 +96,5 @@ visualise_timeseries = True
 visualise_interval   = True
 
 [netcdf_tools]
-plot_start_end_points = False
+plot_start_end_points = True
 plot_deformation      = True
