@@ -98,3 +98,4 @@ visualise_interval   = True
 [netcdf_tools]
 plot_start_end_points = True
 plot_deformation      = True
+plot_area_dist        = True
