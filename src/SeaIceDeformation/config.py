@@ -156,13 +156,12 @@ def filter_data(config=None):
 
     # Plotting the dt distribution for the images pair
     if config['Processing_options']['viz_tstp_dist']:
-
         # options (to have in the namelist?)
         dens = False
         log = False
         bin_step = 1
-        ys = 2018
-        ye = 2021
+        ys = 2017
+        ye = 2022
         alp = 0.5
         hsty = 'stepfilled' # 'bar', 'barstacked', 'step', 'stepfilled'
         bins = range(0,100+bin_step,bin_step) # bins initialization
@@ -208,6 +207,7 @@ def filter_data(config=None):
         plt.title('Timestep between SAR images for S1 and RCM between {} and {} '.format(ys,ye))
 
         # saving the figure
+        # Create the directory if it does not exist already
         output_folder = config['IO']['output_folder']  + '/' + config['IO']['exp'] + '/figs/'
         os.makedirs(output_folder, exist_ok=True)
         print('Saving timestep distribution figure at ' + output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.png'.format(ys,ye,bin_step))
