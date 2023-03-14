@@ -205,7 +205,7 @@ def coverage_timeseries(interval_list, date_pairs, xbins_map, ybins_map, config=
 
 
 # Visualises coverage as a heatmap, split between user-set intervals
-def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=None):
+def interval_frequency_histogram2d(interval_list, date_pairs, xbins_map, ybins_map, config=None):
     """
     Plots a heatmap showing data availaibility (in % of time intervals covered) in a specified range of times.
 
@@ -226,28 +226,32 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
     # Initializing empty numpy array (2D histogram)
     H = np.array([])
 
+    # List of summer months (Won't include data from these months)
+    summer_months = [6, 7, 8, 9, 10]
+
     # Iterating over each interval
     for i in tqdm(range(len(interval_list)), position=0, leave=True):
-        # Loads data and converts to x/y for each interval
-        interval_df = compile_data(interval_list[i])
+        if date_pairs[i][0].month not in summer_months:
+            # Loads data and converts to x/y for each interval
+            interval_df = compile_data(interval_list[i])
 
-        # Skips empty lists
-        try:
-            xy = convert_to_grid(interval_df['lon'], interval_df['lat'])
-        except KeyError:
-            xy = (0,0)
-            continue
+            # Skips empty lists
+            try:
+                xy = convert_to_grid(interval_df['lon'], interval_df['lat'])
+            except KeyError:
+                xy = (0,0)
+                continue
 
-        # Generates histogram (2D numpy array)
-        histogram = coverage_histogram2d(xy, xbins_map, ybins_map)
-        histogram[histogram > 0.0] = 1.0
-        # Changing size of total histogram (only on first run)
-        if H.shape == (0,):
-            H.resize(histogram.shape)
+            # Generates histogram (2D numpy array)
+            histogram = coverage_histogram2d(xy, xbins_map, ybins_map)
+            histogram[histogram > 0.0] = 1.0
+            # Changing size of total histogram (only on first run)
+            if H.shape == (0,):
+                H.resize(histogram.shape)
 
 
-        # Adding interval-specific histogram to total histogram
-        H = H + histogram
+            # Adding interval-specific histogram to total histogram
+            H = H + histogram
 
     # Transposing histogram for plotting
     H = H.T
@@ -271,6 +275,7 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
 
     H[H==0.0] = np.nan
     H = H*100.0
+    n_int = int(np.sum([date_pairs[i][0].month not in summer_months for i in range(len(date_pairs))]))
 
     """
     Plot Data
@@ -280,7 +285,7 @@ def interval_frequency_histogram2d(interval_list, xbins_map, ybins_map, config=N
 
     new_coords = ax.projection.transform_points(trans, binslon, binslat)
 
-    im = ax.pcolormesh(new_coords[:,:,0], new_coords[:,:,1], H/len(interval_list), vmin=0, vmax=100.0, cmap=cmap1)
+    im = ax.pcolormesh(new_coords[:,:,0], new_coords[:,:,1], H/n_int, vmin=0, vmax=100.0, cmap=cmap1)
     # im = ax.pcolormesh(xx, yy, H/len(interval_list), vmin=0, vmax=100.0, cmap=cmap1)
 
     #divider = make_axes_locatable(ax)
@@ -372,7 +377,7 @@ if __name__ == '__main__':
 
         if viz_cf:
             # Plotting coverage heat map in % of intervals with data
-            interval_frequency_histogram2d(interval_list, xbins, ybins, config=config)
+            interval_frequency_histogram2d(interval_list, date_pairs, xbins, ybins, config=config)
 
 
     # Display the run time
