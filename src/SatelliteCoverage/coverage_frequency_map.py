@@ -37,9 +37,9 @@ def get_map_bins(config=None):
 
     # Upper (u) and lower (l) extents of map_x, map_y (metres)
     lxextent = -4400000
-    uxextent =  2200000
-    uyextent =  2700000
-    lyextent = -2500000
+    uxextent =  2600000
+    uyextent =  4000000
+    lyextent = -2600000
 
     # Make bins vectors
     dxi = (1000*float(resolution))
@@ -228,7 +228,6 @@ def interval_frequency_histogram2d(interval_list, date_pairs, xbins_map, ybins_m
 
     # List of summer months (Won't include data from these months)
     summer_months = [6, 7, 8, 9, 10]
-
     # Iterating over each interval
     for i in tqdm(range(len(interval_list)), position=0, leave=True):
         if date_pairs[i][0].month not in summer_months:
