@@ -129,7 +129,7 @@ def compute_deformations(config=None):
             sLon    = raw_data['sLon']    # Starting longitudes
             eLat    = raw_data['eLat']    # Ending latitudes
             eLon    = raw_data['eLon']    # Ending longitudes
-            sat     = (0)*('rcm' in raw_path)+(1)*('s1' in raw_path)
+            sat     = (0)*('rcm' in raw_path)+(1)*('s1' in raw_path)+(2)*('rcm_new' in raw_path)
 
         except load_data.DataFileError as dfe:
             # The error has already been printed in the triangulation stage
