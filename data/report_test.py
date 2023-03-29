@@ -24,8 +24,10 @@ for var in data_ref.variables:
             print(var, ' PASS ')
         elif not test:
             dist = ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len( data_ref[var][:]  )
-            if abs(dist) < 1e-4:
-                print(var, ' PASS ')
+            if abs(dist) < 1e-7 :
+                print(var, ' PASS BUT NOT EQUAL  ')
+            elif abs(dist) < 1e-4 :
+                print(var, ' PASS BUT REALLY NOT EQUAL  ')
             else:
                 print(var, ' FAIL')
                 print('ERROR distance = ', dist)
