@@ -1,6 +1,8 @@
 # Test the netcdf
 from netCDF4 import Dataset
 import pandas as pd
+from numpy import linalg as la
+from numpy import sum as nps
 
 ## 1  Test of the deformation calculations
 print(' ')
@@ -21,6 +23,13 @@ for var in data_ref.variables:
             print(var, ' PASS ')
         elif not test:
             print(var, ' FAIL')
+            dist = la.norm( data_ref[var][:] - data_test[var][:] )
+        print('ERROR distance = ', dist/len(data_ref[var][:] ) )
+        print('data length difference', len(data_ref[var][:]) - len(data_test[var][:]))
+        print('REF dist: ', la.norm( data_ref[var][:]) )
+        print('TEST dist: ', la.norm( data_test[var][:]) )
+        print('REF dist- test dist: ', ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len(data_ref[var][:]  ) )
+        print('REF sum - test sum: ', ( nps( data_ref[var][:]) - nps( data_test[var][:]) ) / len(data_ref[var][:] ) )
     else:
         print(var, ' is not present in the tested dataset')
 
@@ -42,5 +51,12 @@ for var in data_ref:
             print(var, ' PASS ')
         elif not test:
             print(var, ' FAIL')
+            dist = la.norm( data_ref[var][:] - data_test[var][:] )
+        print('ERROR distance = ', dist/len(data_ref[var][:] ) )
+        print('data length difference', len(data_ref[var][:]) - len(data_test[var][:]))
+        print('REF dist: ', la.norm( data_ref[var][:]) )
+        print('TEST dist: ', la.norm( data_test[var][:]) )
+        print('REF dist- test dist: ', ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len(data_ref[var][:]  ) )
+        print('REF sum - test sum: ', ( nps( data_ref[var][:]) - nps( data_test[var][:]) ) / len(data_ref[var][:] ) )
     else:
         print(var, ' is not present in the tested dataset')
