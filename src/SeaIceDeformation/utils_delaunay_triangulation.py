@@ -46,8 +46,6 @@ def delaunay_triangulation(config=None):
         LOAD DATA
         '''
 
-        print(raw_path)
-
         # If the triangulated file already exists and overwrite (in config) is set to 'no',
         # go to the next iteration.
         # Else, process the raw file and write the triangulated file.

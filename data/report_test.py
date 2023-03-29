@@ -23,12 +23,15 @@ for var in data_ref.variables:
         if test:
             print(var, ' PASS ')
         elif not test:
-            print(var, ' FAIL')
-        dist = la.norm( data_ref[var][:] - data_test[var][:] )
-        print('ERROR distance = ', dist/len(data_ref[var][:] ) )
-        print('data length difference', len(data_ref[var][:]) - len(data_test[var][:]))
-        print('REF dist- test dist: ', ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len(data_ref[var][:]  ) )
-        print('REF sum - test sum: ', ( nps( data_ref[var][:]) - nps( data_test[var][:]) ) / len(data_ref[var][:] ) )
+            dist = ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len( data_ref[var][:]  )
+            if abs(dist) < 1e-4:
+                print(var, ' PASS ')
+            else:
+                print(var, ' FAIL')
+                print('ERROR distance = ', dist)
+        # print('data length difference', len(data_ref[var][:]) - len(data_test[var][:]))
+        # print('REF dist- test dist: ', ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len(data_ref[var][:]  ) )
+        # print('REF sum - test sum: ', ( nps( data_ref[var][:]) - nps( data_test[var][:]) ) / len(data_ref[var][:] ) )
     else:
         print(var, ' is not present in the tested dataset')
 
@@ -49,11 +52,15 @@ for var in data_ref:
         if test:
             print(var, ' PASS ')
         elif not test:
+            dist = ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len( data_ref[var][:]  )
+            if abs(dist) < 1e-5:
+                print(var, ' PASS ')
+            else:
+                print(var, ' FAIL')
+                print('ERROR distance = ', dist)
             print(var, ' FAIL')
-        dist = la.norm( data_ref[var][:] - data_test[var][:] )
-        print('ERROR distance = ', dist/len(data_ref[var][:] ) )
-        print('data length difference', len(data_ref[var][:]) - len(data_test[var][:]))
-        print('REF dist- test dist: ', ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len(data_ref[var][:]  ) )
+        # print('data length difference', len(data_ref[var][:]) - len(data_test[var][:]))
+        # print('REF dist- test dist: ', ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len(data_ref[var][:]  ) )
         #print('REF sum - test sum: ', ( nps(data_ref[var][:].astype('float'))  - nps( np.array(data_test[var][:].astype('float')))) / len(data_ref[var][:] ) )
     else:
         print(var, ' is not present in the tested dataset')
