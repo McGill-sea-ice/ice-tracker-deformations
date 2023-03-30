@@ -83,6 +83,87 @@ def get_config_args():
     return config_dict
 
 
+
+# Divides raw data into intervals specified by the user
+# def divide_intervals(raw_paths, max_date, min_date, interval):
+def divide_intervals(config=None):
+    """
+    Divides delta-t filtered data into chunks (intervals) of *interval* hours for
+    processing.
+    INPUTS:
+    raw_paths -- List of data file paths with the desired delta t {list}
+    Date_options -- ConfigParser object to determine start/end dates of intervals as specififed by user
+    Options -- ConfigParser object to determine the interval length as specififed by user
+    OUTPUTS:
+    interval_list -- List of n lists, where n is the number of full intervals which
+                     fit in the min and max dates of coverage. Each nested list (n th)
+                     contains the paths to files which share a date range (even partially)
+                     with the n th interval.
+    date_pairs -- List of tuples, each containing the start and end dates of the n th interval (datetime
+                  objects in tuples, all in a list)
+    """
+
+    raw_paths = config['raw_paths']
+    Date_options = config['Date_options']
+    options = config['options']
+    satellite = config['Metadata']['icetracker']
+
+    start_year  = str(Date_options['start_year'])
+    start_month = str(Date_options['start_month'])
+    start_day   = str(Date_options['start_day'])
+    end_year    = str(Date_options['end_year'])
+    end_month   = str(Date_options['end_month'])
+    end_day     = str(Date_options['end_day'])
+    interval    = options['interval']
+
+
+    # Concatenate start and end dates
+    sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
+    eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
+
+    # Converting date range to timedelta object (hours)
+    date_range = (eDate - sDate)
+    date_range = date_range.days * 24
+
+    # Counting number of full intervals over date range {int}
+    interval_count = date_range // int(interval)
+
+    # Allowing *min_date* to be updated and initializing time difference object
+    min_date_it = sDate
+    dtime = timedelta(hours=int(interval))
+
+    # Creating list containing tuples of date ranges [(dt1, dt2), (dt2, dt3) ...]
+    date_pairs = []
+    for i in range(interval_count):
+        date_pairs.append((min_date_it, min_date_it + dtime))
+        min_date_it = min_date_it + dtime
+
+    # Sorting files into intervals
+    interval_list = []
+    for pair in date_pairs:
+
+        # Initializing temporary list to store dates in interval
+        temp_list = []
+
+        # Checking if date range of file overlaps with interval (if true, append)
+        for filepath in raw_paths:
+            if satellite == 'RCM_new':
+                txt = filepath.split('_')
+                initial_date = datetime.strptime("%s%s" % (txt[9],txt[10]), '%Y%m%d%H%M%S')
+                final_date = datetime.strptime("%s%s" % (txt[19],txt[20]), '%Y%m%d%H%M%S')
+            else:
+                initial_date = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
+                final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')
+
+            if (initial_date <= pair[1]) and (final_date >= pair[0]):
+                temp_list.append(filepath)
+
+        # Appending list of interval-contained files
+        interval_list.append(temp_list)
+
+    return interval_list, date_pairs
+
+
 def filter_data(config=None):
     """
     Filters through the data files located in 'data_path' using the user
@@ -377,6 +458,16 @@ def get_config():
 
     raw_paths = filter_data(config=config)
     config['raw_paths'] = raw_paths
+
+    #raw_list = filter_data(config=config)
+    #config['raw_list'] = raw_list
+
+    interval_list, date_pairs = divide_intervals(config=config)
+
+    # Iterating over each interval
+    for i in tqdm(range(len(interval_list)), position=0, leave=True):
+        # Loads data and converts to x/y for each interval
+        config['raw_paths'] = interval_list[i]
 
     # Get the paths to which data files of all stages of data processing will be stored
     data_paths = get_datapaths(config=config)
