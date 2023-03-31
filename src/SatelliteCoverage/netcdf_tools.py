@@ -19,6 +19,7 @@ from time import strftime
 import time
 from netCDF4 import Dataset
 import numpy as np
+import pandas as pd
 import cartopy.crs as ccrs
 import matplotlib.tri as tri
 import matplotlib.pyplot as plt
@@ -544,6 +545,76 @@ def plot_deformations(data_in=None, config=None):
 
     return None
 
+def plot_area_dist(config):
+    fp = config['IO']['netcdf_path']
+
+    d = Dataset(fp)
+
+    A = np.sqrt(np.array(d['A'][:]))/1e3
+    satellite = np.array(d['satellite'][:])
+
+    dens = True
+    log = False
+    bin_step = 1
+    ys = 2017
+    ye = 2022
+    alp = 0.5
+    hsty = 'stepfilled' # 'bar', 'barstacked', 'step', 'stepfilled'
+    bins = range(0,25+bin_step,bin_step) # bins initialization
+
+    # Dictionnaries initialization
+    y={}
+    y['all'] =[]
+
+    # figure initialization
+    plt.figure()
+
+    sat_list = ['rcm','s1']
+    sat_nb = [0,1]
+    # Read the files names and create the data lists
+    for s,sat in enumerate(sat_nb):
+        y[sat_list[s]] = A[np.where(satellite == sat)[0].tolist()].tolist()
+        y['all'] += y[sat_list[s]]
+
+    y_list = [ y[name] for name in sat_list ]
+    label_list = sat_list
+    if hsty != 'barstacked':
+        y_list += [y['all']]
+        label_list += ['all']
+    hist = plt.hist(y_list, bins=bins, density=dens, label=label_list, histtype=hsty, alpha = alp, log=log)
+
+    # the figure bells and whistles
+    plt.legend()
+    if dens:
+        plt.ylabel('PDF')
+    else :
+        plt.ylabel('Number of triangles')
+    plt.xlabel('Nominal size (km)')
+    plt.xticks(range(0,25,5))
+    plt.title(r'Triangle size ($\sqrt{A}$) in km for S1 and RCM between ' + str(ys) + ' and '+ str(ye))
+
+    # saving the figure
+    # Create the directory if it does not exist already
+    output_folder = '/storage/amelie/RCMS1_analysis/outputs/'+'add_area'+'/figs/'
+    os.makedirs(output_folder, exist_ok=True)
+    print('Saving size distribution figure at ' + output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.png'.format(ys,ye,bin_step))
+    plt.savefig(output_folder + 'RCMS1_{}_{}_bin{}_A_hist.png'.format(ys,ye,bin_step), bbox_inches='tight', dpi=600)
+
+    # Saving the data for after
+    data={}
+    data['bins_start'] = hist[1][:-1]
+    data['bins_end'] = hist[1][1:]
+    for i in range(len(sat_list)):
+        name = label_list[i]
+        data[name] = hist[0][i]
+    df = pd.DataFrame(data, columns=['bins_start','bins_end'] + label_list)
+    print('Saving size distribution data at ' + output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.pkl'.format(ys, ye, bin_step))
+    df.to_pickle(output_folder + 'RCMS1_{}_{}_bin{}_A_hist.pkl'.format(ys, ye, bin_step))
+
+    return None
+
+
+
 if __name__ == '__main__':
 
     # Retrieve the starting time
@@ -557,6 +628,9 @@ if __name__ == '__main__':
 
     if config['netcdf_tools']['plot_deformation']:
         plot_deformations(config=config)
+
+    if config['netcdf_tools']['plot_area_dist']:
+        plot_area_dist(config=config)
 
     # Display the run time
     print("--- %s seconds ---" % (time.time() - start_time))

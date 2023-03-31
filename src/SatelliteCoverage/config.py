@@ -244,7 +244,7 @@ def filter_data(config=None):
     elif satellite == 'RCM':
         sat_list = ['rcm/']
     else:
-        sys.exit("Oh, original, but satellite data other than RCM or S1 is not defined!!")
+        raise Exception("Oh, original, but satellite data other than RCM or S1 is not defined!!")
 
     for sat_type in sat_list:
         for year in range(int(start_year), int(end_year)+1):
