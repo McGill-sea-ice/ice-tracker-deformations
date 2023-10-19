@@ -103,7 +103,7 @@ def divide_intervals(config=None):
                   objects in tuples, all in a list)
     """
 
-    raw_paths = config['raw_paths']
+    #raw_paths = config['raw_paths']
     Date_options = config['Date_options']
     options = config['options']
     satellite = config['Metadata']['icetracker']
@@ -139,30 +139,30 @@ def divide_intervals(config=None):
         min_date_it = min_date_it + dtime
 
     # Sorting files into intervals
-    interval_list = []
-    for pair in date_pairs:
+#    interval_list = []
+#    for pair in date_pairs:
+#
+#        # Initializing temporary list to store dates in interval
+#        temp_list = []
+#
+#        # Checking if date range of file overlaps with interval (if true, append)
+#        for filepath in raw_paths:
+#            if satellite == 'RCM_new':
+#                txt = filepath.split('_')
+#                initial_date = datetime.strptime("%s%s" % (txt[9],txt[10]), '%Y%m%d%H%M%S')
+#                final_date = datetime.strptime("%s%s" % (txt[19],txt[20]), '%Y%m%d%H%M%S')
+#            else:
+#                initial_date = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
+#                final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')
+#
+#            if (initial_date <= pair[1]) and (final_date >= pair[0]):
+#                temp_list.append(filepath)
+#
+#        # Appending list of interval-contained files
+#        interval_list.append(temp_list)
 
-        # Initializing temporary list to store dates in interval
-        temp_list = []
-
-        # Checking if date range of file overlaps with interval (if true, append)
-        for filepath in raw_paths:
-            if satellite == 'RCM_new':
-                txt = filepath.split('_')
-                initial_date = datetime.strptime("%s%s" % (txt[9],txt[10]), '%Y%m%d%H%M%S')
-                final_date = datetime.strptime("%s%s" % (txt[19],txt[20]), '%Y%m%d%H%M%S')
-            else:
-                initial_date = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
-                final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')
-
-            if (initial_date <= pair[1]) and (final_date >= pair[0]):
-                temp_list.append(filepath)
-
-        # Appending list of interval-contained files
-        interval_list.append(temp_list)
-
-    return interval_list, date_pairs
-
+#    return interval_list, date_pairs
+    return date_pairs
 
 def filter_data(config=None):
     """
@@ -221,8 +221,8 @@ def filter_data(config=None):
     max_date = datetime(1000, 12, 25)
 
     # List of summer months (Won't include data from these months)
-    summer_months = [6, 7, 8, 9, 10]
-
+    #summer_months = [6, 7, 8, 9, 10]
+    summer_months = [0]
     date_path = IO['data_folder']
     satellite = Metadata['icetracker']
 

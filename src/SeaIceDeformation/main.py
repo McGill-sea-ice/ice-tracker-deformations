@@ -37,14 +37,12 @@ PERFORM CONFIGURATION
 config = get_config_args()
 
 raw_paths = filter_data(config=config)
-config['raw_paths'] = raw_paths
+#config['raw_paths'] = raw_paths
 
-interval_list, date_pairs = divide_intervals(config=config)
-
+date_pairs = divide_intervals(config=config)
 # Iterating over each interval
-for i in tqdm(range(len(interval_list)), position=0, leave=True):
+for i in tqdm(range(len(date_pairs)), position=0, leave=True):
     # Loads data and converts to x/y for each interval
-    config['raw_paths'] = interval_list[i]
     datepairs = date_pairs[i]
     config['Date_options']['start_year'] = datepairs[0].strftime("%Y")
     config['Date_options']['start_month'] = datepairs[0].strftime("%m")
@@ -52,7 +50,8 @@ for i in tqdm(range(len(interval_list)), position=0, leave=True):
     config['Date_options']['end_year'] = datepairs[1].strftime("%Y")
     config['Date_options']['end_month'] = datepairs[1].strftime("%m")
     config['Date_options']['end_day'] = datepairs[1].strftime("%d")
-
+    raw_paths = filter_data(config=config)
+    config['raw_paths'] = raw_paths
     # Get the paths to which data files of all stages of data processing will be stored
     data_paths = get_datapaths(config=config)
     config['data_paths'] = data_paths

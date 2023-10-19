@@ -56,6 +56,7 @@ single output netcdf4 file that combines all processed datasets.
 
 # Loading from default packages
 import csv
+import datetime
 import os
 from math import sqrt
 import numpy as np
@@ -65,7 +66,8 @@ from tqdm import tqdm
 # Loading from other files
 import SeaIceDeformation.utils_datetime as utils_datetime
 import SeaIceDeformation.utils_load_data as load_data
-import datetime
+
+
 def compute_deformations(config=None):
     '''
     _________________________________________________________________________________________
@@ -104,7 +106,6 @@ def compute_deformations(config=None):
     print('--- Computing sea-ice deformations ---')
     dp = config['data_paths']
     for raw_path, triangulated_path, calculations_path in zip(tqdm(dp['raw']), dp['triangulated'], dp['calculations']):
-
         '''
         _________________________________________________________________________________________
         LOAD DATA
