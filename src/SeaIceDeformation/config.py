@@ -179,8 +179,8 @@ def filter_data(config=None):
             for year in range(int(ys), int(ye)+1): # all the years
                 if os.path.exists(date_path + sat + str(year) + '/'):
                     data_path = date_path + sat + str(year) + '/'
-
-                    for filename in os.listdir(data_path):
+                    listfiles = os.listdir(data_path)
+                    for filename in sorted(listfiles):
                         # Extracting initial and final dates from data file names
                         iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
                         fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
@@ -240,7 +240,8 @@ def filter_data(config=None):
                 #---------------------------------------------------------------------------
 
                 # Filtering data files by date
-                for filename in os.listdir(data_path):
+                listfiles = os.listdir(data_path)
+                for filename in sorted(listfiles):
 
                     # Extracting initial and final dates from data file names
                     iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
