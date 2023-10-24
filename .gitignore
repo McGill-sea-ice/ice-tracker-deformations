@@ -7,6 +7,11 @@
 *.csv
 *.dat
 *.nc
+*.tar.gz
+!data/test_dat/*/2022/*.dat
+!data/test_dat/*/2022/*.nc
+!data/test_ref/*.nc
+data/test_out
 
 # Ignore pdf files and files created during the creation of PDF files
 *.pdf
@@ -25,3 +30,15 @@
 
 # Ignore .txt files
 *.txt
+
+# Ignore the user-defined option namelists
+src/SeaIceDeformation/namelist.ini
+src/SatelliteCoverage/options.ini
+src/SeaIceDeformation/namelist.ini_bak
+src/SatelliteCoverage/options.ini_bak
+
+# Ignore temporary .save files
+*.save
+
+#Ignore outputs
+*outputs*

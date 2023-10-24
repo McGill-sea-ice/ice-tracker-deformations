@@ -38,7 +38,7 @@ Install the Cartopy shapefiles (this would be done automatically by Cartopy, but
 ~~~bash
 conda activate icetrackdefs
 wget -q https://raw.githubusercontent.com/SciTools/cartopy/master/tools/cartopy_feature_download.py -O $CONDA_PREFIX/bin/cartopy_feature_download.py
-python cartopy_feature_download.py physical
+python $CONDA_PREFIX/bin/cartopy_feature_download.py physical
 ~~~
 
 
@@ -79,6 +79,18 @@ conda deactivate
 ```
 
 The user can configure the deformation calculations by modifying the definitions of the parameters in the configuration file `src/SeaIceDeformation/namelist.ini`, and the NetCDF analyses can be configured in `src/SatelliteCoverage`. In particular, the `output_folder` in the `IO` section should be modified to point to a filesystem location where one has write permissions. 
+
+## Testing procedure
+
+in ./data/ run `test.sh`
+
+It will:
+ - run `/src/SeaIceDeformation/main.py` with the `namelist.def` settings.
+ - run `/src/SeaIceDeformation/coverage_frequency_map.py` with the `options.def` settings.
+ - run `/src/SeaIceDeformation/netcdf_tools.py` with the `options.def` settings.
+ - run `/data/report_test.py`
+
+A `PASS` should be obtained for all the variables 
 
 ## Documentation
 

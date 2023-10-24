@@ -5,19 +5,18 @@ Author: Beatrice Duval (bdu002)
 Utils - Get data paths
 ------------------------------------------------------------------
 
-Code that provides functions that produce data file paths for   
-each stage of data processing given an initial raw file name, an 
+Code that provides functions that produce data file paths for
+each stage of data processing given an initial raw file name, an
 output folder, an experiment name, and a starting date.
 
 '''
 
-
 def get_triangulated_csv_path(raw_filename, output_path, exp):
     ''' (str, str, str) -> str
 
-    This function produces a triangulated stage data .csv file absolute path. 
+    This function produces a triangulated stage data .csv file absolute path.
     The triangulated file is to be stored under the output_path/exp/02_triangulated
-    directory, and its name will be created from the raw_filename, i.e. we replace 
+    directory, and its name will be created from the raw_filename, i.e. we replace
     the raw_filename's prefix by 'tri'
 
     Returns the triangulated file's path.
@@ -33,9 +32,12 @@ def get_triangulated_csv_path(raw_filename, output_path, exp):
     >>> print( get_triangulated_csv_path(raw_filename, output_path, exp) )
     /home/bdu002/outputs/2020_MarApr_S1/02_triangulated/tri_20200301002108_20200313002108_1.csv
     '''
-
-    # Create the triangulation stage data .csv filename using the raw filename
-    tri_filename = 'tri' + raw_filename[-36:]
+    if raw_filename[-3:]=="trk":
+        txt = raw_filename.split('_')
+        tri_filename = 'tri_%s%s_%s%s_S_%s%s_%s_E_%s%s_%s.csv' % (txt[5],txt[6],txt[15],txt[16],txt[1],txt[2],txt[3],txt[11],txt[12],txt[13])
+    else:
+        # Create the triangulation stage data .csv filename using the raw filename
+        tri_filename = 'tri' + raw_filename[-36:]
 
     # Get the directory in which the triangulated .csv file is to be stored
     tri_path = output_path + '/' + exp + '/02_triangulated/'  + tri_filename
@@ -47,9 +49,9 @@ def get_triangulated_csv_path(raw_filename, output_path, exp):
 def get_converted_csv_path(raw_filename, output_path, exp):
     ''' (str, str, str) -> str
 
-    This function produces a converted stage data .csv file absolute path. 
+    This function produces a converted stage data .csv file absolute path.
     The converted file is to be stored under the output_path/exp/03_converted
-    directory, and its name will be created from the raw_filename, i.e. we replace 
+    directory, and its name will be created from the raw_filename, i.e. we replace
     the raw_filename's prefix by 'conv'
 
     Returns the converted file's path.
@@ -67,7 +69,11 @@ def get_converted_csv_path(raw_filename, output_path, exp):
     '''
 
     # Create the conversion stage data .csv filename using the raw filename
-    conv_filename = 'conv' + raw_filename[-36:]
+    if raw_filename[-3:]=="trk":
+        txt = raw_filename.split('_')
+        conv_filename = 'conv_%s%s_%s%s_S_%s%s_%s_E_%s%s_%s.csv' % (txt[5],txt[6],txt[15],txt[16],txt[1],txt[2],txt[3],txt[11],txt[12],txt[13])
+    else:
+        conv_filename = 'conv' + raw_filename[-36:]
 
     # Get the directory in which the converted .csv file is to be stored
     conv_path = output_path + '/' + exp + '/03_converted/'  + conv_filename
@@ -79,9 +85,9 @@ def get_converted_csv_path(raw_filename, output_path, exp):
 def get_calculations_csv_path(raw_filename, output_path, exp):
     ''' (str, str, str) -> str
 
-    This function produces a calculations stage data .csv file absolute path. 
+    This function produces a calculations stage data .csv file absolute path.
     The calculations file is to be stored under the output_path/exp/04_calculations
-    directory, and its name will be created from the raw_filename, i.e. we replace 
+    directory, and its name will be created from the raw_filename, i.e. we replace
     the raw_filename's prefix by 'calc'
 
     Returns the calculations file's path.
@@ -99,7 +105,11 @@ def get_calculations_csv_path(raw_filename, output_path, exp):
     '''
 
     # Create the calculations stage data .csv filename using the raw filename
-    calc_filename = 'calc' + raw_filename[-36:]
+    if raw_filename[-3:]=="trk":
+        txt = raw_filename.split('_')
+        calc_filename = 'calc_%s%s_%s%s_S_%s%s_%s_E_%s%s_%s.csv' % (txt[5],txt[6],txt[15],txt[16],txt[1],txt[2],txt[3],txt[11],txt[12],txt[13])
+    else:
+        calc_filename = 'calc' + raw_filename[-36:]
 
     # Get the directory in which the calculated .csv file is to be stored
     calc_csv_path = output_path + '/' + exp + '/04_calculations/'  + calc_filename
@@ -108,15 +118,15 @@ def get_calculations_csv_path(raw_filename, output_path, exp):
     return calc_csv_path
 
 
-def get_output_nc_path(output_path, exp, start_year, start_month, start_day):
+def get_output_nc_path(IO, Date_options, Metadata):
     ''' (str, str, str, str, str) -> str
 
-    This function produces an output netcdf file absolute path. The output file is to 
-    be stored under the output_path/exp/05_output directory, and its name will be created 
+    This function produces an output netcdf file absolute path. The output file is to
+    be stored under the output_path/exp/05_output directory, and its name will be created
     from the input start date.
 
-    The output netcdf file combines the deformation results from all datasets 
-    that have been processed simultaneously (listed in config). 
+    The output netcdf file combines the deformation results from all datasets
+    that have been processed simultaneously (listed in config).
 
     Returns the ouptut netcdf file's path.
 
@@ -130,15 +140,27 @@ def get_output_nc_path(output_path, exp, start_year, start_month, start_day):
     >>> output_path = '/home/bdu002/outputs'
     >>> exp = '2020_MarApr_S1'
     >>> print( get_output_nc_path(output_path, exp, '2020', '03', '01') )
-    '/home/bdu002/outputs/2020_MarApr_S1/05_output/RCMS1SID_20200301_dx.nc'
+    '/home/bdu002/outputs/2020_MarApr_S1/05_output/S1SID_20200301_dx.nc'
     '''
 
+    output_path = IO['output_folder']
+    exp = IO['exp']
+    satellite = Metadata['icetracker']
+    start_year  = str(Date_options['start_year'])
+    start_month = str(Date_options['start_month'])
+    start_day   = str(Date_options['start_day'])
+    end_year    = str(Date_options['end_year'])
+    end_month   = str(Date_options['end_month'])
+    end_day     = str(Date_options['end_day'])
+    timestep    = str(Date_options['timestep'])
+    tolerance   = str(Date_options['tolerance'])
+
     # Create the calculations stage data .csv filename using the raw filename
-    output_filename = 'RCMS1SID_' + start_year + start_month + start_day + '_dx.nc'
+    output_filename = satellite + 'SID_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + timestep + '_tol' + tolerance + '_dx.nc'
 
     # Get the directory in which the calculated .csv file is to be stored
-    output_nc_path = output_path + '/' + exp + '/05_output/' + output_filename
+    nc_output_path = output_path + '/' + exp + '/05_output/' + output_filename
 
-    # Return a normalized calculated csv path
-    return output_nc_path
+    # Return the netcdf output path
+    return nc_output_path
 

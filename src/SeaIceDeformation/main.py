@@ -9,76 +9,90 @@ Script that executes all steps towards the calculation of sea-ice deformations a
 
 '''
 
+# Loading from default packages
+import os
+import sys
+parent = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0,parent)
 import time
-
-import config
-
-# Retrieve the selected processing method (in namelist.ini)
-method = config.config['Processing_options']['method'] 
-
-if method == 'M00':
-    import M00_d01_delaunay_triangulation as delaunay_triangulation
-    import M00_d02_to_grid_coord_system as to_grid_coord_system
-    import M00_d03_compute_deformations as compute_deformations
-
-elif method == 'M01':
-    import M01_d01_delaunay_triangulation as delaunay_triangulation
-    import M01_d03_compute_deformations as compute_deformations
-
-import visualise_deformation
+import datetime
+from tqdm import tqdm
+# Loading from other files
+from config import get_config_args, filter_data
+from config import divide_intervals, get_datapaths
+from utils_delaunay_triangulation import stb, delaunay_triangulation
+from utils_compute_deformations import compute_deformations
+from visualise_deformation import visualise_deformations
+from SatelliteCoverage.netcdf_tools import plot_deformations
 
 # Retrieve the starting time
 start_time = time.time()
 
-
 '''
-1) Triangulation
-
-Perform a Delaunay triangulation and store the results in a .csv file
-
+0) Configuration extraction
+_______________________________________________________________________
+PERFORM CONFIGURATION
 '''
+ # Retrieve configuration arguments from namelist.ini
+config = get_config_args()
 
-print('--- Performing a Delaunay triangulation ---')
-
-delaunay_triangulation.delaunay_triangulation()
-
-
-'''
-2) Conversion (M00 method only)
-
-Convert the triangulation results to a local cartesian grid coordinate system
-
-'''
-
-if method == 'M00':
-
-    print('--- Converting to local grid coordinate systems ---')
-
-    to_grid_coord_system.to_grid_coord_syst()
-
-
-'''
-3) Calculations
-
-Compute sea-ice deformations rates using the X/Y triangulations results
-
-'''
-
-print('--- Computing sea-ice deformations ---')
-
-compute_deformations.compute_deformations()
+raw_paths = filter_data(config=config)
+#config['raw_paths'] = raw_paths
+print(raw_paths)
+date_pairs = divide_intervals(config=config)
+print(date_pairs)
+# Iterating over each interval
+for i in tqdm(range(len(date_pairs)), position=0, leave=True):
+    # Loads data and converts to x/y for each interval
+    datepairs = date_pairs[i]
+    config['Date_options']['start_year'] = datepairs[0].strftime("%Y")
+    config['Date_options']['start_month'] = datepairs[0].strftime("%m")
+    config['Date_options']['start_day'] = datepairs[0].strftime("%d")
+    config['Date_options']['end_year'] = datepairs[1].strftime("%Y")
+    config['Date_options']['end_month'] = datepairs[1].strftime("%m")
+    config['Date_options']['end_day'] = datepairs[1].strftime("%d")
+    raw_paths = filter_data(config=config)
+    config['raw_paths'] = raw_paths
+    # Get the paths to which data files of all stages of data processing will be stored
+    data_paths = get_datapaths(config=config)
+    config['data_paths'] = data_paths
 
 
-'''
-4) Visualise Deformations
-'''
+    '''
+    1) Triangulation
 
-if config.config['Processing_options'].getboolean('visualise'):
-    
-    print('--- Creating sea-ice deformation figures ---')
+    Perform a Delaunay triangulation and store the results in a .csv file
 
-    visualise_deformation.visualise_deformations()
+    '''
 
+    delaunay_triangulation(config=config)
+
+
+    '''
+    2) Calculations
+
+    Compute sea-ice deformations rates using the X/Y triangulations results
+
+    '''
+
+    dataset = compute_deformations(config=config)
+
+
+    '''
+    3) Visualise Deformations
+    '''
+
+    if config['Processing_options']['visualise']:
+
+        # Ploting using csv file
+        # visualise_deformations(config=config)
+
+        # Plotting using the netCDF dataset
+        plot_deformations(data_in=dataset, config=config)
+
+
+    # Close netCDF dataset
+    dataset.close()
 
 # Display the run time
 print("--- %s seconds ---" % (time.time() - start_time))

@@ -1,5 +1,5 @@
 """
-Author: Lekima Yakuden 
+Author: Lekima Yakuden
 GitHub: LekiYak
 
 --------------------------------------------------------------------------------
@@ -9,14 +9,15 @@ Configuration file for data / netCDF analysis tools
 This file contains functions for loading and processing user options, raw data, and netCDF files.
 """
 
-import configparser
+# import from default packages
 import os
+import configparser
 from datetime import datetime, timedelta
-import numpy as np
-from netCDF4 import Dataset
-import haversine as hs
 import pandas as pd
-import pyproj
+from tqdm import tqdm
+
+# Imports from other files
+from SatelliteCoverage.utils import stb
 
 # Loading config file
 def read_config():
@@ -34,18 +35,43 @@ def read_config():
 
     # Reading options.ini
     config = configparser.ConfigParser()
-    config.read(cwd + '/options.ini')
+
+    # Choose the default or user file
+    def_fname = '/options.def'
+    usr_fname = '/options.ini'
+    if os.path.exists(cwd + usr_fname):
+        fname = usr_fname
+    elif os.path.exists(cwd + def_fname):
+        print('--- Using default parameters options.def ---')
+        print('--- Create the options.ini file to define user parameters ---')
+        fname = def_fname
+    else:
+        print('/!/ No config file found! /!/')
+
+    #opening the file
+    config.read(cwd + fname)
 
     # Return a ConfigParser object
-    return config
+    config_dict = {sect: dict(config.items(sect)) for sect in config.sections()}
+
+    # Iterate through the dictionnary to change strings to bools
+    for key in config_dict:
+        if isinstance(config_dict[key], dict):
+            for keyy in config_dict[key]:
+                if isinstance(config_dict[key][keyy], str):
+                    config_dict[key][keyy] = stb(config_dict[key][keyy])
+        elif isinstance(config_dict[key], str):
+            config_dict[key] = stb(config_dict[key])
+
+    return config_dict
 
 """
-Raw Data 
+Raw Data
 """
 # Compiles raw data into pandas dataframe
-def compile_data(raw_paths):
+def compile_data(raw_paths=None):
 
-    """ 
+    """
     Compiles all data points in the list of data files (raw_paths) into a dataframe (df)
 
     Returns the dataframe with all datapoints' starting lat and lon in columns.
@@ -53,7 +79,7 @@ def compile_data(raw_paths):
     INPUTS:
     raw_paths -- List of paths to data files {List}
 
-    OUTPUTS: 
+    OUTPUTS:
     df -- Pandas dataframe with the following columns: Index  lat  lon {Dataframe}
     """
 
@@ -62,64 +88,44 @@ def compile_data(raw_paths):
     # Initialising progression counters
     num_files = len(raw_paths)
     i = 0
-
+    satellite = 'RCM'
     # Appending each file's datapoints to the dataframe
-    for filepath in raw_paths:
-        
-        # Initialize temporary dataframe
-        temp_df = pd.DataFrame()
+    for filepath in tqdm(raw_paths, position=1, leave=False):
 
-        # Reading datapoints into temporary dataframe
-        temp_df = pd.read_csv(filepath, sep='\s\s+', engine='python', usecols = ['sLat','sLon'])
+        if satellite == 'RCM_new':
+            # Initialize temporary dataframe
+            temp_df = pd.DataFrame()
+            with open(filepath) as fd:
+                headers = [ next(fd) for i in range(7) ]
+                temp_df = pd.read_csv(fd,engine='python',sep = '\s\s+', usecols = ['lat_beg','lon_beg'])
+            my_list = list(temp_df)
+            temp_df.drop([0], axis=0, inplace=True)
+            temp_df.rename(columns = {'lat_beg':'lat','lon_beg':'lon'}, inplace = True)
 
-        temp_df.rename(columns = {'sLat':'lat', 'sLon':'lon'}, inplace = True)
+        else:
+            # Reading datapoints into temporary dataframe
+            temp_df = pd.read_csv(filepath, sep='\s\s+', engine='python', usecols = ['sLat','sLon'])
+            temp_df.rename(columns = {'sLat':'lat', 'sLon':'lon'}, inplace = True)
 
-        df = df.append(temp_df)
+        df = pd.concat([df,temp_df])
 
         # Updating counter
         i += 1
-        print(f'{i} / {num_files}')
+        # print(f'{i} / {num_files}')
 
     return df
 
-# Converts lat/lon to the north pole stereographic projection (EPSG 3413)
-def convert_to_grid(lon, lat):
-    """
-    WARNING: INPUT IS LON, LAT (X, Y), AND THE OUTPUT IS ALSO X, Y
-
-    Takes in a point in EPSG 4326 (Lat/Lon) and transforms said point to
-    a polar stereographic projection (EPSG 3413).
-
-    lon, lat {float} -> x, y {float}
-
-    INPUTS:
-    lat, lon -- Float values representing a point in WGS 84
-
-    OUTPUTS:
-    x, y -- Float values representing the transformed point in EPSG 3413
-    """
-
-    # Input projection (lat/lon)
-    in_proj = pyproj.Proj(init='epsg:4326')
-
-    # Output projection (EPSG 3413, Polar Stereographic)
-    out_proj = pyproj.Proj('+proj=stere +lat_0=90 +lat_ts=70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ', preserve_units=True)
-
-    # Transform function
-    x, y = np.array(pyproj.transform(in_proj, out_proj, lon, lat))
-    return x, y
-
 # Divides raw data into intervals specified by the user
-def divide_intervals(raw_paths, max_date, min_date, interval):
+# def divide_intervals(raw_paths, max_date, min_date, interval):
+def divide_intervals(config=None):
     """
     Divides delta-t filtered data into chunks (intervals) of *interval* hours for
     processing.
 
     INPUTS:
     raw_paths -- List of data file paths with the desired delta t {list}
-    max_date -- Upper limit of selected date range {datetime object}
-    min_date -- Lower limit of selected date range {datetime object}
-    interval -- Desired interval length in hours {str}
+    Date_options -- ConfigParser object to determine start/end dates of intervals as specififed by user
+    Options -- ConfigParser object to determine the interval length as specififed by user
 
     OUTPUTS:
     interval_list -- List of n lists, where n is the number of full intervals which
@@ -128,82 +134,108 @@ def divide_intervals(raw_paths, max_date, min_date, interval):
                      with the n th interval.
     date_pairs -- List of tuples, each containing the start and end dates of the n th interval (datetime
                   objects in tuples, all in a list)
-    
+
     """
 
+    raw_paths = config['raw_list']
+    Date_options = config['Date_options']
+    options = config['options']
+    satellite = config['Metadata']['icetracker']
+
+    start_year  = str(Date_options['start_year'])
+    start_month = str(Date_options['start_month'])
+    start_day   = str(Date_options['start_day'])
+    end_year    = str(Date_options['end_year'])
+    end_month   = str(Date_options['end_month'])
+    end_day     = str(Date_options['end_day'])
+    interval    = options['interval']
+
+
+    # Concatenate start and end dates
+    sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
+    eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
+
     # Converting date range to timedelta object (hours)
-    date_range = (max_date - min_date)
+    date_range = (eDate - sDate)
     date_range = date_range.days * 24
 
     # Counting number of full intervals over date range {int}
     interval_count = date_range // int(interval)
 
     # Allowing *min_date* to be updated and initializing time difference object
-    min_date = min_date
+    min_date_it = sDate
     dtime = timedelta(hours=int(interval))
 
     # Creating list containing tuples of date ranges [(dt1, dt2), (dt2, dt3) ...]
     date_pairs = []
     for i in range(interval_count):
-        date_pairs.append((min_date, min_date + dtime))
-        min_date = min_date + dtime
+        date_pairs.append((min_date_it, min_date_it + dtime))
+        min_date_it = min_date_it + dtime
 
     # Sorting files into intervals
     interval_list = []
     for pair in date_pairs:
-        
+
         # Initializing temporary list to store dates in interval
         temp_list = []
 
         # Checking if date range of file overlaps with interval (if true, append)
         for filepath in raw_paths:
-            initial_date = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
-            final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')            
+            if satellite == 'RCM_new':
+                txt = filepath.split('_')
+                initial_date = datetime.strptime("%s%s" % (txt[9],txt[10]), '%Y%m%d%H%M%S')
+                final_date = datetime.strptime("%s%s" % (txt[19],txt[20]), '%Y%m%d%H%M%S')
+            else:
+                initial_date = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
+                final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')
 
             if (initial_date <= pair[1]) and (final_date >= pair[0]):
                 temp_list.append(filepath)
 
-        # Appending list of interval-contained files        
-        interval_list.append(temp_list)      
+        # Appending list of interval-contained files
+        interval_list.append(temp_list)
 
-    return {'interval_list': interval_list, 'date_pairs': date_pairs}
+    return interval_list, date_pairs
+
 
 # Filters raw data based on user set parameters
-def filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path):
+def filter_data(config=None):
     """
-    Filters through the data files located in 'data_path' using the user 
+    Filters through the data files located in 'data_path' using the user
     options in 'options.ini'. Outputs a list of paths to data files which
     satisfy the user's criteria.
 
-    Automatically changes date range to match data availability. i.e. if the user specifies
-    a date range between 01-11-2020 and 01-06-2021, but data is only available from 
-    05-11-2020 and 24-05-2021, dates to be processed will be set to the latter, and
-    the user will be notified (Line 164)
+    Note: If the available data does not span the full start/end dates interval
+    specified by the user in 'options.ini', the user will be informed that the
+    the files to be processed have a different time span the the one requested.
 
     INPUTS:
-    start_year -- Starting year YYYY {str}
-    start_month -- Starting month MM {str}
-    start_day -- Starting day DD {str}
-
-    end_year -- Ending year YYYY {str}
-    end_month -- Ending month MM {str}
-    end_day -- Ending day DD {str} 
-
-    timestep -- Desired timestep in hours {str}
-    tolerance -- Number of hours around timestep that will be filtered through {str}
-
-    data_path -- Path to directory containing data files {str}
+    Date_options -- ConfigParser object to determine start/end dates, timestep, and tolerance as specififed by user.
+    IO -- ConfigParser object to determine the path to directory containing the data files
+    Metadata -- ConfigParser object to determine which satellite(s) is being used.
 
     OUTPUTS:
-    dictionary object -- raw_paths: List of file paths, max_date: Latest date in file list, 
-                         min_date: Earliest date in file list
+    raw_paths -- List of file paths {list}
     """
 
-    # Concatenate start and end dates
-    start_date = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
-    end_date = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
+    IO = config['IO']
+    Date_options = config['Date_options']
+    Metadata = config['Metadata']
 
-    # Set delta t tolerance 
+    start_year  = str(Date_options['start_year'])
+    start_month = str(Date_options['start_month'])
+    start_day   = str(Date_options['start_day'])
+    end_year    = str(Date_options['end_year'])
+    end_month   = str(Date_options['end_month'])
+    end_day     = str(Date_options['end_day'])
+    timestep    = int(Date_options['timestep'])
+    tolerance   = int(Date_options['tolerance'])
+
+    # Concatenate start and end dates
+    sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
+    eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
+
+    # Set delta t tolerance
     upper_timestep = timedelta(hours=(int(timestep) + int(tolerance)))
     lower_timestep = timedelta(hours=(int(timestep) - int(tolerance)))
 
@@ -212,274 +244,77 @@ def filter_data(start_year, start_month, start_day, end_year, end_month, end_day
     min_date = datetime(3000, 12, 25)
     max_date = datetime(1000, 12, 25)
 
-    # Filtering data files by date
-    for filename in os.listdir(data_path):
-        
-        # Extracting initial and final dates from data file names
-        initial_date = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
-        final_date = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
+    # List of summer months (Won't include data from these months)
+    summer_months = [6, 7, 8, 9, 10]
 
-        # Checking if all files from initial_date to final_date will be loaded (timestep == '0')
-        if timestep != '0':
-            # Filtering by date range and delta t and appending to the file list
-            if start_date.date() <= initial_date.date() <= end_date.date() and start_date.date() <= final_date.date() <= end_date.date() and lower_timestep <= (final_date-initial_date) <= upper_timestep: 
-                raw_paths.append(data_path + '/' + filename)
+    date_path = IO['data_folder']
+    satellite = Metadata['icetracker']
 
-                # Updating date tracker
-                if initial_date < min_date:
-                    min_date = initial_date
-                if final_date > max_date:
-                    max_date = final_date    
-        
-        elif timestep == '0':
-            # Filtering by date range only
-            if start_date.date() <= initial_date.date() <= end_date.date() and start_date.date() <= final_date.date() <= end_date.date(): 
-                raw_paths.append(data_path + '/' + filename)
-                
-                # Updating date tracker
-                if initial_date < min_date:
-                    min_date = initial_date
-                if final_date > max_date:
-                    max_date = final_date
+    if satellite == 'RCMS1':
+        sat_list = ['rcm/','s1/']
+    elif satellite == 'S1':
+        sat_list = ['s1/']
+    elif satellite == 'RCM':
+        sat_list = ['rcm/']
+    elif satellite == 'RCM_new':
+        sat_list = ['rcm_new/']
+    else:
+        raise Exception("Oh, original, but satellite data other than RCM or S1 is not defined!!")
 
-    # Notifying user of date range change
-    if start_date != min_date or end_date != max_date:
-        print(f'Start and end dates of data updated to {min_date} and {max_date}')
-            
-    return {'raw_paths': raw_paths, 'max_date': max_date, 'min_date': min_date}
+    for sat_type in sat_list:
+        for year in range(int(start_year), int(end_year)+1):
+
+            if not(os.path.exists(date_path + sat_type + str(year) + '/')):
+                print('No data for '+ sat_type + ' in ' + str(year) )
+            else:
+                data_path = date_path + sat_type + str(year) + '/'
+
+                #--------------------------------------------------------------------------
+                # listing the files in the folder and adding the pairs if in the right dates
+                #     This could be made a function if used when a IO class is made
+                #---------------------------------------------------------------------------
+
+                # Filtering data files by date
+                for filename in os.listdir(data_path):
+
+                    # Extracting initial and final dates from data file names
+                    if satellite == 'RCM_new':
+                        txt = filename.split('_')
+                        iDate = datetime.strptime("%s%s" % (txt[5],txt[6]), '%Y%m%d%H%M%S')
+                        fDate = datetime.strptime("%s%s" % (txt[15],txt[16]), '%Y%m%d%H%M%S')
+                    else:
+                        iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
+                        fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
+
+                    # Checking if all files from iDate to fDate will be loaded (timestep == '0')
+                    if timestep != '0':
+                        # Filtering by date range and delta t and appending to the file list
+                        if iDate < eDate and fDate > sDate and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months:
+                            raw_paths.append(data_path + '/' + filename)
+
+                            # Updating date tracker
+                            if iDate < min_date:
+                                min_date = iDate
+                            if fDate > max_date:
+                                max_date = fDate
+
+                    elif timestep == '0':
+                        # Filtering by date range only
+
+                        if iDate < eDate and fDate > sDate and iDate.month not in summer_months:
+
+                            raw_paths.append(data_path + '/' + filename)
+
+                            # Updating date tracker
+                            if iDate < min_date:
+                                min_date = iDate
+                            if fDate > max_date:
+                                max_date = fDate
 
 
-"""
-netCDF Analysis
-"""
-# Converts desired time range to seconds for netCDF analysis
-def seconds_to_date(path:str, start_year, start_month, start_day, end_year, end_month, end_day):
-    """
-    This function takes in a netCDF's reference time and start and end times of each triangle
-    and calculates the seconds elapsed between the former and latter. This is done to filter
-    the data loaded from the netCDF by time, as the start and end times in the netCDF are stored
-    as "seconds after the reference time".
+    # Notifying user of data start/end times of files corresponding to the specified interval
+    print(f"Valid start/end dates of coverage map: {sDate} to {eDate}")
+    print(f"Earliest/latest start/end dates of data included in coverage map: {min_date} to {max_date}")
 
-    INPUTS:
-    path -- String of path to the netCDF file the data will be read from {str}
+    return raw_paths
 
-    start_year -- Start year of the user-specified period (Hereinafter the "period") {str}
-    start_month -- Start month of the period {str}
-    start_day -- Start day of the period {str}
-
-    end_year -- End year of the period {str}
-    end_month -- End month of the period {str}
-    end_day -- End day of the period {str}
-    """
-
-    # Open dataset
-    ds = Dataset(path, mode='r')
-
-    # Fetch reference time (start timestamp)
-    reftime = ds.getncattr('referenceTime')
-
-    # Closing dataset
-    ds.close()
-
-    # Converting reference time from string to datetime object
-    reftime = reftime[0:10]
-    reftime = datetime.strptime(reftime, '%Y-%m-%d')
-
-    # Converting start and end date strings to datetime objects
-    start_date = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
-    end_date = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
-
-    # Taking the difference between the start and end times of each triangle
-    # and converting it to seconds
-    start_ref_dt = (start_date - reftime).total_seconds()
-    end_ref_dt = (end_date - reftime).total_seconds()
-
-    return start_ref_dt, end_ref_dt
-
-# Filters netCDF data by area
-def filter_area(centre_lat, centre_lon, radius, start_lats, start_lons):
-    """
-    This function filters data read from a netCDF (Stored as NumPy arrays) by area.
-    The user specifies a centre point in WGS 84 (Lat/Lon) and a radius in km, which are then
-    combined to create a mask, leaving only data *radius* kilometres from the centre point.
-    Only triangles with all three vertices within this circle will be loaded.
-
-    INPUTS:
-    centre_lat -- Latitude of the centre point {float}
-    centre_lon -- Longitude of the centre point {float}
-    radius -- Radius of the circle (mask) in kilometres {float}
-    start_lats -- Starting latitudes of the triangles in the format 
-                  [[Latitudes (1)], [Latitudes (2)], [Latitudes (3)]] {NumPy array}
-    start_lons -- Starting latitudes of the triangles in the format 
-                  [[Longitudes (1)], [Longitudes (2)], [Longitudes (3)]] {NumPy array}
-
-    OUTPUTS:
-    indices -- List of indices of triangles located within the area {list}
-    """
-
-    print('--- Filtering area ---')
-
-    # Turning inputs into floats if they aren't already
-    centre_lat, centre_lon, radius = float(centre_lat), float(centre_lon), float(radius)
-    centre_point = (centre_lat, centre_lon)
-
-    # Loading start lat/lon values
-    start_lat1, start_lat2, start_lat3 = start_lats[0], start_lats[1], start_lats[2]
-    start_lon1, start_lon2, start_lon3 = start_lons[0], start_lons[1], start_lons[2]
-
-    # List of 1s and 0s, 1 if the point is within the radius and 0 else
-    tf_list1, tf_list2, tf_list3 = ([] for i in range(3))
-
-    # Iterating over all lists
-    for coordinate in zip(start_lat1, start_lon1):
-        if hs.haversine(coordinate, centre_point) <= radius: # hs.haversine calculates the 
-            tf_list1.append(1)                               # distance between two lats/lons
-        else:
-            tf_list1.append(0)
-    
-    for coordinate in zip(start_lat2, start_lon2):
-        if hs.haversine(coordinate, centre_point) <= radius:
-            tf_list2.append(1)
-        else:
-            tf_list2.append(0)
-
-    for coordinate in zip(start_lat3, start_lon3):
-        if hs.haversine(coordinate, centre_point) <= radius:
-            tf_list3.append(1)
-        else:
-            tf_list3.append(0)
-
-    # Filtering indices where all three points (entire triangle) is within the radius
-    indices = [i for i in range(len(tf_list1)) if tf_list1[i] == tf_list2[i] == tf_list3[i] == 1]
-
-    return indices
-
-# Loads netCDF data
-def load_netcdf(path:str):
-    """
-    This function reads and loads data from a netCDF file in the same format as those output by the deformation
-    calculation script in src/SeaIceDeformation. The user is able to filter the data by time and area,
-    allowing for analytical tools to be applied to selected snippets of data.
-    
-    INPUTS:
-    path -- String of path to the netCDF file the data will be read from {str}
-
-    OUTPUTS:
-    dictionary object -- Dictionary storing filtered data as NumPy arrays {dict}
-    """
-
-    print('--- Loading data ---')
-    
-    # Reading config
-    config = read_config()
-    options = config['options']
-
-    # Reading user options
-    start_year, start_month, start_day = options['start_year'], options['start_month'], options['start_day']
-    end_year, end_month, end_day = options['end_year'], options['end_month'], options['end_day']
-    area_filter, centre_lat, centre_lon, radius = options['area_filter'], options['centre_lat'], options['centre_lon'], options['radius']
-
-    # Load netCDF as Dataset from *path*
-    ds = Dataset(path, mode='r')
-
-    # Get start / end times from user
-    start_time_s, end_time_s = seconds_to_date(path, start_year, start_month, start_day, end_year, end_month, end_day)
-
-    # Extracting time variables
-    start_time = ds.variables['start_time'][:]
-    end_time = ds.variables['end_time'][:]
-
-    # Indices of data in desired time frame
-    time_indices = np.where( (start_time > start_time_s) & (start_time < end_time_s) )[0]
-
-    # Extracting data (Filtered by time only)
-
-    start_time = start_time[time_indices]
-    end_time = end_time[time_indices]
-
-    start_lat1 = (ds.variables['start_lat1'][:])[time_indices]
-    start_lat2 = (ds.variables['start_lat2'][:])[time_indices]
-    start_lat3 = (ds.variables['start_lat3'][:])[time_indices]
-
-    start_lon1 = (ds.variables['start_lon1'][:])[time_indices]
-    start_lon2 = (ds.variables['start_lon2'][:])[time_indices]
-    start_lon3 = (ds.variables['start_lon3'][:])[time_indices]
-
-    end_lat1 = (ds.variables['end_lat1'][:])[time_indices]
-    end_lat2 = (ds.variables['end_lat2'][:])[time_indices]
-    end_lat3 = (ds.variables['end_lat3'][:])[time_indices]
-
-    end_lon1 = (ds.variables['end_lon1'][:])[time_indices]
-    end_lon2 = (ds.variables['end_lon2'][:])[time_indices]
-    end_lon3 = (ds.variables['end_lon3'][:])[time_indices]
-
-    div = (ds.variables['div'][:])[time_indices]
-    shr = (ds.variables['shr'][:])[time_indices]
-    vrt = (ds.variables['vrt'][:])[time_indices]
-
-    idx1 = (ds.variables['idx1'][:])[time_indices]
-    idx2 = (ds.variables['idx2'][:])[time_indices]
-    idx3 = (ds.variables['idx3'][:])[time_indices]
-    no   = (ds.variables['no'][:])[time_indices]
-
-    id_start_lat1 = (ds.variables['id_start_lat1'][:])[time_indices]
-    id_start_lat2 = (ds.variables['id_start_lat2'][:])[time_indices]
-    id_start_lat3 = (ds.variables['id_start_lat3'][:])[time_indices]
-
-    dudx = (ds.variables['dudx'][:])[time_indices]
-    dudy = (ds.variables['dudy'][:])[time_indices]
-    dvdx = (ds.variables['dvdx'][:])[time_indices]
-    dvdy = (ds.variables['dvdy'][:])[time_indices]
-
-    # Compressing coordinates into arrays of arrays
-    start_lats = np.array([start_lat1, start_lat2, start_lat3])
-    start_lons = np.array([start_lon1, start_lon2, start_lon3])
-    end_lats = np.array([end_lat1, end_lat2, end_lat3])
-    end_lons = np.array([end_lon1, end_lon2, end_lon3])
-
-    reftime = ds.getncattr('referenceTime')
-    icetracker = ds.getncattr('iceTracker')
-    trackingerror = ds.getncattr('trackingError')
-
-    if area_filter == 'True':
-        print('--- Filtering by area ---')
-        # Filtering by area
-        area_indices = filter_area(centre_lat, centre_lon, radius, start_lats, start_lons)
-
-        # Applying filter
-        start_time = start_time[area_indices]
-        end_time = end_time[area_indices]
-
-        start_lats = np.array([start_lat1[area_indices], start_lat2[area_indices], start_lat3[area_indices]])
-        start_lons = np.array([start_lon1[area_indices], start_lon2[area_indices], start_lon3[area_indices]])
-        end_lats = np.array([end_lat1[area_indices], end_lat2[area_indices], end_lat3[area_indices]])
-        end_lons = np.array([end_lon1[area_indices], start_lon2[area_indices], end_lon3[area_indices]])
-
-        div = div[area_indices]
-        shr = shr[area_indices]
-        vrt = vrt[area_indices]
-
-        idx1 = idx1[area_indices]
-        idx2 = idx2[area_indices]
-        idx3 = idx3[area_indices]
-        no   = no[area_indices]
-
-        id_start_lat1 = id_start_lat1[area_indices]
-        id_start_lat2 = id_start_lat2[area_indices]
-        id_start_lat3 = id_start_lat3[area_indices]
-
-        dudx = dudx[area_indices]
-        dudy = dudy[area_indices]
-        dvdx = dvdx[area_indices]
-        dvdy = dvdy[area_indices]
-
-    # Closing dataset
-    ds.close()
-
-    return {'start_lats': start_lats, 'start_lons': start_lons, 'end_lats': end_lats, 'end_lons': end_lons, 
-            'div': div, 'shr': shr, 'vrt': vrt, 
-            'start_time': start_time, 'end_time': end_time, 'time_indices': time_indices, 
-            'reftime': reftime, 'icetracker': icetracker, 'trackingerror': trackingerror, 
-            'idx1': idx1, 'idx2': idx2, 'idx3': idx3, 'no': no, 
-            'start_id1': id_start_lat1, 'start_id2': id_start_lat2, 'start_id3': id_start_lat3, 
-            'dudx': dudx, 'dudy': dudy, 'dvdx': dvdx, 'dvdy': dvdy}
