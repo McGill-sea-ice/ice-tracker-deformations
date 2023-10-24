@@ -38,8 +38,9 @@ config = get_config_args()
 
 raw_paths = filter_data(config=config)
 #config['raw_paths'] = raw_paths
-
+print(raw_paths)
 date_pairs = divide_intervals(config=config)
+print(date_pairs)
 # Iterating over each interval
 for i in tqdm(range(len(date_pairs)), position=0, leave=True):
     # Loads data and converts to x/y for each interval

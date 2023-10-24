@@ -25,7 +25,7 @@ for var in data_ref.variables:
         elif not test:
             dist = ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len( data_ref[var][:]  )
             if abs(dist) < 1e-7 :
-                print(var, ' PASS BUT NOT EQUAL (after all, perfection is perfection, and this isn't)')
+                print(var, ' PASS BUT NOT EQUAL (after all, perfection is perfection, and this isnt)')
             elif abs(dist) < 1e-4 :
                 print(var, ' PASS BUT REALLY NOT EQUAL (but if you squeeze your eyes...)')
             else:

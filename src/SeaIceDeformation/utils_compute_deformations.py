@@ -297,7 +297,6 @@ def compute_deformations(config=None):
     '''
     # Find absolute path in which the output netcdf file is to be stored
     nc_output_path = config['data_paths']['nc_output']
-
     # Create a directory to store the output netcdf file if it does not exist already
     os.makedirs(os.path.dirname(nc_output_path), exist_ok=True)
 

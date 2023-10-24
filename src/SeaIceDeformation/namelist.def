@@ -92,3 +92,13 @@ end_day = 02
 
 timestep = 24
 tolerance = 24
+
+[options]
+interval = 24
+resolution  = 20
+percentage  = False
+ref_lat = 70
+area_filter = False
+centre_lat  = 71
+centre_lon  = -160
+radius      = 700
