@@ -80,8 +80,12 @@ def compute_deformations(config=None):
     sTime, eTime, \
         sLat1, sLat2, sLat3, sLon1, sLon2, sLon3, \
         eLat1, eLat2, eLat3, eLon1, eLon2, eLon3, \
-        div, shr, vrt, idx1, idx2, idx3, no, idx_sLat1, idx_sLat2, idx_sLat3, A_l, dudx_l, dudy_l, dvdx_l, dvdy_l, sat_l \
-        = ([] for i in range(30))
+        div, shr, vrt, idx1, idx2, idx3, \
+        no, idx_sLat1, idx_sLat2, idx_sLat3, A_l, \
+        dudx_l, dudy_l, dvdx_l, dvdy_l, sat_l , \
+        delA_l, delI_l, delII_l, s2n \
+        = ([] for i in range(34))
+    sigx = 200.0
 
     # Retrieve the starting date common to all processed datasets (from namelist.ini)
     Date_options = config['Date_options']
@@ -147,7 +151,7 @@ def compute_deformations(config=None):
 
         # Retrieve the starting and ending times and compute the time interval (days)
         start, end = utils_datetime.dataDatetimes(raw_path)
-        dt = utils_datetime.dT( (start, end) ) / 86400
+        dt = utils_datetime.dT( (start, end) ) / 86400.0
 
         # Create a header and a list of data rows that will be used to create the output csv file
         header = ['no.', 'Sat',  'A', 'dudx', 'dudy', 'dvdx', 'dvdy', 'eps_I', 'eps_II', 'vrt', 'eps_tot']
@@ -240,6 +244,28 @@ def compute_deformations(config=None):
             dvdx_l.append(dvdx)
             dvdy_l.append(dvdy)
 
+            del11, del12, del21, del22, delA = calculate_trackerrors( u_list, v_list, sx_list, sy_list,dt)
+
+            del11 = (dudx*dudx*delA/A**2.0 + del11) * sigx**2.0
+            del22 = (dvdy*dvdy*delA/A**2.0 + del22) * sigx**2.0
+            del12 = (dudy*dudy*delA/A**2.0 + del12) * sigx**2.0
+            del21 = (dvdx*dvdx*delA/A**2.0 + del21) * sigx**2.0
+            delI = del11 + del22
+            if eps_II > 0.0:
+                delII = (delI*(((dudx - dvdy)/eps_II)**2.0) + (del12+del21)*(((dudy + dvdx)/eps_II)**2.0))
+                deltot = delII*((eps_II/eps_tot)**2.0) + delI*(( eps_I/eps_tot)**2.0)
+                sig2noise = (eps_tot)/(deltot**0.5)
+            else:
+                delII = np.nan
+                deltot = np.nan
+                sig2noise = 0.0
+
+            # Add the strain rates and area to the netcdf lists
+            delA_l.append(delA)
+            delI_l.append(delI)
+            delII_l.append(delII)
+            s2n.append(sig2noise)
+
         # Update file counter
         file_num += 1
 
@@ -301,16 +327,24 @@ def compute_deformations(config=None):
     os.makedirs(os.path.dirname(nc_output_path), exist_ok=True)
 
     print("Printing the deformations in the netcdf: ", nc_output_path)
+
     # Create an output netcdf file and dataset
     output_ds = Dataset(nc_output_path, 'w', format = 'NETCDF4')
 
-    # Add metadata
+    # Add metadata as global attribute to the netcdf
     Metadata = config['Metadata']
-    output_ds.icetracker = Metadata['icetracker']
+    maxDeltat = int(Date_options['tolerance']) + int(Date_options['timestep'])
+    if Metadata['icetracker'] == 'RCMS1':
+        SARsource = "RCM and S1"
+    else:
+        SARsource = Metadata['icetracker']
+    print(SARsource)
+    Metadata = config['Metadata']
+    output_ds.SatelliteSource = SARsource
     output_ds.referenceTime = YYYY + '-' + MM + '-' + DD + ' 00:00:00'
     output_ds.trackingError = Metadata['tracking_error'] + ' m'
-    output_ds.timestep = Date_options['timestep'] + ' hours'
-    output_ds.tolerance = Date_options['tolerance'] + ' hours'
+    output_ds.Max_Deltat = '%s hours' % maxDeltat
+    #output_ds.tolerance = Date_options['tolerance'] + ' hours'
 
     # Create x array to store output data
     x = output_ds.createDimension('x', len(sTime))
@@ -342,7 +376,7 @@ def compute_deformations(config=None):
     id1        = output_ds.createVariable('idx1', 'u4', 'x') # Triangle vertices
     id2        = output_ds.createVariable('idx2', 'u4', 'x')
     id3        = output_ds.createVariable('idx3', 'u4', 'x')
-    idtri      = output_ds.createVariable('no', 'u4', 'x')
+    idpair     = output_ds.createVariable('no', 'u4', 'x')
 
     Aa         = output_ds.createVariable('A', 'f8', 'x') # Triangle area
 
@@ -350,6 +384,13 @@ def compute_deformations(config=None):
     duy        = output_ds.createVariable('dudy', 'f8', 'x')
     dvx        = output_ds.createVariable('dvdx', 'f8', 'x')
     dvy        = output_ds.createVariable('dvdy', 'f8', 'x')
+
+
+    sA         = output_ds.createVariable('errA', 'f8', 'x') # Triangle area
+    sI         = output_ds.createVariable('errI', 'f8', 'x') # Strain rates
+    sII        = output_ds.createVariable('errII', 'f8', 'x')
+    sig2n      = output_ds.createVariable('s2n', 'f8', 'x')
+
 
     # Specify units for each variable
     start_time.units = 'seconds since the reference time'
@@ -371,16 +412,27 @@ def compute_deformations(config=None):
     end_lon2.units   = 'degrees East'
     end_lon3.units   = 'degrees East'
 
+    id1.units        = 'ID vertex 1'
+    id2.units        = 'ID vertex 2'
+    id3.units        = 'ID vertex 3'
+    idpair.units     = 'ID SAR pair'
+
     d.units          = '1/days'
     s.units          = '1/days'
     v.units          = '1/days'
 
-    dux.units       = '1/days'
-    duy.units       = '1/days'
-    dvx.units       = '1/days'
-    dvy.units       = '1/days'
+    dux.units        = '1/days'
+    duy.units        = '1/days'
+    dvx.units        = '1/days'
+    dvy.units        = '1/days'
 
     Aa.units         = 'square meters'
+
+    sI.units         = '1/days'
+    sII.units        = '1/days'
+
+    sA.units         = 'square meters'
+    sig2n.units      = 'none'
 
     # Attribute data arrays to each variable
     start_time[:] = sTime
@@ -409,7 +461,7 @@ def compute_deformations(config=None):
     id1[:]        = idx1
     id2[:]        = idx2
     id3[:]        = idx3
-    idtri[:]      = no
+    idpair[:]      = no
 
     Aa[:]        = [Ai*(int(Metadata['tracking_error'])**2.) for Ai in A_l]
 
@@ -417,6 +469,11 @@ def compute_deformations(config=None):
     duy[:]       = dudy_l
     dvx[:]       = dvdx_l
     dvy[:]       = dvdy_l
+
+    sA[:]        = delA_l
+    sI[:]        = delI_l
+    sII[:]       = delII_l
+    sig2n[:]     = s2n
 
     return output_ds
 
@@ -489,6 +546,57 @@ def calculate_strainrates( u_list, v_list, sx_list, sy_list ):
         dvdy += -1.0/(2.0*A) * ( v_list[((i+1) % n)] + v_list[i] ) * ( sx_list[((i+1) % n)] - sx_list[i] )
 
     return dudx, dudy, dvdx, dvdy, A
+
+
+def calculate_trackerrors( u_list, v_list, sx_list, sy_list, Deltat ):
+    ''' (float, list, list) float
+
+    Computes the strain rates (or velocity derivatives).
+
+    Keyword arguments:
+    u_list -- list of u component velocities for each cell vertices
+    v_list -- list of v component velocities for each cell vertices
+    sx_list -- list of starting x positions for each cell vertices
+    sy_list -- list of starting y positions for each cell vertices
+    '''
+
+    # Find the number of cell vertices
+    n = len(sx_list)
+
+    #----- Compute the Lagrangian cell area A -----
+
+    # Initialize the cell area to 0
+    A = 0.0
+    delA = 0.0
+
+    # Perform a summation to compute A (see Bouchat et al. (2020) eqn. 6)
+    for i in range( n ):
+        A += (1.0/2.0) * ( sx_list[i] * sy_list[((i+1) % n)] - sx_list[((i+1) % n)] *  sy_list[i])
+
+        delA += ((sx_list[i] - sx_list[((i+2) % n)])**2.0 + (sy_list[((i+2) % n)] - sy_list[i])**2.0)/4.0
+
+    #----- Compute the strain rates ---------------
+
+    # Initialize the strain rates to 0
+    trackerror11 = 0.0
+    trackerror12 = 0.0
+    trackerror21 = 0.0
+    trackerror22 = 0.0
+
+    # Perform a summation to compute strain rates (see Bouchat et al. (2020) eqn. 5)
+    for i in range( n ):
+
+        trackerror11 += (sy_list[i] - sy_list[((i+2) % n)])**2.0/(2.0*A*A*Deltat*Deltat) + (u_list[i]-u_list[((i+2) % n)])**2.0/(4.0*A*A)
+
+        trackerror22 += (sx_list[i] - sx_list[((i+2) % n)])**2.0/(2.0*A*A*Deltat*Deltat) + (v_list[i]-v_list[((i+2) % n)])**2.0/(4.0*A*A)
+
+        trackerror12 += (sx_list[i] - sx_list[((i+2) % n)])**2.0/(2.0*A*A*Deltat*Deltat) + (u_list[i]-u_list[((i+2) % n)])**2.0/(4.0*A*A)
+
+        trackerror21 += (sy_list[i] - sy_list[((i+2) % n)])**2.0/(2.0*A*A*Deltat*Deltat) + (v_list[i]-v_list[((i+2) % n)])**2.0/(4.0*A*A)
+
+
+    return trackerror11, trackerror12, trackerror21, trackerror22, delA
+
 
 
 if __name__ == '__main__':

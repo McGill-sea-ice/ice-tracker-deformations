@@ -27,23 +27,21 @@ from SatelliteCoverage.netcdf_tools import plot_deformations
 
 # Retrieve the starting time
 start_time = time.time()
-
 '''
 0) Configuration extraction
 _______________________________________________________________________
 PERFORM CONFIGURATION
 '''
- # Retrieve configuration arguments from namelist.ini
-config = get_config_args()
 
+# Retrieve configuration arguments from namelist.ini
+config = get_config_args()
 raw_paths = filter_data(config=config)
-#config['raw_paths'] = raw_paths
-print(raw_paths)
 date_pairs = divide_intervals(config=config)
-print(date_pairs)
-# Iterating over each interval
-for i in tqdm(range(len(date_pairs)), position=0, leave=True):
-    # Loads data and converts to x/y for each interval
+
+# Iterating over each (daily) interval
+for i in tqdm(range(len(date_pairs)), position=0, leave=False):
+
+    #Set the start and end time according to the given date
     datepairs = date_pairs[i]
     config['Date_options']['start_year'] = datepairs[0].strftime("%Y")
     config['Date_options']['start_month'] = datepairs[0].strftime("%m")
@@ -51,45 +49,20 @@ for i in tqdm(range(len(date_pairs)), position=0, leave=True):
     config['Date_options']['end_year'] = datepairs[1].strftime("%Y")
     config['Date_options']['end_month'] = datepairs[1].strftime("%m")
     config['Date_options']['end_day'] = datepairs[1].strftime("%d")
+
+    # Loads sea ice motion data for the given interval
     raw_paths = filter_data(config=config)
     config['raw_paths'] = raw_paths
+
     # Get the paths to which data files of all stages of data processing will be stored
     data_paths = get_datapaths(config=config)
     config['data_paths'] = data_paths
 
-
-    '''
-    1) Triangulation
-
-    Perform a Delaunay triangulation and store the results in a .csv file
-
-    '''
-
+    #Triangulate and store results to temp .csv files (to be improved)
     delaunay_triangulation(config=config)
 
-
-    '''
-    2) Calculations
-
-    Compute sea-ice deformations rates using the X/Y triangulations results
-
-    '''
-
+    #Compute sea-ice deformations rates and stack in daily netcdf output.
     dataset = compute_deformations(config=config)
-
-
-    '''
-    3) Visualise Deformations
-    '''
-
-    if config['Processing_options']['visualise']:
-
-        # Ploting using csv file
-        # visualise_deformations(config=config)
-
-        # Plotting using the netCDF dataset
-        plot_deformations(data_in=dataset, config=config)
-
 
     # Close netCDF dataset
     dataset.close()

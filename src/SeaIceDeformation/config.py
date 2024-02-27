@@ -138,30 +138,6 @@ def divide_intervals(config=None):
         date_pairs.append((min_date_it, min_date_it + dtime))
         min_date_it = min_date_it + dtime
 
-    # Sorting files into intervals
-#    interval_list = []
-#    for pair in date_pairs:
-#
-#        # Initializing temporary list to store dates in interval
-#        temp_list = []
-#
-#        # Checking if date range of file overlaps with interval (if true, append)
-#        for filepath in raw_paths:
-#            if satellite == 'RCM_new':
-#                txt = filepath.split('_')
-#                initial_date = datetime.strptime("%s%s" % (txt[9],txt[10]), '%Y%m%d%H%M%S')
-#                final_date = datetime.strptime("%s%s" % (txt[19],txt[20]), '%Y%m%d%H%M%S')
-#            else:
-#                initial_date = datetime.strptime(filepath[-35:-21], '%Y%m%d%H%M%S')
-#                final_date = datetime.strptime(filepath[-20:-6], '%Y%m%d%H%M%S')
-#
-#            if (initial_date <= pair[1]) and (final_date >= pair[0]):
-#                temp_list.append(filepath)
-#
-#        # Appending list of interval-contained files
-#        interval_list.append(temp_list)
-
-#    return interval_list, date_pairs
     return date_pairs
 
 def filter_data(config=None):
@@ -210,7 +186,7 @@ def filter_data(config=None):
     # Concatenate start and end dates
     sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
     eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
-
+    print(sDate,eDate)
     # Set delta t tolerance
     upper_timestep = timedelta(hours=(int(timestep) + int(tolerance)))
     lower_timestep = timedelta(hours=(int(timestep) - int(tolerance)))
@@ -223,6 +199,8 @@ def filter_data(config=None):
     # List of summer months (Won't include data from these months)
     #summer_months = [6, 7, 8, 9, 10]
     summer_months = [0]
+
+    #Fetch the path to the SAR-derived sea ice motion files
     date_path = IO['data_folder']
     satellite = Metadata['icetracker']
 
@@ -233,10 +211,12 @@ def filter_data(config=None):
     elif satellite == 'RCM':
         sat_list = ['rcm/']
     elif satellite == 'RCM_new':
-        sat_list = ['rcm_new/']
+        sat_list = ['rcm_corrected/']
     else:
-        sys.exit("Oh, original, but satellite data other than RCM or S1 is not defined!!")
+        sys.exit("Oh, original, but satellite data %s is not defined!!" % satellite )
 
+    #--------------------------------------------------------
+    # This below should be moved to data analysis tools.
     # Plotting the dt distribution for the images pair
     if config['Processing_options']['viz_tstp_dist']:
         # options (to have in the namelist?)
@@ -307,8 +287,10 @@ def filter_data(config=None):
         print('Saving timestep distribution data at ' + output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.pkl'.format(ys, ye, bin_step))
         df.to_pickle(output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.pkl'.format(ys, ye, bin_step))
         # df.to_csv(output_folder + 'RCMS1_{}_{}_bin{}_dt_hist.csv'.format(ys, ye, bin_step), index=False)
+    #---------------------------------------------------------------------------------------------------
 
-    # filter the data
+
+    # List the pair files that correspond to time interval
     for sat_type in sat_list:
         for year in range(int(start_year), int(end_year)+1):
 
@@ -329,23 +311,35 @@ def filter_data(config=None):
                         txt = filename.split('_')
                         iDate = datetime.strptime("%s%s" % (txt[5],txt[6]), '%Y%m%d%H%M%S')
                         fDate = datetime.strptime("%s%s" % (txt[15],txt[16]), '%Y%m%d%H%M%S')
+                        mean_Date = iDate + (fDate - iDate)/2.0
                     else:
                         # Extracting initial and final dates from data file names
                         iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
                         fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
+                        mean_Date = iDate + (fDate - iDate)/2.0
+
 
                     # Checking if all files from iDate to fDate will be loaded (timestep == '0')
                     if timestep != '0':
-                        # Filtering by date range and delta t and appending to the file list
-                        if iDate < eDate and fDate > sDate and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months:
+
+                        ##---- Use the part below to select data based on valid time-----
+                        #if iDate < eDate and fDate > sDate and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months:
+                        ##---------------------------------------------------------------
+
+                        ##---- Use the part below to select data based on start time-----
+                        if iDate <= eDate and iDate > sDate and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months:
+                        ##---------------------------------------------------------------
+
                             raw_paths.append(data_path + '/' + filename)
 
+                            # I don't think this is needed
                             # Updating date tracker
                             if iDate < min_date:
                                 min_date = iDate
                             if fDate > max_date:
                                 max_date = fDate
 
+                    # This below never occurs
                     elif timestep == '0':
                         # Filtering by date range only
                         if iDate < eDate and fDate > sDate and iDate.month not in summer_months:
@@ -404,6 +398,9 @@ def get_datapaths(config=None):
     icetracker -- sea-ice motion tracker used for calculations \\
     '''
 
+    # As this is cleaned, we would like to avoid saving data
+    # every step. Some of these paths will not be needed.
+
     raw_paths = config['raw_paths']
 
     # Retrieve the IO and Date_options sections
@@ -446,31 +443,27 @@ def get_datapaths(config=None):
 
     return data_paths
 
-'''
-_______________________________________________________________________
-PERFORM CONFIGURATION
-'''
+#The following is no longer used
 
-def get_config():
-
-    # Retrieve configuration arguments from namelist.ini
-    config = get_config_args()
-
-    raw_paths = filter_data(config=config)
-    config['raw_paths'] = raw_paths
-
-    #raw_list = filter_data(config=config)
-    #config['raw_list'] = raw_list
-
-    interval_list, date_pairs = divide_intervals(config=config)
-
-    # Iterating over each interval
-    for i in tqdm(range(len(interval_list)), position=0, leave=True):
-        # Loads data and converts to x/y for each interval
-        config['raw_paths'] = interval_list[i]
-
-    # Get the paths to which data files of all stages of data processing will be stored
-    data_paths = get_datapaths(config=config)
-    config['data_paths'] = data_paths
-
-    return config
+#def get_config():
+#
+#    # Retrieve configuration arguments from namelist.ini
+#    config = get_config_args()
+#
+#    #Update the list of SAR ice motion data file paths
+#    raw_paths = filter_data(config=config)
+#    config['raw_paths'] = raw_paths
+#
+#    #This may not be needed as the invervals are made in the main?
+#    interval_list, date_pairs = divide_intervals(config=config)
+#
+#    # Iterating over each interval
+#    for i in tqdm(range(len(interval_list)), position=0, leave=True):
+#        # Loads data and converts to x/y for each interval
+#        config['raw_paths'] = interval_list[i]
+#
+#    # Get the paths to which data files of all stages of data processing will be stored
+#    data_paths = get_datapaths(config=config)
+#    config['data_paths'] = data_paths
+#
+#    return config

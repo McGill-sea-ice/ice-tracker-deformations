@@ -40,10 +40,9 @@ def load_raw(path_raw, nbfb, empty_files, nbfg, nbpg):
 
     # Determine if the raw file is a .dat file
     file_type = path_raw[-3:len(path_raw)]
-
     # If the file is not a .dat file, raise an error
-    if file_type == 'dat':
 
+    if file_type == 'dat':
         # Create a data frame
         df = pd.read_csv(path_raw, sep='\s\s+', engine='python')
 
@@ -85,12 +84,11 @@ def load_raw(path_raw, nbfb, empty_files, nbfg, nbpg):
         # Create a data frame
         df = pd.DataFrame()
         with open(path_raw) as fd:
-            headers = [ next(fd) for i in range(7) ]
+            headers = [ next(fd) for i in range(9) ]
             df = pd.read_csv(fd,engine='python',sep = '\s\s+')
         df.drop([0], axis=0, inplace=True)
         nb = len(df.index)
         df.reset_index(inplace=True)
-        #print(nb)
 
         # Retrieve data points
         sLat    = df['lat_beg']    # Starting latitudes
@@ -133,10 +131,6 @@ def load_raw(path_raw, nbfb, empty_files, nbfg, nbpg):
         raw_data = {'sLat': sLat, 'sLon': sLon, 'eLat': eLat, 'eLon': eLon,
                         'startX': startX, 'startY': startY, 'endX': endX, 'endY': endY,
                         'dispX': dispX, 'dispY': dispY}
-
-
-
-
 
 
     else:
