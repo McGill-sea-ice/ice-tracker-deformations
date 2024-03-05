@@ -65,7 +65,8 @@ class TimeUtil:
 
         self.year = self.StartDate.strftime("%Y")
         self.dailyclock = 0
-        self.StartDate.strftime("RCMS1SUD_%Y%m%d_000")
+        self.StartDate_str = self.StartDate.strftime("%Y%m%d")
+        self.EndDate_str = self.EndDate.strftime("%Y%m%d")
         ThisTime_str = self.ThisTime.strftime("%Y%m%d")
         NextTime_str = self.NextTime.strftime("%Y%m%d")
         self.ThisTimeFile = "RCMS1SID_%s_%s_dt72_tol72_dx.nc" % (ThisTime_str, NextTime_str)

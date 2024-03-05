@@ -3,10 +3,21 @@ Author: Mathieu Plante, Lekima Yakuden
 GitHub: mathieuslplante, LekiYak
 
 --------------------------------------------------------------------------------
-Tools for analysing and processing netCDF files
+Code to investigate SIDRR dataset format and caracteristics
 --------------------------------------------------------------------------------
 
-This file contains functions for analysing and processing netCDF files.
+This code is used to load the SIDRR data from the daily netcdf files,
+plot the included data and determine the spatio-temporal coverage.
+
+SIDRR data computed from SAR image pairs are stored in daily netcdf files,
+according to the acquistion time of the earliest image from the pair.
+SIDRR data spanning a given date are found accross several netcdf files.
+
+To load all data valid for a specific date, it is necessary to:
+
+1. Span cdf files from days prior to the analysis initial time,
+2. Keep track of the previously loaded data until past the
+   acquisition time of the latest image from the pair.
 
 """
 
@@ -20,21 +31,14 @@ from datetime import datetime, date, time, timedelta
 import time
 from netCDF4 import Dataset
 import numpy as np
-import cartopy.crs as ccrs
-import matplotlib.tri as tri
-import matplotlib.pyplot as plt
-import cartopy.feature as cfeature
-from tqdm import tqdm
-import haversine as hs
 
 # Code from other files
 from visualisation import visualisation
 from LoadDataset   import SID_dataset
 from SatelliteCoverage.config import read_config
 from TimeUtil import TimeUtil
-from SIDD_data_object import SIDD_Data
-sys.path.append(r'/storage/mathieu/SIDD/src/')
-from SIDD import SIDD
+from Statistics_objects import Coverage_map, Data_Distribution
+
 
 if __name__ == '__main__':
 
@@ -44,13 +48,7 @@ if __name__ == '__main__':
     # Reading config
     config = read_config()
     path = config['IO']['netcdf_path']
-    time = TimeUtil(config = config['Date_options'])
-    print(config['netcdf_tools'])
-    if config['netcdf_tools']['compute_pdfs']:
-        namelist_SIDD = config['SIDD_options']
-        OutputFolder =  namelist_SIDD['outputfolder']+ config['IO']['exp'] + '/'
-        analysis = SIDD(config = namelist_SIDD,
-                        time=time)
+    TimeTool = TimeUtil(config = config['Date_options'])
 
     #--------------------------------------------------------------
     # Initialise with 6 earlier days to get all data for given day.
@@ -63,14 +61,14 @@ if __name__ == '__main__':
     #    - Data_Mem: Earlier data carrier
     #--------------------------------------------------------------
 
-    refTime = time.ThisTime
+    refTime = TimeTool.ThisTime
     Data_Mem = None
 
     #Looping over earlier days
     for tic in range(0,Delta_days_init):
 
-        ThisTime = time.ThisTime - timedelta(days=Delta_days_init-tic)
-        NextTime = ThisTime + timedelta(seconds=time.tstep*60*60)
+        ThisTime = TimeTool.ThisTime - timedelta(days=Delta_days_init-tic)
+        NextTime = ThisTime + timedelta(seconds=TimeTool.tstep*60*60)
         ThisTime_str = ThisTime.strftime("%Y%m%d")
         NextTime_str = NextTime.strftime("%Y%m%d")
 
@@ -106,57 +104,85 @@ if __name__ == '__main__':
         Data_Mem.day_flag = Data_Mem.day_flag + 1
 
     #------------------------------------------------------------------
-    # Do data analysis for each date in namelist time period
+    # STARTING ANALYSIS
     #------------------------------------------------------------------
 
     # Head_start is the Delta-t associated with different reference date
     # in the data carried over from previous dates.
     Head_start = Delta_days_init*60*60*24
 
+    #Initialize statistics objects
+    if config['netcdf_tools']['show_spatial_coverage']:
+        resolution = float(config['options']['resolution'])
+        FreqMap = Coverage_map(resolution = resolution)
+
+    #Initialise 1d histograms for the triangle areas.
+    if config['netcdf_tools']['show_spatial_scale_dist']:
+        A_dist_all = Data_Distribution(LeftBC= 0.0, RightBC = 20.0, nbins = 80, label = "all")
+        A_dist_S1 = Data_Distribution(LeftBC= 0.0, RightBC = 20.0, nbins = 80, label = "S1")
+        A_dist_RCM = Data_Distribution(LeftBC= 0.0, RightBC = 20.0, nbins = 80, label = "RCM")
+
+
     # Iterating over each day
-    for ThisTime in time.daterange():
+    for ThisTime in TimeTool.daterange():
+
+        #------------------------------------------------------------------
+        # Fetch data
+        #------------------------------------------------------------------
 
         # Update time and data paths
-        time.ThisTime = ThisTime
-        time.NextTime = time.ThisTime + timedelta(seconds=time.tstep*60*60)
-        ThisTime_str = time.ThisTime.strftime("%Y%m%d")
-        NextTime_str = time.NextTime.strftime("%Y%m%d")
+        TimeTool.ThisTime = ThisTime
+        TimeTool.NextTime = TimeTool.ThisTime + timedelta(seconds=TimeTool.tstep*60*60)
+
+        #Use to limit the analysis to specific months. Otherwise, ignore.
+        if TimeTool.ThisTime.month > 12 and TimeTool.ThisTime.month < 1:
+            continue
+        ThisTime_str = TimeTool.ThisTime.strftime("%Y%m%d")
+        NextTime_str = TimeTool.NextTime.strftime("%Y%m%d")
         Sat = config['Metadata']['icetracker']
-        time.ThisTimeFile = "%sSID_%s_%s_dt72_tol72_dx.nc" % (Sat,ThisTime_str, NextTime_str)
-        filePath = path + time.ThisTimeFile
+        TimeTool.ThisTimeFile = "%sSID_%s_%s_dt72_tol72_dx.nc" % (Sat,ThisTime_str, NextTime_str)
+        filePath = path + TimeTool.ThisTimeFile
 
         #Load visualisation tool
-        visuals = visualisation()
+        visuals = visualisation(config=config)
+
         #Load new Data from SIDRR and stack to carrier
         Data = SID_dataset(FileName= filePath, config=config)
         Data.start_time = Data.start_time + Head_start
         Data.end_time = Data.end_time + Head_start
         Data.Concatenate_data(Data2 = Data_Mem)
 
-        #Mask triangles with too large area. This should not be hardcoded!!
-        indices = [i for i in range(len(Data.A)) if  Data.A[i] > 20000**2.0 ]
-        Data.mask_data(indices = indices)
+        #------------------------------------------------------------------
+        # Produce figures to visualise the dataset characteristics
+        #------------------------------------------------------------------
 
+        #Figure showing the start and end points in a file
         if config['netcdf_tools']['plot_start_end_points']:
-           # #Figure showing the start and end points in a file
-           # visuals.plot_start_end_points(data = Data, config=config)
+           visuals.plot_start_end_points(data = Data, datestring  = ThisTime_str)
 
-           # #Figure showing the stacked SAR image areas.
-           # visuals.plot_pairs(data = Data, config = config)
+        #Figure showing the stacked SAR image areas.
+        if config['netcdf_tools']['plot_stacked_pairs']:
+           visuals.show_stacked_pairs(data = Data, datestring  = ThisTime_str)
 
-            #Figure showing the triangulated data of specified SAR image pair ID.
-            visuals.plot_triangles(data=Data, config=config, no = [2], show_ID = True)
-            visuals.plot_triangles(data=Data, config=config, no = [34], show_ID = True)
-            visuals.plot_triangles(data=Data, config=config, no = [1], show_ID = True)
+        #Figure showing the triangulated data of specified SAR image pair ID.
+        if config['netcdf_tools']['plot_triangulated_data']:
+            visuals.plot_triangles(data=Data, no = int(2), triangle_zoom = True, datestring = ThisTime_str)
 
+        #Figure showing normal, shear and rotation rates.
         if config['netcdf_tools']['plot_deformation']:
-            visuals.plot_deformations(data = Data, config=config, datestring = ThisTime_str)
+            visuals.plot_deformations(data = Data, datestring = ThisTime_str)
+            visuals.show_tripcolor_field(data=Data, Field = Data.A,
+                                          title = "Triangle Areas", label = "Area",
+                                          datestring=ThisTime_str)
+        #Figure showing the spatial coverage of the dataset
+        if config['netcdf_tools']['show_spatial_coverage']:
+            FreqMap.add2hist_2D(Data = Data)
 
-        # Should be moved to Data analysis tool, not part of the published dataset.
-        if config['netcdf_tools']['compute_pdfs']:
-            SIDDdata = SIDD_Data(InputData = Data)
-            analysis.add2pdf(data = SIDDdata, time = time)
-            analysis.show_pdf(time = time,output_folder = OutputFolder  + "figs/PDFs/" + ThisTime_str)
+        #Distribute the triangle areas in 1d histogram, and add to bins.
+        if config['netcdf_tools']['show_spatial_scale_dist']:
+            A_dist_all.add2hist_1D(Data = Data.A[:])
+            A_dist_S1.add2hist_1D(Data = Data.A[Data.satellite[:]==1])
+            A_dist_RCM.add2hist_1D(Data = Data.A[Data.satellite[:]==0])
 
         #--------------------------------------------------------------------------------
         #Update the data carrier for the next timestep
@@ -171,10 +197,16 @@ if __name__ == '__main__':
         del visuals
         del Data
 
-    #Save SIDD netcdf analysis.
-    if config['netcdf_tools']['compute_pdfs']:
-        analysis.Save2netcdf(time = time, output_folder = OutputFolder + ThisTime_str)
+    visuals = visualisation(config = config)
 
+    # Make figure showing the spatio-temportal coverage of the SIDRR data in the analysed period
+    if config['netcdf_tools']['show_spatial_coverage']:
+        visuals.show_spatial_coverage(distribution_2D = FreqMap, datestring = TimeTool.StartDate_str + '_' + TimeTool.EndDate_str)
+
+    # Make figure showing the distribution of data spatial scales
+    if config['netcdf_tools']['show_spatial_scale_dist']:
+        visuals.plot_area_dist(dist1 = A_dist_S1,
+                               datestring = TimeTool.StartDate_str + '_' + TimeTool.EndDate_str)
 
     # Display the computation time
     print("--- %s seconds ---" % (time.time() - start_time))
