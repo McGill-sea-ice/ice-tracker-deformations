@@ -20,7 +20,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Code from other files
-from SatelliteCoverage.utils import date_to_seconds, seconds_to_date, convert_to_grid, get_prefix
+#from SatelliteCoverage.utils import date_to_seconds, seconds_to_date, convert_to_grid, get_prefix
 
 
 

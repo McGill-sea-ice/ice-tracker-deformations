@@ -20,7 +20,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-from SatelliteCoverage.utils import convert_from_grid, get_prefix, convert_to_grid
+#from SatelliteCoverage.utils import convert_from_grid, get_prefix, convert_to_grid
 
 # Loads netCDF data
 class Data_Distribution:

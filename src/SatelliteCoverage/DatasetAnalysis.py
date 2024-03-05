@@ -26,16 +26,17 @@ import os
 import sys
 parent = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0,parent)
+sys.path.append(r'src/')
 from time import strftime
+import configparser
 from datetime import datetime, date, time, timedelta
 import time
-from netCDF4 import Dataset
 import numpy as np
+#from netCDF4 import Dataset
 
-# Code from other files
+# Code from src files
 from visualisation import visualisation
 from LoadDataset   import SID_dataset
-from SatelliteCoverage.config import read_config
 from TimeUtil import TimeUtil
 from Statistics_objects import Coverage_map, Data_Distribution
 
@@ -45,8 +46,11 @@ if __name__ == '__main__':
     # Start the clock
     start_time = time.time()
     Delta_days_init = 6
+
     # Reading config
-    config = read_config()
+    config = configparser.ConfigParser()
+    config.read('options.ini')
+
     path = config['IO']['netcdf_path']
     TimeTool = TimeUtil(config = config['Date_options'])
 
