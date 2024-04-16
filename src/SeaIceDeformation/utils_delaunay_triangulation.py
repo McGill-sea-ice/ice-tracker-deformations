@@ -27,7 +27,7 @@ from tqdm import tqdm
 # Loading from other files
 import SeaIceDeformation.utils_grid_coord_system as grid_coord_system
 import SeaIceDeformation.utils_load_data as load_data
-from SatelliteCoverage.utils import stb
+from config import stb
 
 def delaunay_triangulation(config=None):
 

@@ -23,7 +23,6 @@ from config import divide_intervals, get_datapaths
 from utils_delaunay_triangulation import stb, delaunay_triangulation
 from utils_compute_deformations import compute_deformations
 from visualise_deformation import visualise_deformations
-from SatelliteCoverage.netcdf_tools import plot_deformations
 
 # Retrieve the starting time
 start_time = time.time()

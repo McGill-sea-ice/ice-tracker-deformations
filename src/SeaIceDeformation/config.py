@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 # Loading from other files
 import SeaIceDeformation.utils_get_data_paths as get_data_paths
-from SatelliteCoverage.utils import stb
+#from SatelliteCoverage.utils import stb
 
 '''
 _______________________________________________________________________
@@ -38,6 +38,15 @@ class datasetSelectionError(Exception):
 _______________________________________________________________________
 DEFINE CONFIG FUNCTIONS
 '''
+
+def stb(s):
+    if s in ['yes','Yes','true','True']:
+         return True
+    elif s in ['no','False','No','false']:
+         return False
+    else:
+         return s
+
 
 def get_config_args():
     ''' None -> ConfigParser
@@ -115,7 +124,7 @@ def divide_intervals(config=None):
     end_month   = str(Date_options['end_month'])
     end_day     = str(Date_options['end_day'])
     interval    = options['interval']
-
+    print(start_year,start_month,start_day)
 
     # Concatenate start and end dates
     sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
@@ -182,7 +191,7 @@ def filter_data(config=None):
     end_day     = str(Date_options['end_day'])
     timestep    = int(Date_options['timestep'])
     tolerance   = int(Date_options['tolerance'])
-
+    print(start_year,start_month,start_day)
     # Concatenate start and end dates
     sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
     eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')

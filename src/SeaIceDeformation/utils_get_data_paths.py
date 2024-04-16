@@ -156,10 +156,10 @@ def get_output_nc_path(IO, Date_options, Metadata):
     tolerance   = str(Date_options['tolerance'])
 
     # Create the calculations stage data .csv filename using the raw filename
-    output_filename = satellite + 'SID_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + timestep + '_tol' + tolerance + '_dx.nc'
-
+#    output_filename = satellite + 'SID_' + start_year + start_month + start_day + '_' + end_year + end_month + end_day + '_dt' + timestep + '_tol' + tolerance + '_dx.nc'
+    output_filename = 'SIDRR_' + start_year + start_month + start_day + '.nc'
     # Get the directory in which the calculated .csv file is to be stored
-    nc_output_path = output_path + '/' + exp + '/05_output/' + output_filename
+    nc_output_path = output_path + '/' + output_filename
 
     # Return the netcdf output path
     return nc_output_path
