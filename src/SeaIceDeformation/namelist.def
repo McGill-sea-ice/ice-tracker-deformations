@@ -63,9 +63,9 @@
 #   tolerance:   (int) Tolerance of timestep in hours
 
 [IO]
-data_folder = ../../data/test_dat/
-output_folder = ../../data/test_out/
-exp = test
+data_folder = /storage/common/S1_RCM_tracked_pairs/
+output_folder = /storage/mathieu/ice-tracker-deformations/data/test_out/
+exp =
 
 [Grid]
 riops_grid = /home/socn000/env_ubuntu-18.04-skylake-64/eccc-ppp4/datafiles/constants/oce/repository/master/CONCEPTS/creg012pe/grid/coordinates_CREG12_ext.nc
@@ -78,20 +78,20 @@ tracking_error = 200
 
 [Processing_options]
 overwrite = True
-visualise = True
-viz_tstp_dist = True
+visualise = False
+viz_tstp_dist = False
 
 [Date_options]
-start_year = 2022
-start_month = 01
+start_year = 2017
+start_month = 09
 start_day = 01
 
-end_year = 2022
-end_month = 01
-end_day = 02
+end_year = 2017
+end_month = 09
+end_day = 03
 
-timestep = 24
-tolerance = 24
+timestep = 72
+tolerance =72
 
 [options]
 interval = 24

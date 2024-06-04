@@ -192,9 +192,11 @@ def filter_data(config=None):
     timestep    = int(Date_options['timestep'])
     tolerance   = int(Date_options['tolerance'])
     print(start_year,start_month,start_day)
+
     # Concatenate start and end dates
     sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
     eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
+
     print(sDate,eDate)
     # Set delta t tolerance
     upper_timestep = timedelta(hours=(int(timestep) + int(tolerance)))
@@ -452,27 +454,3 @@ def get_datapaths(config=None):
 
     return data_paths
 
-#The following is no longer used
-
-#def get_config():
-#
-#    # Retrieve configuration arguments from namelist.ini
-#    config = get_config_args()
-#
-#    #Update the list of SAR ice motion data file paths
-#    raw_paths = filter_data(config=config)
-#    config['raw_paths'] = raw_paths
-#
-#    #This may not be needed as the invervals are made in the main?
-#    interval_list, date_pairs = divide_intervals(config=config)
-#
-#    # Iterating over each interval
-#    for i in tqdm(range(len(interval_list)), position=0, leave=True):
-#        # Loads data and converts to x/y for each interval
-#        config['raw_paths'] = interval_list[i]
-#
-#    # Get the paths to which data files of all stages of data processing will be stored
-#    data_paths = get_datapaths(config=config)
-#    config['data_paths'] = data_paths
-#
-#    return config

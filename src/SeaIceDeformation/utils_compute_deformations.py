@@ -101,7 +101,7 @@ def compute_deformations(config=None):
 
     # Counter of current file being processed
     file_num = 0
-
+    file_tot = 0
     # Iterate through all raw, triangulated and calculations data files listed in config
     empty_files_list = []
     nbfb = 0
@@ -116,7 +116,7 @@ def compute_deformations(config=None):
         '''
 
 
-
+        file_tot += 1
         # Check if the triangulated data set exists. If it does not, go to the next iteration
         if not( os.path.exists(triangulated_path) ):
             continue
@@ -139,19 +139,20 @@ def compute_deformations(config=None):
             # The error has already been printed in the triangulation stage
             continue
 
-        #print(raw_path)
-        #print(triangulated_path)
-        #print(len(startX))
+
+        # Retrieve the starting and ending times and compute the time interval (days)
+        start, end = utils_datetime.dataDatetimes(raw_path)
+        dt = utils_datetime.dT( (start, end) ) / 86400.0
+        if dt < 0.5:
+            print(dt)
+            continue
+
         # Load the triangulated dataset
         triangulated_data = load_data.load_triangulated( triangulated_path )
         vertice_ids1 = triangulated_data['vertice_idx1'] # Vertex indices in raw data file
         vertice_ids2 = triangulated_data['vertice_idx2']
         vertice_ids3 = triangulated_data['vertice_idx3']
         #print(vertice_idx1)
-
-        # Retrieve the starting and ending times and compute the time interval (days)
-        start, end = utils_datetime.dataDatetimes(raw_path)
-        dt = utils_datetime.dT( (start, end) ) / 86400.0
 
         # Create a header and a list of data rows that will be used to create the output csv file
         header = ['no.', 'Sat',  'A', 'dudx', 'dudy', 'dvdx', 'dvdy', 'eps_I', 'eps_II', 'vrt', 'eps_tot']
@@ -191,11 +192,6 @@ def compute_deformations(config=None):
             ex_list = np.array([eX1[n], eX2[n], eX3[n]])*sigx # Ending x positions
             ey_list = np.array([eY1[n], eY2[n], eY3[n]])*sigx  # Ending y positions
 
-            # Write the vertices' IDs and triangle ID to lists
-            ids1.append(vertice_ids1[n])
-            ids2.append(vertice_ids2[n])
-            ids3.append(vertice_ids3[n])
-            idpair.append(file_num)
 
             # Create a list of velocity components for each triangle vertex
             u_list, v_list = calculate_uv_lists( sx_list, ex_list, sy_list, ey_list, dt)
@@ -215,35 +211,7 @@ def compute_deformations(config=None):
             # Compute the total sea-ice deformation rate
             eps_tot = sqrt( eps_I**2 + eps_II**2 )
 
-
-            '''
-            _________________________________________________________________________________________
-            POPULATE CSV ROW LIST
-            '''
-
-            # Add the data row corresponding to the current triangle to the list of data rows
-            row_list.append( [n, sat, A, dudx, dudy, dvdx, dvdy, eps_I, eps_II, rot, eps_tot] )
-
-
-            '''
-            _________________________________________________________________________________________
-            POPULATE NETCDF ARRAYS
-            '''
-            # Add the satellite to the netcdf lists
-            sat_l.append(sat)
-
-            # Add the divergence and the shear strain rates to the netcdf lists
-            div.append(eps_I)
-            shr.append(eps_II)
-            vrt.append(rot)
-
-            # Add the strain rates and area to the netcdf lists
-            A_l.append(A)
-            dudx_l.append(dudx)
-            dudy_l.append(dudy)
-            dvdx_l.append(dvdx)
-            dvdy_l.append(dvdy)
-
+            # Compute the propagation errors
             del11, del12, del21, del22, delA = calculate_trackerrors( u_list, v_list, sx_list, sy_list,dt)
 
             del11 = dudx*dudx*delA/A**2.0 + del11*(sigx**2.0)
@@ -255,22 +223,78 @@ def compute_deformations(config=None):
             term1 = (delI*(dudx - dvdy)**2.0 + (del12+del21)*(dudy + dvdx)**2.0) #this is eps_II^2 * delII^2
             term2 = eps_I**2.0 * delI
             epstot_deltot = term1 + term2
+
             if eps_II > 0.0:
                 delII = (delI*(((dudx - dvdy)/eps_II)**2.0) + (del12+del21)*(((dudy + dvdx)/eps_II)**2.0))
                 deltot = delII*((eps_II/eps_tot)**2.0) + delI*(( eps_I/eps_tot)**2.0)
                 sig2noise = eps_tot**2.0 / epstot_deltot**0.5
             else:
-                delII = np.nan
-                deltot = np.nan
+                delII = 1000.0
+                deltot = 1000.0
                 sig2noise = 0.0
 
+            '''
+            _________________________________________________________________________________________
+            Add the computed data to the output vectors
+            '''
+            if (A**0.5 < 20000.0):
+                # Write the vertices' IDs and triangle ID to lists
+                ids1.append(vertice_ids1[n])
+                ids2.append(vertice_ids2[n])
+                ids3.append(vertice_ids3[n])
+                idpair.append(file_num)
 
-            # Add the strain rates and area to the netcdf lists
-            delA_l.append(delA)
-            delI_l.append(delI)
-            delII_l.append(delII)
-            delvrt_l.append(delrot)
-            s2n.append(sig2noise)
+                # Add the data row corresponding to the current triangle to the list of data rows
+                row_list.append( [n, sat, A, dudx, dudy, dvdx, dvdy, eps_I, eps_II, rot, eps_tot] )
+
+                # Add the satellite to the netcdf lists
+                sat_l.append(sat)
+
+                # Add the divergence and the shear strain rates to the netcdf lists
+                div.append(eps_I)
+                shr.append(eps_II)
+                vrt.append(rot)
+
+                # Add the strain rates and area to the netcdf lists
+                A_l.append(A)
+                dudx_l.append(dudx)
+                dudy_l.append(dudy)
+                dvdx_l.append(dvdx)
+                dvdy_l.append(dvdy)
+
+                # Add the strain rates and area to the netcdf lists
+                delA_l.append(delA**0.5)
+                delI_l.append(delI**0.5)
+                delII_l.append(delII**0.5)
+                delvrt_l.append(delrot**0.5)
+                s2n.append(sig2noise)
+
+
+                # Add the starting and ending Lat/Lon positions of each triangle vertices
+                # to the netcdf list
+                sLat1.append(np.array(sLat)[vertice_ids1[n]])
+                sLat2.append(np.array(sLat)[vertice_ids2[n]])
+                sLat3.append(np.array(sLat)[vertice_ids3[n]])
+
+                sLon1.append(np.array(sLon)[vertice_ids1[n]])
+                sLon2.append(np.array(sLon)[vertice_ids2[n]])
+                sLon3.append(np.array(sLon)[vertice_ids3[n]])
+
+                eLat1.append(np.array(eLat)[vertice_ids1[n]])
+                eLat2.append(np.array(eLat)[vertice_ids2[n]])
+                eLat3.append(np.array(eLat)[vertice_ids3[n]])
+
+                eLon1.append(np.array(eLon)[vertice_ids1[n]])
+                eLon2.append(np.array(eLon)[vertice_ids2[n]])
+                eLon3.append(np.array(eLon)[vertice_ids3[n]])
+
+                ids_sLat1.append(vertice_ids1[n])
+                ids_sLat2.append(vertice_ids2[n])
+                ids_sLat3.append(vertice_ids3[n])
+
+
+            else:
+                num_tri = num_tri - 1
 
         # Update file counter
         file_num += 1
@@ -284,49 +308,11 @@ def compute_deformations(config=None):
         eTime.extend([e for i in range(num_tri)])
 
 
-        # Add the starting and ending Lat/Lon positions of each triangle vertices
-        # to the netcdf list
-        sLat1.extend(np.array(sLat)[vertice_ids1])
-        sLat2.extend(np.array(sLat)[vertice_ids2])
-        sLat3.extend(np.array(sLat)[vertice_ids3])
-
-        sLon1.extend(np.array(sLon)[vertice_ids1])
-        sLon2.extend(np.array(sLon)[vertice_ids2])
-        sLon3.extend(np.array(sLon)[vertice_ids3])
-
-        eLat1.extend(np.array(eLat)[vertice_ids1])
-        eLat2.extend(np.array(eLat)[vertice_ids2])
-        eLat3.extend(np.array(eLat)[vertice_ids3])
-
-        eLon1.extend(np.array(eLon)[vertice_ids1])
-        eLon2.extend(np.array(eLon)[vertice_ids2])
-        eLon3.extend(np.array(eLon)[vertice_ids3])
-
-        ids_sLat1.extend(vertice_ids1)
-        ids_sLat2.extend(vertice_ids2)
-        ids_sLat3.extend(vertice_ids3)
-
-        '''
-        _________________________________________________________________________________________
-        WRITE THE CURRENT DATASET'S RESULTS TO A CSV FILE (DEPRECATED)
-        '''
-        # If the calculations file already exists and overwrite (in namelist.ini) is set to 'no',
-        # do not write the calculations csv file
-        # if not ( os.path.exists(calculations_path) and not config.config['Processing_options'].getboolean('overwrite')):
-            # Create a directory to store the calculations csv path if it does not exist already
-            # os.makedirs(os.path.dirname(calculations_path), exist_ok=True)
-
-            # Write the results in the calculations_csv_path file path
-            # with open(calculations_path, 'w', encoding='UTF8', newline='') as f:
-                # writer = csv.writer(f)
-
-                # Write the data rows to the csv file
-                # writer.writerows(row_list)
-
     '''
     _________________________________________________________________________________________
     WRITE ALL RESULTS COMBINED TO A NETCDF FILE
     '''
+    print(file_tot,file_num)
     # Find absolute path in which the output netcdf file is to be stored
     nc_output_path = config['data_paths']['nc_output']
     # Create a directory to store the output netcdf file if it does not exist already
