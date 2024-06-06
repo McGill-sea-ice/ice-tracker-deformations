@@ -19,10 +19,6 @@ from scipy.spatial import Delaunay
 import numpy as np
 from math import acos
 
-# Loading from other files
-#from config import stb
-
-
 # Load data and organize is into a triangular arrays
 class make_into_tri_arrays:
 
@@ -117,7 +113,6 @@ class make_into_tri_arrays:
 
 
         if len(self.vertice_ids1) < 1:
-            print("triangulated with only %s triangles")
             self.fault = 1
 
     def get_tri_angles(self, xy1, xy2, xy3):

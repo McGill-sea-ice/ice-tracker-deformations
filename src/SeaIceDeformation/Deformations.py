@@ -16,8 +16,6 @@ from tqdm import tqdm
 import datetime
 import numpy as np
 from math import sqrt
-# Loading from other files
-from config import stb
 
 
 # Load data and organize is into a triangular arrays

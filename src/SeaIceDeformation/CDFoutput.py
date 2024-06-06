@@ -9,8 +9,6 @@ Python object opening and saving the netcdf outputs
 
 # Loading from default packages
 import os
-# Loading from other files
-from config import stb
 import numpy as np
 from netCDF4 import Dataset
 
