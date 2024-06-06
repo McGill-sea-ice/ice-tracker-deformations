@@ -19,16 +19,21 @@ data_test = Dataset(file_test)
 
 for var in data_ref.variables:
     if var in data_test.variables:
-        test = (data_ref[var][:] == data_test[var][:])
+        test = np.all(data_ref[var][:] == data_test[var][:])
         if test:
             print(var, ' PASS ')
         elif not test:
             #Check the number of triangles
-            if (len(data_ref[var][:]) != len(data_ref[var][:])):
-                print("Differences in variable %s length : ctrl = %s, test = %s" % (var, len(data_ref[var][:]), len(data_ref[var][:])))
+            if (len(data_ref[var][:]) != len(data_test[var][:])):
+                print("Differences in variable %s length : ctrl = %s, test = %s" % (var, len(data_ref[var][:]), len(data_test[var][:])))
+                if var == 'start_time':
+                    print(var, np.unique(data_ref['end_time'][:]-data_ref['start_time'][:]),
+                               np.unique(data_test['end_time'][:]-data_test['start_time'][:]))
+                if var == 'end_time':
+                    print(var, np.unique(data_ref[var][:]),np.unique(data_test[var][:]))
             else:
                 print("variable %s has length : ctrl = %s, test = %s" % (var, len(data_ref[var][:]), len(data_ref[var][:])))
-                dist = ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len( data_ref[var][:]  )
+                dist = la.norm( (data_ref[var][:] - data_test[var][:] )/data_ref[var][:] )
                 if abs(dist) < 1e-7 :
                     print(var, ' PASS BUT NOT EQUAL (after all, perfection is perfection, and this isnt)')
                 elif abs(dist) < 1e-4 :
