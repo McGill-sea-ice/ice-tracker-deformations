@@ -11,24 +11,14 @@ Configuration script for data processing
 
 '''
 
+# Loading from default packages
 import configparser
 import os
 import re
+import sys
 from datetime import datetime, timedelta
-
-import utils_datetime
-import utils_get_data_paths as get_data_paths
-
-
-'''
-_______________________________________________________________________
-DEFINE ERROR CLASS 
-'''
-
-
-# Create a class of errors for datasets selection
-class datasetSelectionError(Exception):
-    pass
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
 '''
@@ -36,232 +26,163 @@ _______________________________________________________________________
 DEFINE CONFIG FUNCTIONS
 '''
 
-def get_config_args():
-    ''' None -> ConfigParser
-    
-    Function that reads the namelist.ini file and returns a 
-    ConfigParser object, assuming the namelist.ini file is
-    located under the current directory.
-
+class dataset_config:
     '''
-    
-    # Retrieve the path of the src folder, i.e. the current directory
-    srcPath = os.path.dirname(os.path.realpath(__file__))
-    
-    # Read the namelist.ini file using configparser
-    config = configparser.ConfigParser()
-    config.read(srcPath + '/namelist.ini')
-
-    # Return a ConfigParser object
-    return config
-
-
-def filter_data(start_year, start_month, start_day, end_year, end_month, end_day, timestep, tolerance, data_path):
-    """
-    Filters through the data files located in 'data_path' using the user 
-    options in 'options.ini'. Outputs a list of paths to data files which
-    satisfy the user's criteria.
-
-    Automatically changes date range to match data availability. i.e. if the user specifies
-    a date range between 01-11-2020 and 01-06-2021, but data is only available from 
-    05-11-2020 and 24-05-2021, dates to be processed will be set to the latter, and
-    the user will be notified (Line 
-
-    INPUTS:
-    start_year -- Starting year YYYY {str}
-    start_month -- Starting month MM {str}
-    start_day -- Starting day DD {str}
-
-    end_year -- Ending year YYYY {str}
-    end_month -- Ending month MM {str}
-    end_day -- Ending day DD {str} 
-
-    timestep -- Desired timestep in hours {str}
-    tolerance -- Number of hours around timestep that will be filtered through {str}
-
-    data_path -- Path to directory containing data files {str}
-
-    OUTPUTS:
-    raw_paths -- List of file paths {list}
-    """
-
-    # Concatenate start and end dates
-    sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
-    eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
-
-    # Set delta t tolerance 
-    upper_timestep = timedelta(hours=(int(timestep) + int(tolerance)))
-    lower_timestep = timedelta(hours=(int(timestep) - int(tolerance)))
-
-    # Initializing file list and date count variables
-    raw_paths = []
-    min_date = datetime(3000, 12, 25)
-    max_date = datetime(1000, 12, 25)
-
-    # List of summer months (Won't include data from these months)
-    summer_months = [6, 7, 8, 9, 10]
-
-    # Filtering data files by date
-    for filename in os.listdir(data_path):
-        
-        # Extracting initial and final dates from data file names
-        iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
-        fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
-
-        # Checking if all files from iDate to fDate will be loaded (timestep == '0')
-        if timestep != '0':
-            # Filtering by date range and delta t and appending to the file list
-            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and lower_timestep <= (fDate-iDate) <= upper_timestep and iDate.month not in summer_months: 
-                raw_paths.append(data_path + '/' + filename)
-
-                # Updating date tracker
-                if iDate < min_date:
-                    min_date = iDate
-                if fDate > max_date:
-                    max_date = fDate
-        
-        elif timestep == '0':
-            # Filtering by date range only
-            if sDate.date() <= iDate.date() <= eDate.date() and sDate.date() <= fDate.date() <= eDate.date() and iDate.month not in summer_months: 
-                raw_paths.append(data_path + '/' + filename)
-                
-                # Updating date tracker
-                if iDate < min_date:
-                    min_date = iDate
-                if fDate > max_date:
-                    max_date = fDate
-
-    # Notifying user of date range change
-    if sDate != min_date or eDate != max_date:
-        print(f"Start and end dates of data updated to {min_date} and {max_date}")
-            
-    return raw_paths
-
-def get_datapaths(raw_paths, output_path, exp, start_year, start_month, start_day, method):
-    ''' (str, str, str, str) -> dict[str, Any]
-
-    Function that creates lists that store data file paths for every dataset
-    and for every stage of data processing (triangulation, conversion and 
-    calculations), as well as the output netcdf file path.
-
-    Returns a dictionnary of the lists of .csv file paths (one per stage of data 
-    processing) and of the output netcdf file path.
-
-    Every raw data file (e.g. pairs_20200320010317_20200401010317_1.dat) is 
-    associated to a triangulated (e.g. tri_20200320010317_20200401010317_1.csv), 
-    converted (e.g. conv_20200320010317_20200401010317_1.csv) (for M00 
-    method only) and calculated (e.g. calc_20200320010317_20200401010317_1.csv) 
-    .csv file.
-
-    The output netcdf file combines the output data of all processed datasets 
-    (listed in the input *raw_paths*). Its name indicates the common starting times 
-    of all datasets (e.g. RCMS1SID_20200301_dx.nc).
-
-    All output files are stored under output_path/exp, and under a folder
-    associated to the stage of dataprocessing. 
-    
-    For example, given a raw data file 'pair_A.dat', the output triangulation file 
-    will be stored under 'output_path/exp/02_triangulated/tri_A.csv', the output
-    converted file under 'output_path/exp/03_converted/conv_A.csv', the output
-    calculations files under 'output_path/exp/04_calculations/calc_A.csv', and the
-    output netcdf file under 'output_path/exp/05_output/RCMS1SID_YYYYMMDD_dx.nc',
-    where YYYY, MM and DD refer to the input *start_year*, *start_month* and *start_day*,
-    respectively.
-    
-    Keyword arguments: \\
-    raw_paths   -- list of raw datasets' absolute paths \\
-    output_path -- path in which all output data files are to be stored \\
-    exp         -- name of the experiment
-    start_year  -- starting year of the raw datasets listed in raw_paths \\
-    start_month -- starting month of the raw datasets listed in raw_paths \\
-    start_day   -- starting day of the raw datasets listed in raw_paths \\
-    method      -- method that will be used to process datasets
+    This object is used to make the dataset production configuration,
+    get the namilist arguments and list the ASITS output files to be processed.
     '''
 
-    # Raise an error if the input raw paths list is empty
-    if raw_paths ==  []:
-        raise datasetSelectionError('The list of raw datasets to process is empty.')
-    
-    # Initialize lists of data paths for the subsequent stages of data processing
-    triangulated_paths  = []
-    calculations_paths  = []
+    def __init__(self):
 
-    # If we are processing data using method M00, initialize an additionnal list for 
-    # converted data paths
-    if method == 'M00':
-        converted_paths     = []
+        # Retrieve the path of the src folder, i.e. the current directory
+        self.srcPath = os.path.dirname(os.path.realpath(__file__))
 
-    # Iterate through all input raw file paths
-    for raw in raw_paths:
-     
-        # Retrive the raw filename
-        raw_filename = os.path.basename(raw)
+        # Choose the default or user file
+        def_fname = '/namelist.def'
+        usr_fname = '/namelist.ini'
 
-        # For each raw file path, find the appropriate path for each stage of data processing
-        tri  = get_data_paths.get_triangulated_csv_path(raw_filename, output_path, exp)     # path for triangulated data file
-        cal  = get_data_paths.get_calculations_csv_path(raw_filename, output_path, exp)  # path for calculated data file
+        if os.path.exists(self.srcPath + usr_fname):
+            self.fname = usr_fname
+        elif os.path.exists(self.srcPath + def_fname):
+            print('--- Using default parameters namelist.def ---')
+            print('--- Create the namelits.ini file to define user parameters ---')
+            self.fname = def_fname
+        else:
+            print('/!/ No config file found! /!/')
 
-        # Append the file paths to the file path lists
-        triangulated_paths.append(tri)
-        calculations_paths.append(cal)
+        #----------------
+        # Get the namelist
+        #----------------
 
-        # If we are processing data using method M00, find the appropriate path for the 
-        # converted file, and append it the converted file path list
-        if method == 'M00':
-            conv = get_data_paths.get_converted_csv_path(raw_filename, output_path, exp)     
-            converted_paths.append(conv) 
+        # Read the namelist.ini file using configparser
+        config = configparser.ConfigParser()
+        config.read(self.srcPath + self.fname)
 
-    # Find the appropriate path for the output netcdf file
-    output_path = get_data_paths.get_output_nc_path(output_path, exp, start_year, start_month, start_day)
+        # Return a dictionnary object
+        config_dict = {sect: dict(config.items(sect)) for sect in config.sections()}
 
-    # Create the output data paths dictionnaty depending on the method 
-    # we are using to process data
-    if method == 'M00':
-        data_paths =  { 'raw': raw_paths, 
-                        'triangulated': triangulated_paths, 
-                        'converted': converted_paths, 
-                        'calculations': calculations_paths, 
-                        'output': output_path }
-    
-    elif method == 'M01':
-        data_paths =  { 'raw': raw_paths, 
-                        'triangulated': triangulated_paths, 
-                        'calculations': calculations_paths, 
-                        'output': output_path }        
+        # Iterate through the dictionnary to change strings to bools
+        for key in config_dict:
+            if isinstance(config_dict[key], dict):
+                for keyy in config_dict[key]:
+                    if isinstance(config_dict[key][keyy], str):
+                        config_dict[key][keyy] = self.stb(config_dict[key][keyy])
+            elif isinstance(config_dict[key], str):
+                config_dict[key] = self.stb(config_dict[key])
 
-    return data_paths
+        self.namelist = config_dict
 
 
-
-'''
-_______________________________________________________________________
-PERFORM CONFIGURATION
-'''
-
-# Retrieve configuration arguments from namelist.ini 
-config = get_config_args()
-
-# Retrieve the IO and Date_options sections
-IO = config['IO']
-Date_options = config['Date_options']
-
-raw_paths = filter_data(    Date_options['start_year'], 
-                            Date_options['start_month'], 
-                            Date_options['start_day'],
-                            Date_options['end_year'], 
-                            Date_options['end_month'], 
-                            Date_options['end_day'],
-                            Date_options['timestep'],
-                            Date_options['tolerance'],
-                            IO['data_folder']           )
-
-# Get the paths to which data files of all stages of data processing will be stored
-data_paths = get_datapaths( raw_paths, 
-                            IO['output_folder'],
-                            IO['exp'],
-                            Date_options['start_year'], 
-                            Date_options['start_month'], 
-                            Date_options['start_day'], 
-                            config['Processing_options']['method'] )
+        #----------------
+        # Make list of daily start-end time pairs (to itterate from)
+        #----------------
 
 
+        Date_options = self.namelist['Date_options']
+        options = self.namelist['options']
+        satellite = self.namelist['Metadata']['icetracker']
+
+        #Get the start and end dates
+        start_year  = str(Date_options['start_year'])
+        start_month = str(Date_options['start_month'])
+        start_day   = str(Date_options['start_day'])
+        end_year    = str(Date_options['end_year'])
+        end_month   = str(Date_options['end_month'])
+        end_day     = str(Date_options['end_day'])
+
+        sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
+        eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
+
+        # Get the number of days in the production period
+        date_range = (eDate - sDate)
+        date_range = date_range.days
+
+        # Allowing *min_date* to be updated and initializing time difference object
+        start_date = sDate
+        dtime = timedelta(hours=24)
+
+        # Creating list containing tuples of date ranges [(dt1, dt2), (dt2, dt3) ...]
+        self.date_pairs = []
+        for i in range(date_range):
+            end_date = start_date + dtime
+            self.date_pairs.append((start_date, end_date))
+            start_date = end_date
+
+    def get_daily_SARpair_data(self):
+        """
+        Filters through the data files located in the input data folder to make
+        a list of ASITS outputs with first image acquisition time in the specified date.
+
+
+        Output: raw_paths -- List of ASITS output files to be processed
+        """
+
+        # Retrieve the IO and Date_options sections
+        IO = self.namelist['IO']
+        Date_options = self.namelist['Date_options']
+        Metadata = self.namelist['Metadata']
+
+        # Get the start and end date of given day
+        start_year  = str(Date_options['start_year'])
+        start_month = str(Date_options['start_month'])
+        start_day   = str(Date_options['start_day'])
+        end_year    = str(Date_options['end_year'])
+        end_month   = str(Date_options['end_month'])
+        end_day     = str(Date_options['end_day'])
+        timestep    = int(Date_options['timestep'])
+        tolerance   = int(Date_options['tolerance'])
+
+        sDate = datetime.strptime(start_year + start_month + start_day, '%Y%m%d')
+        eDate = datetime.strptime(end_year + end_month + end_day, '%Y%m%d')
+
+        # Initializing file list and date count variables
+        raw_paths = []
+
+        #Fetch the path to the SAR-derived sea ice motion files
+        date_path = IO['data_folder']
+        satellite = Metadata['icetracker']
+
+        if satellite == 'RCMS1':
+            sat_list = ['rcm/','s1/']
+        elif satellite == 'S1':
+            sat_list = ['s1/']
+        elif satellite == 'RCM':
+            sat_list = ['rcm/']
+        else:
+            sys.exit("Oh! Original, but satellite data %s is not defined!!" % satellite )
+
+
+        # List the pair files that correspond to time interval
+        for sat_type in sat_list:
+            for year in range(int(start_year), int(end_year)+1):
+
+                if not(os.path.exists(date_path + sat_type + str(year) + '/')):
+                    print('No data for '+ sat_type + ' in ' + str(year) )
+                else:
+                    data_path = date_path + sat_type + str(year) + '/'
+
+                    #--------------------------------------------------------------------------
+                    # Seek pairs that are in the specific date
+                    #---------------------------------------------------------------------------
+
+                    # Filtering data files by date
+                    listfiles = os.listdir(data_path)
+                    for filename in sorted(listfiles):
+                        # Extracting initial and final dates from data file names
+
+                        iDate = datetime.strptime(filename[6:20], '%Y%m%d%H%M%S')
+                        fDate = datetime.strptime(filename[21:35], '%Y%m%d%H%M%S')
+
+                        if iDate <= eDate and iDate > sDate and (fDate-iDate) <= timedelta(days=6):
+                            raw_paths.append(data_path + '/' + filename)
+
+        return raw_paths
+
+
+    def stb(self, s):
+        if s in ['yes','Yes','true','True']:
+             return True
+        elif s in ['no','False','No','false']:
+             return False
+        else:
+             return s
