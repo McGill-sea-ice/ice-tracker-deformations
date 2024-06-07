@@ -34,11 +34,58 @@ class compute_SIDRR:
 
         #====================================================
         #
+        # Make arrays to store computed variables
+        #
+        #====================================================
+
+        self.sTime = []
+        self.eTime =  []
+
+        self.sat =  []
+
+        self.sLat1 =  []
+        self.sLat2 = []
+        self.sLat3 =  []
+        self.sLon1 =  []
+        self.sLon2 =  []
+        self.sLon3 =  []
+
+        self.eLat1 =  []
+        self.eLat2 =  []
+        self.eLat3 = []
+        self.eLon1 =  []
+        self.eLon2 =  []
+        self.eLon3 =  []
+
+        self.div = []
+        self.shr = []
+        self.vrt = []
+
+        self.ids1 = []
+        self.ids2 = []
+        self.ids3 = []
+        self.idpair = []
+
+        self.A = []
+
+        self.dudx = []
+        self.dudy = []
+        self.dvdx = []
+        self.dvdy = []
+
+        self.delA = []
+        self.delI = []
+        self.delII = []
+        self.delvrt = []
+        self.s2n = []
+
+        #====================================================
+        #
         # COMPUTE DEFORMATIONS FOR EACH TRIANGLE
         #
         #====================================================
+        self.sigx = data.sigx
         sigx = data.sigx
-        CDFout.sigx = sigx
         dt = data.dt
         self.num_tri = len(tri_array.vertice_ids1)
         num_tri = int(self.num_tri)
@@ -103,53 +150,53 @@ class compute_SIDRR:
             if (A**0.5 < 20000.0):
                 self.nbfg += 1
                 # Write the vertices' IDs and triangle ID to lists
-                CDFout.ids1.append(tri_array.vertice_ids1[n])
-                CDFout.ids2.append(tri_array.vertice_ids2[n])
-                CDFout.ids3.append(tri_array.vertice_ids3[n])
+                self.ids1.append(tri_array.vertice_ids1[n])
+                self.ids2.append(tri_array.vertice_ids2[n])
+                self.ids3.append(tri_array.vertice_ids3[n])
                 if idpair is None:
                     idpair = 0
-                CDFout.idpair.append(idpair)
+                self.idpair.append(idpair)
 
                 # Add the satellite to the netcdf lists
-                CDFout.sat.append(int(data.sat))
+                self.sat.append(int(data.sat))
 
                 # Add the divergence and the shear strain rates to the netcdf lists
-                CDFout.div.append(eps_I)
-                CDFout.shr.append(eps_II)
-                CDFout.vrt.append(vrt)
+                self.div.append(eps_I)
+                self.shr.append(eps_II)
+                self.vrt.append(vrt)
 
                 # Add the strain rates and area to the netcdf lists
-                CDFout.A.append(A)
-                CDFout.dudx.append(dudx)
-                CDFout.dudy.append(dudy)
-                CDFout.dvdx.append(dvdx)
-                CDFout.dvdy.append(dvdy)
+                self.A.append(A)
+                self.dudx.append(dudx)
+                self.dudy.append(dudy)
+                self.dvdx.append(dvdx)
+                self.dvdy.append(dvdy)
 
                 # Add the strain rates and area to the netcdf lists
-                CDFout.delA.append(delA**0.5)
-                CDFout.delI.append(delI**0.5)
-                CDFout.delII.append(delII**0.5)
-                CDFout.delvrt.append(delvrt**0.5)
-                CDFout.s2n.append(sig2noise)
+                self.delA.append(delA**0.5)
+                self.delI.append(delI**0.5)
+                self.delII.append(delII**0.5)
+                self.delvrt.append(delvrt**0.5)
+                self.s2n.append(sig2noise)
 
 
                 # Add the starting and ending Lat/Lon positions of each triangle vertices
                 # to the netcdf list
-                CDFout.sLat1.append(np.array(data.sLat)[tri_array.vertice_ids1[n]])
-                CDFout.sLat2.append(np.array(data.sLat)[tri_array.vertice_ids2[n]])
-                CDFout.sLat3.append(np.array(data.sLat)[tri_array.vertice_ids3[n]])
+                self.sLat1.append(np.array(data.sLat)[tri_array.vertice_ids1[n]])
+                self.sLat2.append(np.array(data.sLat)[tri_array.vertice_ids2[n]])
+                self.sLat3.append(np.array(data.sLat)[tri_array.vertice_ids3[n]])
 
-                CDFout.sLon1.append(np.array(data.sLon)[tri_array.vertice_ids1[n]])
-                CDFout.sLon2.append(np.array(data.sLon)[tri_array.vertice_ids2[n]])
-                CDFout.sLon3.append(np.array(data.sLon)[tri_array.vertice_ids3[n]])
+                self.sLon1.append(np.array(data.sLon)[tri_array.vertice_ids1[n]])
+                self.sLon2.append(np.array(data.sLon)[tri_array.vertice_ids2[n]])
+                self.sLon3.append(np.array(data.sLon)[tri_array.vertice_ids3[n]])
 
-                CDFout.eLat1.append(np.array(data.eLat)[tri_array.vertice_ids1[n]])
-                CDFout.eLat2.append(np.array(data.eLat)[tri_array.vertice_ids2[n]])
-                CDFout.eLat3.append(np.array(data.eLat)[tri_array.vertice_ids3[n]])
+                self.eLat1.append(np.array(data.eLat)[tri_array.vertice_ids1[n]])
+                self.eLat2.append(np.array(data.eLat)[tri_array.vertice_ids2[n]])
+                self.eLat3.append(np.array(data.eLat)[tri_array.vertice_ids3[n]])
 
-                CDFout.eLon1.append(np.array(data.eLon)[tri_array.vertice_ids1[n]])
-                CDFout.eLon2.append(np.array(data.eLon)[tri_array.vertice_ids2[n]])
-                CDFout.eLon3.append(np.array(data.eLon)[tri_array.vertice_ids3[n]])
+                self.eLon1.append(np.array(data.eLon)[tri_array.vertice_ids1[n]])
+                self.eLon2.append(np.array(data.eLon)[tri_array.vertice_ids2[n]])
+                self.eLon3.append(np.array(data.eLon)[tri_array.vertice_ids3[n]])
 
             else:
                 self.nbfb += 1
@@ -157,8 +204,8 @@ class compute_SIDRR:
 
         # Add the starting and ending times (in seconds since the reference time)
         # to the times list
-        CDFout.sTime.extend([data.sTime for i in range(self.num_tri)])
-        CDFout.eTime.extend([data.eTime for i in range(self.num_tri)])
+        self.sTime.extend([data.sTime for i in range(self.num_tri)])
+        self.eTime.extend([data.eTime for i in range(self.num_tri)])
 
         self.num_large = len(tri_array.vertice_ids1) - self.num_tri
 

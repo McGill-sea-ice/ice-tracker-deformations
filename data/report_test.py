@@ -26,14 +26,12 @@ for var in data_ref.variables:
             #Check the number of triangles
             if (len(data_ref[var][:]) != len(data_test[var][:])):
                 print("Differences in variable %s length : ctrl = %s, test = %s" % (var, len(data_ref[var][:]), len(data_test[var][:])))
-                if var == 'start_time':
-                    print(var, np.unique(data_ref['end_time'][:]-data_ref['start_time'][:]),
-                               np.unique(data_test['end_time'][:]-data_test['start_time'][:]))
-                if var == 'end_time':
-                    print(var, np.unique(data_ref[var][:]),np.unique(data_test[var][:]))
             else:
                 print("variable %s has length : ctrl = %s, test = %s" % (var, len(data_ref[var][:]), len(data_ref[var][:])))
                 dist = la.norm( (data_ref[var][:] - data_test[var][:] )/data_ref[var][:] )
+                if var == 'idpair':
+                    print(var, data_test[var][:]-data_ref[var][:])
+
                 if abs(dist) < 1e-7 :
                     print(var, ' PASS BUT NOT EQUAL (after all, perfection is perfection, and this isnt)')
                 elif abs(dist) < 1e-4 :
@@ -47,32 +45,3 @@ for var in data_ref.variables:
     else:
         print(var, ' is not present in the tested dataset')
 
-## 2 test of the coverage frequency
-print(' ')
-print(" --- 2 test of the coverage frequency ---")
-print(' ')
-
-file_ref  = 'test_ref/RCMS1_20220101_20220102_dt24_tol24_res20_int1_reflat70_coverage_area_timeseries.pkl'
-file_test = 'test_out/test/figs/RCMS1_20220101_20220102_dt24_tol24_res20_int1_reflat70_coverage_area_timeseries.pkl'
-
-data_ref = pd.read_pickle(file_ref)
-data_test = pd.read_pickle(file_test)
-
-for var in data_ref:
-    if var in data_test:
-        test = ( data_ref[var][:] == data_test[var][:] ).all()
-        if test:
-            print(var, ' PASS ')
-        elif not test:
-            dist = ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len( data_ref[var][:]  )
-            if abs(dist) < 1e-5:
-                print(var, ' PASS ')
-            else:
-                print(var, ' FAIL')
-                print('ERROR distance = ', dist)
-            print(var, ' FAIL')
-        # print('data length difference', len(data_ref[var][:]) - len(data_test[var][:]))
-        # print('REF dist- test dist: ', ( la.norm( data_ref[var][:]) - la.norm( data_test[var][:] ) ) / len(data_ref[var][:]  ) )
-        #print('REF sum - test sum: ', ( nps(data_ref[var][:].astype('float'))  - nps( np.array(data_test[var][:].astype('float')))) / len(data_ref[var][:] ) )
-    else:
-        print(var, ' is not present in the tested dataset')

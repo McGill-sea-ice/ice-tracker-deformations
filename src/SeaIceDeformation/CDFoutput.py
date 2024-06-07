@@ -25,6 +25,8 @@ class CDFoutput:
         #
         #====================================================
 
+        self.sigx = 200
+
         self.sTime = []
         self.eTime =  []
 
@@ -74,49 +76,53 @@ class CDFoutput:
         # Create netcdf dataset variables
         #
         #====================================================
+        self.sTime.extend(SIDRRdata.sTime)
+        self.eTime.extend(SIDRRdata.eTime)
 
-        self.sTime = self.sTime.append(SIDRRdata.sTime)
-        self.eTime = self.eTime.append(SIDRRdata.eTime)
+        self.sat.extend(SIDRRdata.sat)
 
-        self.sat   = self.sat.append(SIDRRdata.sat)
+        self.sLat1.extend(SIDRRdata.sLat1)
+        self.sLat2.extend(SIDRRdata.sLat2)
+        self.sLat3.extend(SIDRRdata.sLat3)
+        self.sLon1.extend(SIDRRdata.sLon1)
+        self.sLon2.extend(SIDRRdata.sLon2)
+        self.sLon3.extend(SIDRRdata.sLon3)
 
-        self.sLat1 = self.sLat1.append(SIDRRdata.sLat1)
-        self.sLat2 = self.sLat2.append(SIDRRdata.sLat2)
-        self.sLat3 = self.sLat3.append(SIDRRdata.sLat3)
-        self.sLon1 = self.sLon1.append(SIDRRdata.sLon1)
-        self.sLon2 = self.sLon2.append(SIDRRdata.sLon2)
-        self.sLon3 = self.sLon3.append(SIDRRdata.sLon3)
+        self.eLat1.extend(SIDRRdata.eLat1)
+        self.eLat2.extend(SIDRRdata.eLat2)
+        self.eLat3.extend(SIDRRdata.eLat3)
+        self.eLon1.extend(SIDRRdata.eLon1)
+        self.eLon2.extend(SIDRRdata.eLon2)
+        self.eLon3.extend(SIDRRdata.eLon3)
 
-        self.eLat1 = self.eLat1.append(SIDRRdata.eLat1)
-        self.eLat2 = self.eLat2.append(SIDRRdata.eLat2)
-        self.eLat3 = self.eLat3.append(SIDRRdata.eLat3)
-        self.eLon1 = self.eLon1.append(SIDRRdata.eLon1)
-        self.eLon2 = self.eLon2.append(SIDRRdata.eLon2)
-        self.eLon3 = self.eLon3.append(SIDRRdata.eLon3)
+        self.div.extend(SIDRRdata.div)
+        self.shr.extend(SIDRRdata.shr)
+        self.vrt.extend(SIDRRdata.vrt)
 
-        self.div   = self.div.append(SIDRRdata.div)
-        self.shr   = self.shr.append(SIDRRdata.shr)
-        self.vrt   = self.vrt.append(SIDRRdata.vrt)
+        self.ids1.extend(SIDRRdata.ids1)
+        self.ids2.extend(SIDRRdata.ids2)
+        self.ids3.extend(SIDRRdata.ids3)
+        self.idpair.extend(SIDRRdata.idpair)
 
-        self.ids1  = self.ids1.append(SIDRRdata.ids1)
-        self.ids2  = self.ids2.append(SIDRRdata.ids2)
-        self.ids3  = self.ids3.append(SIDRRdata.ids3)
-        self.idpair = self.idpair.append(SIDRRdata.idpair)
+        self.A.extend(SIDRRdata.A)
 
-        self.A = self.A.append(SIDRRdata.A)
+        self.dudx.extend(SIDRRdata.dudx)
+        self.dudy.extend(SIDRRdata.dudy)
+        self.dvdx.extend(SIDRRdata.dvdx)
+        self.dvdy.extend(SIDRRdata.dvdy)
 
-        self.dudx = self.dudx.append(SIDRRdata.dudx)
-        self.dudy = self.dudy.append(SIDRRdata.dudy)
-        self.dvdx = self.dvdx.append(SIDRRdata.dvdx)
-        self.dvdy = self.dvdy.append(SIDRRdata.dvdy)
+        self.delA.extend(SIDRRdata.delA)
+        self.delI.extend(SIDRRdata.delI)
+        self.delII.extend(SIDRRdata.delII)
+        self.delvrt.extend(SIDRRdata.delvrt)
+        self.s2n.extend(SIDRRdata.s2n)
 
-        self.delA = self.delA.append(SIDRRdata.delA)
-        self.delI = self.delI.append(SIDRRdata.delI)
-        self.delII = self.delII.append(SIDRRdata.delII)
-        self.delvrt = self.delvrt.append(SIDRRdata.delvrt)
-        self.s2n = self.s2n.append(SIDRRdata.s2n)
+
+        self.sigx = SIDRRdata.sigx
 
     def write_CDF(self, config = None,DateString = None):
+
+
 
         Date_options = config['Date_options']
         # Find absolute path in which the output netcdf file is to be stored
