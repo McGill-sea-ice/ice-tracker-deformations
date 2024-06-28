@@ -56,29 +56,11 @@ python src/SeaIceDeformation/main.py
 conda deactivate
 ```
 
-To use the analysis tools, we activate the Conda environment and run one of the two files in `src/SatelliteCoverage/`:
-
-```bash
-# Activate the virtual environment
-conda activate icetrackdefs
-# Launch the raw data anylsis tool
-python src/SatelliteCoverage/coverage_frequency_map.py
-# Deactivate the environment when you are done
-conda deactivate
-```
-
-or
-
-```bash
-# Activate the virtual environment
-conda activate icetrackdefs
-# Launch the NetCDF tool
-python src/SatelliteCoverage/netcdf_tools.py
-# Deactivate the environment when you are done
-conda deactivate
-```
-
 The user can configure the deformation calculations by modifying the definitions of the parameters in the configuration file `src/SeaIceDeformation/namelist.ini`, and the NetCDF analyses can be configured in `src/SatelliteCoverage`. In particular, the `output_folder` in the `IO` section should be modified to point to a filesystem location where one has write permissions. 
+
+The SIDRR.py tool can be used to analyse the data.
+(McGill-sea-ice/SIDRRpy
+
 
 ## Testing procedure
 
@@ -86,30 +68,16 @@ in ./data/ run `test.sh`
 
 It will:
  - run `/src/SeaIceDeformation/main.py` with the `namelist.def` settings.
- - run `/src/SeaIceDeformation/coverage_frequency_map.py` with the `options.def` settings.
- - run `/src/SeaIceDeformation/netcdf_tools.py` with the `options.def` settings.
  - run `/data/report_test.py`
 
 A `PASS` should be obtained for all the variables 
 
 ## Documentation
 
-To generate PDF documentation for this project, start by accessing the `docs` folder (assuming we are already in the project folder):
-
-```bash
-cd docs
-```
-
-Finally, write the following command:
-
-```bash
-make SeaIceDeformation_doc.pdf
-```
-
-*SeaIceDeformation_Methods.pdf* will be stored in the current directory.
+We refer to the manuscript submitted to ESSD (ESSD-2024-227).
 
 ## Input Data Location
 
-The March and April 2020 Sentinel-1 and RCM ice tracker data stored in *RCM_dats_2020_MarApr.tar.gz* and *S1_dats_2020_MarApr.tar.gz* is located under `/space/hall4/sitestore/eccc/crd/ccrp/mib001/jf_icetracker_data`.
+The Data is located on crunch, in /storage/common/
 
 
