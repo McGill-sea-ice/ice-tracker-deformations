@@ -46,6 +46,13 @@ class CDFoutput:
         self.eLon2 =  []
         self.eLon3 =  []
 
+        self.sLat = []
+        self.sLon = []
+        self.eLat = []
+        self.eLon = []
+        self.tri_inv = []
+        self.pts_idpair =[]
+
         self.div = []
         self.shr = []
         self.vrt = []
@@ -95,15 +102,41 @@ class CDFoutput:
         self.eLon2.extend(SIDRRdata.eLon2)
         self.eLon3.extend(SIDRRdata.eLon3)
 
+        #This is Anton Korosov proposed modifications
+        ids = np.hstack([SIDRRdata.ids1, SIDRRdata.ids2, SIDRRdata.ids3])
+        sLat = np.hstack([SIDRRdata.sLat1, SIDRRdata.sLat2, SIDRRdata.sLat3])
+        sLon = np.hstack([SIDRRdata.sLon1, SIDRRdata.sLon2, SIDRRdata.sLon3])
+        eLat = np.hstack([SIDRRdata.eLat1, SIDRRdata.eLat2, SIDRRdata.eLat3])
+        eLon = np.hstack([SIDRRdata.eLon1, SIDRRdata.eLon2, SIDRRdata.eLon3])
+        _, unq_idx, unq_inv = np.unique(ids, return_index=True, return_inverse=True)
+
+
+        start_lat = sLat[unq_idx]
+        start_lon = sLon[unq_idx]
+        end_lat = eLat[unq_idx]
+        end_lon = eLon[unq_idx]
+
+        pts_idpair = start_lat.copy()*0.0 + np.unique(SIDRRdata.idpair)
+
+        tri = unq_inv.reshape(3, -1).T
+
+
+
+        self.sLat.extend(start_lat)
+        self.sLon.extend(start_lon)
+        self.eLat.extend(end_lat)
+        self.eLon.extend(end_lon)
+        self.pts_idpair.extend(pts_idpair)
+
         self.div.extend(SIDRRdata.div)
         self.shr.extend(SIDRRdata.shr)
         self.vrt.extend(SIDRRdata.vrt)
 
-        self.ids1.extend(SIDRRdata.ids1)
-        self.ids2.extend(SIDRRdata.ids2)
-        self.ids3.extend(SIDRRdata.ids3)
-        self.idpair.extend(SIDRRdata.idpair)
+        self.ids1.extend(tri[:,0])
+        self.ids2.extend(tri[:,1])
+        self.ids3.extend(tri[:,2])
 
+        self.idpair.extend(SIDRRdata.idpair)
         self.A.extend(SIDRRdata.A)
 
         self.dudx.extend(SIDRRdata.dudx)
@@ -116,7 +149,6 @@ class CDFoutput:
         self.delII.extend(SIDRRdata.delII)
         self.delvrt.extend(SIDRRdata.delvrt)
         self.s2n.extend(SIDRRdata.s2n)
-
 
         self.sigx = SIDRRdata.sigx
 
@@ -159,6 +191,7 @@ class CDFoutput:
         #-------------------------------------------------
 
         n = output_ds.createDimension('n', len(self.sTime))
+        n = output_ds.createDimension('npts', len(self.sLat))
 
         #-------------------------------------------------
         # Create netcdf variables
@@ -169,19 +202,11 @@ class CDFoutput:
 
         satellite  = output_ds.createVariable('satellite', 'u4', 'n') # Satellite
 
-        start_lat1 = output_ds.createVariable('start_lat1', 'f8', 'n') # Starting Lat/Lon triangle vertices
-        start_lat2 = output_ds.createVariable('start_lat2', 'f8', 'n')
-        start_lat3 = output_ds.createVariable('start_lat3', 'f8', 'n')
-        start_lon1 = output_ds.createVariable('start_lon1', 'f8', 'n')
-        start_lon2 = output_ds.createVariable('start_lon2', 'f8', 'n')
-        start_lon3 = output_ds.createVariable('start_lon3', 'f8', 'n')
-
-        end_lat1   = output_ds.createVariable('end_lat1', 'f8', 'n') # Ending Lat/Lon triangle vertices
-        end_lat2   = output_ds.createVariable('end_lat2', 'f8', 'n')
-        end_lat3   = output_ds.createVariable('end_lat3', 'f8', 'n')
-        end_lon1   = output_ds.createVariable('end_lon1', 'f8', 'n')
-        end_lon2   = output_ds.createVariable('end_lon2', 'f8', 'n')
-        end_lon3   = output_ds.createVariable('end_lon3', 'f8', 'n')
+        start_lat = output_ds.createVariable('start_lat', 'f8', 'npts') # tracked features start locations
+        start_lon = output_ds.createVariable('start_lon', 'f8', 'npts')
+        end_lat = output_ds.createVariable('end_lat', 'f8', 'npts') # tracked features end locations
+        end_lon = output_ds.createVariable('end_lon', 'f8', 'npts')
+        pts_idpair = output_ds.createVariable('pts_idpair','u4','npts')
 
         d          = output_ds.createVariable('div', 'f8', 'n') # Divergence and shear strain and vorticity rates
         s          = output_ds.createVariable('shr', 'f8', 'n')
@@ -218,24 +243,17 @@ class CDFoutput:
 
         satellite.units   = '0: RCM; 1: S1'
 
-        start_lat1.units = 'degrees North'
-        start_lat2.units = 'degrees North'
-        start_lat3.units = 'degrees North'
-        start_lon1.units = 'degrees East'
-        start_lon2.units = 'degrees East'
-        start_lon3.units = 'degrees East'
 
-        end_lat1.units   = 'degrees North'
-        end_lat2.units   = 'degrees North'
-        end_lat3.units   = 'degrees North'
-        end_lon1.units   = 'degrees East'
-        end_lon2.units   = 'degrees East'
-        end_lon3.units   = 'degrees East'
+        start_lat.units = 'degrees North'
+        start_lon.units = 'degrees East'
+        end_lat.units   = 'degrees North'
+        end_lon.units   = 'degrees East'
 
         id1.units        = 'ID vertex 1'
         id2.units        = 'ID vertex 2'
         id3.units        = 'ID vertex 3'
         id_pair.units     = 'ID SAR pair'
+        pts_idpair.units     = 'ID SAR pair'
 
         d.units          = '1/days'
         s.units          = '1/days'
@@ -264,19 +282,10 @@ class CDFoutput:
 
         satellite[:]  = self.sat
 
-        start_lat1[:] = self.sLat1
-        start_lat2[:] = self.sLat2
-        start_lat3[:] = self.sLat3
-        start_lon1[:] = self.sLon1
-        start_lon2[:] = self.sLon2
-        start_lon3[:] = self.sLon3
-
-        end_lat1[:]   = self.eLat1
-        end_lat2[:]   = self.eLat2
-        end_lat3[:]   = self.eLat3
-        end_lon1[:]   = self.eLon1
-        end_lon2[:]   = self.eLon2
-        end_lon3[:]   = self.eLon3
+        start_lat[:] = self.sLat
+        start_lon[:] = self.sLon
+        end_lat[:]   = self.eLat
+        end_lon[:]   = self.eLon
 
         d[:]          = self.div
         s[:]          = self.shr
@@ -286,6 +295,7 @@ class CDFoutput:
         id2[:]        = self.ids2
         id3[:]        = self.ids3
         id_pair[:]    = self.idpair
+        pts_idpair[:]    = self.pts_idpair
 
         Aa[:]         = self.A
 
